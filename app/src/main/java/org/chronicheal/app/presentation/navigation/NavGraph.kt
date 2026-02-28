@@ -5,18 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import org.chronicheal.app.domain.model.EntryType
-import org.chronicheal.app.presentation.AddActivityScreen
-import org.chronicheal.app.presentation.AddDiseaseScreen
-import org.chronicheal.app.presentation.AddDrugScreen
-import org.chronicheal.app.presentation.AddExternalFactorScreen
-import org.chronicheal.app.presentation.AddJournalScreen
-import org.chronicheal.app.presentation.AddMealScreen
-import org.chronicheal.app.presentation.AddMedicalAppointmentScreen
-import org.chronicheal.app.presentation.AddPainScreen
-import org.chronicheal.app.presentation.AddSleepScreen
-import org.chronicheal.app.presentation.AddSymptomScreen
-import org.chronicheal.app.presentation.EntryTypeSelectionScreen
-import org.chronicheal.app.presentation.TimelineScreen
+import org.chronicheal.app.presentation.*
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -28,7 +17,15 @@ fun NavGraph(navController: NavHostController) {
             TimelineScreen(
                 onAddEntryClick = {
                     navController.navigate(Screen.EntryTypeSelection.route)
+                },
+                onCalendarClick = {
+                    navController.navigate(Screen.Calendar.route)
                 }
+            )
+        }
+        composable(route = Screen.Calendar.route) {
+            CalendarScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
         composable(route = Screen.EntryTypeSelection.route) {

@@ -5,42 +5,28 @@ This document outlines the implementation steps for ChronicHeal, based on the `R
 ## Phase 1: Core Data Foundation and Basic UI (Completed)
 Established the core data structure and a basic user interface.
 
-### Accomplishments:
-- **Dependency Setup**: Integrated Jetpack Compose, Hilt, Room, and KSP.
-- **Domain Layer**: Defined `HealthEntry` and `EntryType`.
-- **Data Layer**: 
-    - Implemented Room database (`AppDatabase`, `EntryDao`).
-    - Implemented `EntryRepository` and its implementation `EntryRepositoryImpl`.
-    - Set up Hilt modules for Dependency Injection.
-- **Presentation Layer**: 
-    - Switched `MainActivity` to Compose.
-    - Set up Material 3 Theme.
-    - Cleaned up legacy View-based files.
-
-## Phase 2: Timeline and Entry Management (In Progress)
+## Phase 2: Timeline and Entry Management (Completed)
 Goal: Allow users to view their history and add new entries.
 
 ### Accomplishments:
-- **Domain Layer (Use Cases)**: Implemented `GetEntriesUseCase` and `AddEntryUseCase`.
-- **Presentation Layer (Navigation)**: 
-    - Integrated Compose Navigation.
-    - Defined routes for Timeline, Type Selection, and specialized input screens.
-- **UI Components**:
-    - `TimelineScreen`: Displays a list of health entries from the database.
-    - `EntryTypeSelectionScreen`: Grid-based selection for different tracking types.
-    - `AddPainScreen`: Specialized input with intensity slider and location field.
-    - `AddDrugScreen`: Specialized input for medication and dosage.
+- **Unified Entry System**: Implemented all 10 specialized screens (Pain, Drugs, Symptoms, Disease, Meals, Sleep, Medical Appointment, Activity, External Factors, Journal).
+- **Calendar View**: Added a monthly overview with data markers for active days.
+- **Timeline**: Reactive list view with entry deletion support.
+- **Navigation**: Full Compose Navigation implementation with Hilt integration.
 
-### Remaining for Phase 2:
-- **More Specialized Input Screens**: Add screens for Symptoms, Meals, and Activities.
-- **Entry Edition/Deletion**: Allow users to tap an entry in the timeline to edit or delete it.
-- **Calendar View**: Add a monthly calendar view to navigate the history.
+## Phase 3: Analytics and Export (In Progress)
+Goal: Visualize data trends and ensure data portability.
 
-## Phase 3: Analytics and Export
-- Basic graphing of pain intensity over time.
-- JSON export/import functionality.
+### 1. Data Portability (Current)
+- **JSON Export**: Allow users to save their entire history to a local file.
+- **JSON Import**: Allow users to restore data from a previous backup.
+- **PDF Export**: Generate a medical-friendly report (planned).
+
+### 2. Analytics & Visualization
+- **Graphing**: Basic trend lines for pain and symptom intensity over time.
+- **Correlations**: Identify patterns (e.g., Sleep vs. Pain).
 
 ## Phase 4: Advanced Features
 - Body scan UI.
-- PDF Report generation.
 - Reminders via WorkManager.
+- Biometric Lock.

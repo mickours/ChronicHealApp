@@ -2,6 +2,7 @@ package org.chronicheal.app.presentation.navigation
 
 sealed class Screen(val route: String) {
     object Timeline : Screen("timeline")
+    object Calendar : Screen("calendar")
     object EntryTypeSelection : Screen("entry_type_selection")
     object AddPain : Screen("add_pain")
     object AddDrug : Screen("add_drug")

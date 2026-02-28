@@ -2,12 +2,16 @@ package org.chronicheal.app.domain.model
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
+import org.chronicheal.app.data.local.InstantSerializer
 import java.time.Instant
 
 @Entity(tableName = "health_entries")
+@Serializable
 data class HealthEntry(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    @Serializable(with = InstantSerializer::class)
     val timestamp: Instant = Instant.now(),
     val type: EntryType,
     val note: String = "",

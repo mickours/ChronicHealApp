@@ -1,5 +1,8 @@
 package org.chronicheal.app.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class EntryType {
     PAIN,
     DRUG,

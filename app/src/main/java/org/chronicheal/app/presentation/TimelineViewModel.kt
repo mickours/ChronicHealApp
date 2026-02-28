@@ -10,13 +10,17 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.usecase.AddEntryUseCase
+import org.chronicheal.app.domain.usecase.DeleteEntryUseCase
 import org.chronicheal.app.domain.usecase.GetEntriesUseCase
+import org.chronicheal.app.domain.usecase.UpdateEntryUseCase
 import javax.inject.Inject
 
 @HiltViewModel
 class TimelineViewModel @Inject constructor(
     private val getEntriesUseCase: GetEntriesUseCase,
-    private val addEntryUseCase: AddEntryUseCase
+    private val addEntryUseCase: AddEntryUseCase,
+    private val deleteEntryUseCase: DeleteEntryUseCase,
+    private val updateEntryUseCase: UpdateEntryUseCase
 ) : ViewModel() {
 
     val uiState: StateFlow<TimelineUiState> = getEntriesUseCase()
@@ -30,6 +34,18 @@ class TimelineViewModel @Inject constructor(
     fun addEntry(entry: HealthEntry) {
         viewModelScope.launch {
             addEntryUseCase(entry)
+        }
+    }
+
+    fun updateEntry(entry: HealthEntry) {
+        viewModelScope.launch {
+            updateEntryUseCase(entry)
+        }
+    }
+
+    fun deleteEntry(entry: HealthEntry) {
+        viewModelScope.launch {
+            deleteEntryUseCase(entry)
         }
     }
 }
