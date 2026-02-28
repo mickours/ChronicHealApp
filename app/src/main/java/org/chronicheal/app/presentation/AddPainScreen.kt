@@ -26,7 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import kotlin.math.roundToInt
@@ -36,7 +36,7 @@ import kotlin.math.roundToInt
 fun AddPainScreen(
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: TimelineViewModel = viewModel()
+    viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var intensity by remember { mutableFloatStateOf(5f) }
     var location by remember { mutableStateOf("") }

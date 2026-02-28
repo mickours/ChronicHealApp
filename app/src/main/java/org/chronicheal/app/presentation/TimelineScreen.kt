@@ -19,16 +19,17 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 
 @Composable
 fun TimelineScreen(
     onAddEntryClick: () -> Unit,
-    viewModel: TimelineViewModel = viewModel()
+    viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -73,7 +74,8 @@ fun EntryItem(entry: HealthEntry) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = entry.type.name.replace("_", " ").lowercase().capitalize(),
+                text = entry.type.name.replace("_", " ").lowercase()
+                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
                 style = MaterialTheme.typography.titleMedium
             )
             Text(

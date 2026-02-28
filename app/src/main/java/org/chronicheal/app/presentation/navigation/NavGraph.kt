@@ -6,8 +6,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.presentation.AddActivityScreen
+import org.chronicheal.app.presentation.AddDiseaseScreen
 import org.chronicheal.app.presentation.AddDrugScreen
+import org.chronicheal.app.presentation.AddExternalFactorScreen
+import org.chronicheal.app.presentation.AddJournalScreen
 import org.chronicheal.app.presentation.AddMealScreen
+import org.chronicheal.app.presentation.AddMedicalAppointmentScreen
 import org.chronicheal.app.presentation.AddPainScreen
 import org.chronicheal.app.presentation.AddSleepScreen
 import org.chronicheal.app.presentation.AddSymptomScreen
@@ -30,18 +34,19 @@ fun NavGraph(navController: NavHostController) {
         composable(route = Screen.EntryTypeSelection.route) {
             EntryTypeSelectionScreen(
                 onTypeSelected = { type ->
-                    when (type) {
-                        EntryType.PAIN -> navController.navigate(Screen.AddPain.route)
-                        EntryType.DRUG -> navController.navigate(Screen.AddDrug.route)
-                        EntryType.SYMPTOM -> navController.navigate(Screen.AddSymptom.route)
-                        EntryType.ACTIVITY -> navController.navigate(Screen.AddActivity.route)
-                        EntryType.MEAL -> navController.navigate(Screen.AddMeal.route)
-                        EntryType.SLEEP -> navController.navigate(Screen.AddSleep.route)
-                        else -> {
-                            // TODO: Implement other specialized screens
-                            navController.popBackStack()
-                        }
+                    val route = when (type) {
+                        EntryType.PAIN -> Screen.AddPain.route
+                        EntryType.DRUG -> Screen.AddDrug.route
+                        EntryType.SYMPTOM -> Screen.AddSymptom.route
+                        EntryType.DISEASE -> Screen.AddDisease.route
+                        EntryType.MEAL -> Screen.AddMeal.route
+                        EntryType.SLEEP -> Screen.AddSleep.route
+                        EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.route
+                        EntryType.ACTIVITY -> Screen.AddActivity.route
+                        EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.route
+                        EntryType.JOURNAL -> Screen.AddJournal.route
                     }
+                    navController.navigate(route)
                 },
                 onBackClick = { navController.popBackStack() }
             )
@@ -88,6 +93,38 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(route = Screen.AddSleep.route) {
             AddSleepScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = {
+                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
+                }
+            )
+        }
+        composable(route = Screen.AddDisease.route) {
+            AddDiseaseScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = {
+                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
+                }
+            )
+        }
+        composable(route = Screen.AddMedicalAppointment.route) {
+            AddMedicalAppointmentScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = {
+                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
+                }
+            )
+        }
+        composable(route = Screen.AddExternalFactor.route) {
+            AddExternalFactorScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = {
+                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
+                }
+            )
+        }
+        composable(route = Screen.AddJournal.route) {
+            AddJournalScreen(
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = {
                     navController.popBackStack(Screen.Timeline.route, inclusive = false)

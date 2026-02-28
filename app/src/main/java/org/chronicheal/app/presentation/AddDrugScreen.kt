@@ -23,7 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 
@@ -32,7 +32,7 @@ import org.chronicheal.app.domain.model.HealthEntry
 fun AddDrugScreen(
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: TimelineViewModel = viewModel()
+    viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var dosage by remember { mutableStateOf("") }
@@ -90,7 +90,7 @@ fun AddDrugScreen(
                         HealthEntry(
                             type = EntryType.DRUG,
                             name = name,
-                            unit = dosage, // Using unit field for dosage string for now
+                            unit = dosage,
                             note = note
                         )
                     )

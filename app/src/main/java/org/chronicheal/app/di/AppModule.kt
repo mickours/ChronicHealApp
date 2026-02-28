@@ -22,7 +22,9 @@ object AppModule {
             context,
             AppDatabase::class.java,
             "chronicheal_db"
-        ).build()
+        )
+        .fallbackToDestructiveMigration()
+        .build()
     }
 
     @Provides
