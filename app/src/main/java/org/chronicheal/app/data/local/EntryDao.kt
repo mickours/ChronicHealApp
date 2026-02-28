@@ -20,7 +20,10 @@ interface EntryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntry(entry: HealthEntry)
 
-    @Update
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertEntries(entries: List<HealthEntry>)
+
+    @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateEntry(entry: HealthEntry)
 
     @Delete

@@ -9,4 +9,5 @@ interface EntryRepository {
     suspend fun insertEntry(entry: HealthEntry)
     suspend fun updateEntry(entry: HealthEntry)
     suspend fun deleteEntry(entry: HealthEntry)
+    suspend fun insertEntries(entries: List<HealthEntry>)
 }

@@ -20,11 +20,19 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onCalendarClick = {
                     navController.navigate(Screen.Calendar.route)
+                },
+                onSettingsClick = {
+                    navController.navigate(Screen.Settings.route)
                 }
             )
         }
         composable(route = Screen.Calendar.route) {
             CalendarScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable(route = Screen.Settings.route) {
+            SettingsScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

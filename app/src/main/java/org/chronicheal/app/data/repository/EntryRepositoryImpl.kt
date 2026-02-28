@@ -22,6 +22,10 @@ class EntryRepositoryImpl @Inject constructor(
         dao.insertEntry(entry)
     }
 
+    override suspend fun insertEntries(entries: List<HealthEntry>) {
+        dao.insertEntries(entries)
+    }
+
     override suspend fun updateEntry(entry: HealthEntry) {
         dao.updateEntry(entry)
     }
