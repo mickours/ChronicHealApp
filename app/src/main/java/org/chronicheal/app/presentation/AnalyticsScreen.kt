@@ -59,18 +59,21 @@ import com.patrykandpatrick.vico.compose.chart.column.columnChart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
 import com.patrykandpatrick.vico.compose.component.lineComponent
 import com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient
+import com.patrykandpatrick.vico.compose.component.textComponent
 import com.patrykandpatrick.vico.core.axis.AxisItemPlacer
 import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 import com.patrykandpatrick.vico.core.chart.line.LineChart
 import com.patrykandpatrick.vico.core.component.shape.Shapes
+import com.patrykandpatrick.vico.core.component.text.textComponent
 import com.patrykandpatrick.vico.core.entry.FloatEntry
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
 import kotlin.math.ceil
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -170,7 +173,7 @@ fun AnalyticsScreen(
                 val locations = uiState.painData.keys.toList()
                 val dates = uiState.painData.values.first().keys.toList()
                 
-                // Stack the series manually
+                // Manually calculate stacked series for LineChart area stacking
                 val rawSeries = uiState.painData.values.toList()
                 val stackedSeries = remember(uiState.painData) {
                     val result = mutableListOf<List<FloatEntry>>()
@@ -185,14 +188,20 @@ fun AnalyticsScreen(
                     result
                 }
 
-                // Plot stacked areas. Reverse so largest area is drawn first
+                // Plot the stacked lines. We reverse so the largest cumulative sum (top area) 
+                // is drawn first. This allows subsequent smaller areas to overlay it and create the stacked effect.
                 val model = remember(stackedSeries) {
                     entryModelOf(*stackedSeries.reversed().toTypedArray())
                 }
                 
-                val bottomAxisFormatter = remember(dates) {
+                val bottomAxisFormatter = remember(dates, timeRange) {
                     AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-                        dates.getOrNull(value.toInt())?.format(DateTimeFormatter.ofPattern("MMM dd")) ?: ""
+                        val date = dates.getOrNull(value.toInt()) ?: return@AxisValueFormatter ""
+                        when (timeRange) {
+                            TimeRange.WEEK -> date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                            TimeRange.MONTH -> date.dayOfMonth.toString()
+                            TimeRange.YEAR -> date.monthValue.toString()
+                        }
                     }
                 }
 
@@ -219,12 +228,27 @@ fun AnalyticsScreen(
                         )
                     ),
                     bottomAxis = rememberBottomAxis(
+                        label = textComponent {
+                            this.color = Color.Black.toArgb()
+                            this.lineCount = 1
+                        },
                         valueFormatter = bottomAxisFormatter,
-                        labelRotationDegrees = 45f
+                        labelRotationDegrees = 45f,
+                        itemPlacer = remember(timeRange) {
+                            AxisItemPlacer.Horizontal.default(
+                                spacing = when(timeRange) {
+                                    TimeRange.YEAR -> 1 // Show monthly ticks approx
+                                    TimeRange.MONTH -> 1
+                                    TimeRange.WEEK -> 1
+                                },
+                                offset = 0,
+
+                            )
+                        }
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(280.dp)
+                        .height(320.dp)
                 )
 
                 // Legend
@@ -267,7 +291,7 @@ fun AnalyticsScreen(
                 }
 
                 val maxFreq = remember(uiState.symptomSeveritySum) {
-                    (uiState.symptomSeveritySum.values.maxOfOrNull { it.toFloat() } ?: 5f).coerceAtLeast(1f)
+                    (uiState.symptomSeveritySum.values.maxOfOrNull { it } ?: 5).toFloat().coerceAtLeast(1f)
                 }
 
                 Chart(
@@ -287,8 +311,12 @@ fun AnalyticsScreen(
                         )
                     ),
                     bottomAxis = rememberBottomAxis(
+                        label = textComponent {
+                            this.color = Color.Black.toArgb()
+                        },
                         valueFormatter = bottomAxisFormatter,
-                        labelRotationDegrees = 45f
+                        labelRotationDegrees = 45f,
+                        itemPlacer = AxisItemPlacer.Horizontal.default(spacing = 5)
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -318,7 +346,7 @@ fun TimeRangeSelector(
                 Icon(Icons.Default.ChevronLeft, contentDescription = "Previous")
             }
             
-            val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
+            val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy")
             Text(
                 text = "${startDate.format(formatter)} - ${getEndDate(startDate, timeRange).format(formatter)}",
                 style = MaterialTheme.typography.bodyMedium,

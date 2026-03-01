@@ -2,11 +2,34 @@ package org.chronicheal.app.presentation
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -26,6 +49,7 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val isBiometricLockEnabled by securityViewModel.isBiometricLockEnabled.collectAsState()
+    val isBiometricAvailable by securityViewModel.isBiometricAvailable.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -96,16 +120,23 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Biometric Lock", style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        text = "Require biometric authentication to open the app",
+                        text = "Biometric Lock",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (isBiometricAvailable) Color.Unspecified else MaterialTheme.colorScheme.outline
+                    )
+                    Text(
+                        text = if (isBiometricAvailable) 
+                            "Require biometric authentication to open the app" 
+                            else "Biometric authentication is not available on this device",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline
                     )
                 }
                 Switch(
                     checked = isBiometricLockEnabled,
-                    onCheckedChange = { securityViewModel.setBiometricLockEnabled(it) }
+                    onCheckedChange = { securityViewModel.setBiometricLockEnabled(it) },
+                    enabled = isBiometricAvailable
                 )
             }
 

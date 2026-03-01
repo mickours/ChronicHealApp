@@ -42,7 +42,7 @@ Goal: Interactive tools and notifications.
 - **Persistence**: Reminders survive device reboots via `BootReceiver`.
 - **Centralized Hub**: Reminders are now listed and manageable directly from the Calendar view.
 
-## Phase 5: Polish and Privacy (Current)
+## Phase 5: Polish and Privacy (Completed)
 - **Enhanced Entry Model**: Added `durationMinutes` and `isFinished` properties to `HealthEntry`.
 - **Default Durations**: Each `EntryType` now has a default duration (e.g., Sleep: 8h, Meal: 30min, Activity: 30min).
 - **Swipe-to-Action**: Implemented `SwipeToDismissBox` in Timeline and Day View.
@@ -60,5 +60,9 @@ Goal: Interactive tools and notifications.
         - **Severity-based Symptom Analysis**: Symptom charts now reflect the **sum of severity** rather than just frequency, giving a more accurate picture of symptom burden.
         - **Readability Optimizations**: Implemented rotated X-axis labels and fixed Y-axis increments to handle dense data views across different time ranges (Week, Month, Year).
     - **High-Visibility Calendar Markers**: Increased the size and contrast of health indicators in the calendar view. Dots now feature stronger colors and a subtle border to ensure they remain distinct and legible against all background shades.
-- Biometric Lock.
-- Search and Filters.
+- **Biometric Lock Implementation**:
+    - **Technical Choice**: Switched `MainActivity` from `ComponentActivity` to `AppCompatActivity` to support the `BiometricPrompt` API.
+    - **Enforcement**: Implemented mandatory biometric authentication on app startup when enabled in settings.
+    - **Session Persistence**: Used a local `isAuthenticated` state in `MainActivity` to avoid re-triggering the prompt during configuration changes or internal navigation while keeping the app secure on fresh starts.
+    - **Availability Safeguards**: Added `BiometricManager` checks in `SecurityViewModel` to disable and reset the lock setting if biometric hardware is missing or credentials are not enrolled. The UI now reflects this state by disabling the toggle and providing contextual feedback.
+- **Search and Filters** (Next Goal).
