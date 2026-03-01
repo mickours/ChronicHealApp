@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.Reminder
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,7 +30,7 @@ fun RemindersScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Reminders") },
+                title = { Text("Manage Reminders") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -89,7 +91,29 @@ fun ReminderItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = reminder.title, style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = reminder.title, style = MaterialTheme.typography.titleMedium)
+                    if (reminder.entryType != null) {
+                        Spacer(Modifier.width(8.dp))
+                        SuggestionChip(
+                            onClick = { },
+                            label = { 
+                                Text(
+                                    text = reminder.entryType.name.lowercase()
+                                        .replaceFirstChar { it.titlecase(Locale.getDefault()) },
+                                    style = MaterialTheme.typography.labelSmall
+                                ) 
+                            },
+                            icon = {
+                                Icon(
+                                    Icons.Default.NotificationsActive,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                            }
+                        )
+                    }
+                }
                 Text(
                     text = reminder.time.format(timeFormatter),
                     style = MaterialTheme.typography.bodyMedium
@@ -112,7 +136,7 @@ fun ReminderItem(
     }
 }
 
-fun getDaysOfWeekString(days: Set<Int>): String {
+private fun getDaysOfWeekString(days: Set<Int>): String {
     if (days.size == 7) return "Every day"
     if (days.isEmpty()) return "Never"
     

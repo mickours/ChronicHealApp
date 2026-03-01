@@ -1,21 +1,25 @@
 package org.chronicheal.app.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,13 +47,21 @@ fun CalendarScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Calendar & Reminders") },
+                title = { Text("Calendar") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
+                    TextButton(
+                        onClick = { currentMonth = YearMonth.now() },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Default.Today, contentDescription = null)
+                        Spacer(Modifier.width(4.dp))
+                        Text("Today")
+                    }
                     IconButton(onClick = onManageRemindersClick) {
                         Icon(Icons.Default.Notifications, contentDescription = "Manage Reminders")
                     }
@@ -169,6 +181,7 @@ fun CalendarGrid(
     val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek.value % 7 // 0 for Sunday, 1 for Monday...
     val days = (1..daysInMonth).toList()
     val emptyDaysBefore = (0 until firstDayOfMonth).toList()
+    val today = LocalDate.now()
 
     val entriesByDate = entries.groupBy {
         it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
@@ -204,9 +217,11 @@ fun CalendarGrid(
                                 val day = days[dayIndex]
                                 val date = currentMonth.atDay(day)
                                 val hasEntries = entriesByDate.containsKey(date)
+                                val isToday = date == today
                                 DayCell(
                                     day = day, 
                                     hasEntries = hasEntries,
+                                    isToday = isToday,
                                     onClick = { onDateClick(date) }
                                 )
                             } else {
@@ -224,23 +239,41 @@ fun CalendarGrid(
 fun DayCell(
     day: Int, 
     hasEntries: Boolean,
+    isToday: Boolean,
     onClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
             .aspectRatio(1f)
-            .padding(2.dp)
-            .clip(MaterialTheme.shapes.small)
+            .padding(4.dp)
+            .clip(CircleShape)
+            .background(
+                if (isToday) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
+            )
+            .then(
+                if (isToday) {
+                    Modifier.border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                } else {
+                    Modifier
+                }
+            )
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = day.toString())
+            Text(
+                text = day.toString(),
+                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+            )
             if (hasEntries) {
                 Box(
                     modifier = Modifier
                         .size(4.dp)
-                        .background(MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.small)
+                        .background(
+                            if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary, 
+                            shape = CircleShape
+                        )
                 )
             }
         }
