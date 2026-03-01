@@ -8,6 +8,8 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import org.chronicheal.app.domain.model.EntryType
+import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.repository.EntryRepository
 import java.io.OutputStream
 import java.time.LocalDate
@@ -23,74 +25,173 @@ class ExportPdfUseCase @Inject constructor(
         withContext(Dispatchers.IO) {
             var entries = repository.getAllEntries().first()
             
-            if (startDate != null) {
-                entries = entries.filter { 
-                    val date = it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                    !date.isBefore(startDate) 
-                }
-            }
-            if (endDate != null) {
-                entries = entries.filter { 
-                    val date = it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                    !date.isAfter(endDate) 
-                }
+            val actualStart = startDate ?: entries.lastOrNull()?.timestamp?.atZone(ZoneId.systemDefault())?.toLocalDate() ?: LocalDate.now()
+            val actualEnd = endDate ?: LocalDate.now()
+
+            entries = entries.filter { 
+                val date = it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                !date.isBefore(actualStart) && !date.isAfter(actualEnd)
             }
 
             val document = PdfDocument()
             try {
-                val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 size
+                val pageWidth = 595
+                val pageHeight = 842
+                val margin = 40f
+                val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
                 var page = document.startPage(pageInfo)
                 var canvas = page.canvas
                 
-                // Set background to white
                 canvas.drawColor(Color.WHITE)
 
                 val titlePaint = Paint().apply {
                     color = Color.BLACK
-                    textSize = 18f
+                    textSize = 20f
+                    isFakeBoldText = true
+                }
+                val headerPaint = Paint().apply {
+                    color = Color.BLACK
+                    textSize = 14f
                     isFakeBoldText = true
                 }
                 val textPaint = Paint().apply {
                     color = Color.BLACK
-                    textSize = 12f
+                    textSize = 10f
                 }
-                val dateFormater = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault())
+                val chartLinePaint = Paint().apply {
+                    color = 0xFF0072B2.toInt() // Blue
+                    strokeWidth = 2f
+                    style = Paint.Style.STROKE
+                    isAntiAlias = true
+                }
+                val chartBarPaint = Paint().apply {
+                    color = 0xFFD55E00.toInt() // Vermillion
+                    style = Paint.Style.FILL
+                }
+                val axisPaint = Paint().apply {
+                    color = Color.LTGRAY
+                    strokeWidth = 1f
+                }
 
-                var y = 40f
-                canvas.drawText("ChronicHeal Health Report", 40f, y, titlePaint)
+                var y = margin + 20f
+                canvas.drawText("ChronicHeal Health Report", margin, y, titlePaint)
                 y += 25f
                 
-                val rangeStr = when {
-                    startDate != null && endDate != null -> "Range: $startDate to $endDate"
-                    startDate != null -> "From: $startDate"
-                    endDate != null -> "Until: $endDate"
-                    else -> "Full History"
+                val rangeStr = "Period: $actualStart to $actualEnd"
+                canvas.drawText(rangeStr, margin, y, textPaint)
+                y += 40f
+
+                // --- 1. Pain Evolution Graph ---
+                canvas.drawText("Pain Evolution (0-10)", margin, y, headerPaint)
+                y += 20f
+                
+                val chartHeight = 100f
+                val chartWidth = pageWidth - (margin * 2)
+                
+                // Draw Axes
+                canvas.drawLine(margin, y, margin + chartWidth, y, axisPaint) // Top
+                canvas.drawLine(margin, y + chartHeight, margin + chartWidth, y + chartHeight, axisPaint) // Bottom
+                
+                val painData = entries
+                    .filter { it.type == EntryType.PAIN && it.intensity != null }
+                    .groupBy { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() }
+                    .mapValues { it.value.mapNotNull { e -> e.intensity }.average().toFloat() }
+
+                val daysBetween = java.time.temporal.ChronoUnit.DAYS.between(actualStart, actualEnd).coerceAtLeast(1)
+                val stepX = chartWidth / daysBetween
+                
+                var lastX = -1f
+                var lastY = -1f
+                
+                for (i in 0..daysBetween) {
+                    val date = actualStart.plusDays(i)
+                    val intensity = painData[date] ?: 0f
+                    val currentX = margin + (i * stepX)
+                    val currentY = y + chartHeight - (intensity * (chartHeight / 10f))
+                    
+                    if (lastX != -1f) {
+                        canvas.drawLine(lastX, lastY, currentX, currentY, chartLinePaint)
+                    }
+                    canvas.drawCircle(currentX, currentY, 2f, chartLinePaint.apply { style = Paint.Style.FILL })
+                    chartLinePaint.apply { style = Paint.Style.STROKE }
+                    
+                    lastX = currentX
+                    lastY = currentY
                 }
-                canvas.drawText(rangeStr, 40f, y, textPaint)
-                y += 35f
+                y += chartHeight + 40f
+
+                // --- 2. Top Symptoms ---
+                canvas.drawText("Top Symptoms Frequency", margin, y, headerPaint)
+                y += 20f
+                
+                val symptomFreq = entries
+                    .filter { it.type == EntryType.SYMPTOM && it.name != null }
+                    .groupBy { it.name!! }
+                    .mapValues { it.value.size }
+                    .toList()
+                    .sortedByDescending { it.second }
+                    .take(5)
+
+                if (symptomFreq.isNotEmpty()) {
+                    val maxFreq = symptomFreq.maxOf { it.second }.toFloat().coerceAtLeast(1f)
+                    val barHeight = 15f
+                    val barSpacing = 5f
+                    
+                    symptomFreq.forEach { (name, count) ->
+                        val barWidth = (count / maxFreq) * chartWidth
+                        canvas.drawRect(margin, y, margin + barWidth, y + barHeight, chartBarPaint)
+                        canvas.drawText("$name ($count)", margin + barWidth + 5f, y + 12f, textPaint)
+                        y += barHeight + barSpacing
+                    }
+                } else {
+                    canvas.drawText("No symptom data recorded.", margin, y, textPaint)
+                    y += 20f
+                }
+                
+                y += 30f
+                canvas.drawText("Detailed Logs", margin, y, headerPaint)
+                y += 20f
+
+                val dateFormater = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault())
 
                 entries.forEach { entry ->
-                    if (y > 800f) {
+                    if (y > pageHeight - margin) {
                         document.finishPage(page)
                         page = document.startPage(pageInfo)
                         canvas = page.canvas
                         canvas.drawColor(Color.WHITE)
-                        y = 40f
+                        y = margin
                     }
 
                     val dateStr = dateFormater.format(entry.timestamp)
                     val typeStr = entry.type.name.lowercase().replaceFirstChar { it.uppercase() }
                     val nameStr = if (entry.name != null) "(${entry.name}) " else ""
+                    val valueStr = if (entry.intensity != null) "Level: ${entry.intensity} " else ""
                     val noteStr = if (entry.note.isNotBlank()) "- ${entry.note}" else ""
                     
-                    val fullLine = "$dateStr - $typeStr: $nameStr$noteStr"
-                    // Simple text wrapping if line is too long
-                    if (fullLine.length > 80) {
-                        canvas.drawText(fullLine.substring(0, 80) + "...", 40f, y, textPaint)
-                    } else {
-                        canvas.drawText(fullLine, 40f, y, textPaint)
+                    val fullLine = "$dateStr - $typeStr: $nameStr$valueStr$noteStr"
+                    
+                    // Simple multiline support
+                    val words = fullLine.split(" ")
+                    var line = ""
+                    words.forEach { word ->
+                        if (textPaint.measureText(line + word) < chartWidth) {
+                            line += "$word "
+                        } else {
+                            canvas.drawText(line, margin, y, textPaint)
+                            y += 15f
+                            line = "  $word "
+                            if (y > pageHeight - margin) {
+                                document.finishPage(page)
+                                page = document.startPage(pageInfo)
+                                canvas = page.canvas
+                                canvas.drawColor(Color.WHITE)
+                                y = margin
+                            }
+                        }
                     }
-                    y += 20f
+                    canvas.drawText(line, margin, y, textPaint)
+                    y += 18f
                 }
 
                 document.finishPage(page)
