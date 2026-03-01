@@ -50,7 +50,6 @@ fun TimelineScreen(
 
     LaunchedEffect(todayIndex) {
         if (todayIndex != -1) {
-            // scrollToItem puts the item at the top of the viewport
             listState.scrollToItem(todayIndex)
         }
     }
