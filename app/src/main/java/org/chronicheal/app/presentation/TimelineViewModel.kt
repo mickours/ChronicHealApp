@@ -3,9 +3,10 @@ package org.chronicheal.app.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.chronicheal.app.data.notification.ReminderScheduler
@@ -28,14 +29,19 @@ class TimelineViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var recentlyDeletedEntry: HealthEntry? = null
+    private val _message = MutableStateFlow<String?>(null)
 
-    val uiState: StateFlow<TimelineUiState> = getEntriesUseCase()
-        .map { TimelineUiState(entries = it) }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = TimelineUiState()
-        )
+    val uiState: StateFlow<TimelineUiState> = combine(
+        getEntriesUseCase(),
+        _message
+    ) { entries, message ->
+        TimelineUiState(entries = entries, message = message)
+    }
+    .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = TimelineUiState()
+    )
 
     fun addEntry(entry: HealthEntry) {
         viewModelScope.launch {
@@ -87,6 +93,14 @@ class TimelineViewModel @Inject constructor(
         }
     }
 
+    fun showMessage(msg: String) {
+        _message.value = msg
+    }
+
+    fun clearMessage() {
+        _message.value = null
+    }
+
     suspend fun getEntryById(id: Long): HealthEntry? {
         return getEntryByIdUseCase(id)
     }
@@ -98,5 +112,6 @@ class TimelineViewModel @Inject constructor(
 
 data class TimelineUiState(
     val entries: List<HealthEntry> = emptyList(),
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val message: String? = null
 )

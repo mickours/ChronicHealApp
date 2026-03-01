@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,7 +40,7 @@ fun AddExternalFactorScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var factorName by remember { mutableStateOf("") }
-    var intensity by remember { mutableFloatStateOf(5f) }
+    var intensity by remember { mutableStateOf(5f) }
     var note by remember { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
@@ -54,6 +55,8 @@ fun AddExternalFactorScreen(
             }
         }
     }
+
+    BackHandler(onBack = onBackClick)
 
     Scaffold(
         topBar = {

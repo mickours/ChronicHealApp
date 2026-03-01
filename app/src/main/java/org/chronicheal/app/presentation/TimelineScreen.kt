@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
@@ -32,6 +33,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TimelineScreen(
+    navController: NavController,
     onAddEntryClick: () -> Unit,
     onCalendarClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -58,6 +60,29 @@ fun TimelineScreen(
     LaunchedEffect(todayIndex) {
         if (todayIndex != -1) {
             listState.scrollToItem(todayIndex)
+        }
+    }
+
+    // Observe messages from SavedStateHandle (e.g. "Edition canceled")
+    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+    val navMessageFlow = remember(savedStateHandle) {
+        savedStateHandle?.getStateFlow<String?>("message", null)
+    }
+    val navMessage by (navMessageFlow?.collectAsState() ?: remember { mutableStateOf<String?>(null) })
+
+    LaunchedEffect(navMessage) {
+        navMessage?.let { msg ->
+            scope.launch {
+                snackbarHostState.showSnackbar(msg)
+                savedStateHandle?.remove<String>("message")
+            }
+        }
+    }
+
+    LaunchedEffect(uiState.message) {
+        uiState.message?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessage()
         }
     }
 
@@ -343,7 +368,7 @@ fun EntryItem(
                                 text = entry.type.name.replace("_", " ").lowercase()
                                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
                                 style = MaterialTheme.typography.titleMedium,
-                                color = categoryColor.copy(alpha = 0.8f) // Optional: subtly color the title too
+                                color = categoryColor.copy(alpha = 0.8f)
                             )
                             if (entry.hasReminder) {
                                 Spacer(Modifier.width(8.dp))

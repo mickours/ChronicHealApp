@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -55,12 +56,21 @@ fun AddDiseaseScreen(
         }
     }
 
+    val handleBack = {
+        if (id != null) {
+            viewModel.showMessage("Edition canceled")
+        }
+        onBackClick()
+    }
+
+    BackHandler(onBack = handleBack)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (id == null) "Log Disease/Condition" else "Edit Disease/Condition") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = handleBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }

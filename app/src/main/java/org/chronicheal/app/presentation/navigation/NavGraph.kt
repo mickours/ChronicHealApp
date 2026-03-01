@@ -1,6 +1,7 @@
 package org.chronicheal.app.presentation.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -16,24 +17,26 @@ fun NavGraph(navController: NavHostController) {
         navController = navController,
         startDestination = Screen.Timeline.route
     ) {
-        val onEntryClick: (HealthEntry) -> Unit = { entry ->
+        val onEntryClick: (HealthEntry, String?) -> Unit = { entry, date ->
             val route = when (entry.type) {
-                EntryType.PAIN -> Screen.AddPain.createRoute(id = entry.id)
-                EntryType.DRUG -> Screen.AddDrug.createRoute(id = entry.id)
-                EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(id = entry.id)
-                EntryType.DISEASE -> Screen.AddDisease.createRoute(id = entry.id)
-                EntryType.MEAL -> Screen.AddMeal.createRoute(id = entry.id)
-                EntryType.SLEEP -> Screen.AddSleep.createRoute(id = entry.id)
-                EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.createRoute(id = entry.id)
-                EntryType.ACTIVITY -> Screen.AddActivity.createRoute(id = entry.id)
-                EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(id = entry.id)
-                EntryType.JOURNAL -> Screen.AddJournal.createRoute(id = entry.id)
+                EntryType.PAIN -> Screen.AddPain.createRoute(id = entry.id, date = date)
+                EntryType.DRUG -> Screen.AddDrug.createRoute(id = entry.id, date = date)
+                EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(id = entry.id, date = date)
+                EntryType.DISEASE -> Screen.AddDisease.createRoute(id = entry.id, date = date)
+                EntryType.MEAL -> Screen.AddMeal.createRoute(id = entry.id, date = date)
+                EntryType.SLEEP -> Screen.AddSleep.createRoute(id = entry.id, date = date)
+                EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.createRoute(id = entry.id, date = date)
+                EntryType.ACTIVITY -> Screen.AddActivity.createRoute(id = entry.id, date = date)
+                EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(id = entry.id, date = date)
+                EntryType.JOURNAL -> Screen.AddJournal.createRoute(id = entry.id, date = date)
             }
             navController.navigate(route)
         }
 
-        composable(route = Screen.Timeline.route) {
+        composable(route = Screen.Timeline.route) { backStackEntry ->
+            val viewModel: TimelineViewModel = hiltViewModel(backStackEntry)
             TimelineScreen(
+                navController = navController,
                 onAddEntryClick = {
                     navController.navigate(Screen.EntryTypeSelection.createRoute())
                 },
@@ -49,9 +52,11 @@ fun NavGraph(navController: NavHostController) {
                 onBodyScanClick = {
                     navController.navigate(Screen.BodyScan.route)
                 },
-                onEntryClick = onEntryClick
+                onEntryClick = { entry -> onEntryClick(entry, null) },
+                viewModel = viewModel
             )
         }
+        
         composable(route = Screen.Calendar.route) {
             CalendarScreen(
                 onBackClick = { navController.popBackStack() },
@@ -76,13 +81,16 @@ fun NavGraph(navController: NavHostController) {
             arguments = listOf(navArgument("date") { type = NavType.StringType })
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date") ?: ""
+            val viewModel: TimelineViewModel = hiltViewModel(backStackEntry)
             DayViewScreen(
+                navController = navController,
                 dateString = date,
                 onBackClick = { navController.popBackStack() },
                 onAddEntryClick = { clickedDate ->
                     navController.navigate(Screen.EntryTypeSelection.createRoute(clickedDate.toString()))
                 },
-                onEntryClick = onEntryClick
+                onEntryClick = { entry -> onEntryClick(entry, date) },
+                viewModel = viewModel
             )
         }
         composable(route = Screen.Settings.route) {
@@ -136,12 +144,18 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
-        fun onSaveSuccess(date: String?) {
-            if (date != null) {
-                navController.popBackStack(Screen.DayView.createRoute(date), inclusive = false)
-            } else {
-                navController.popBackStack(Screen.Timeline.route, inclusive = false)
+        fun onSaveSuccess(date: String?, isUpdate: Boolean) {
+            val message = if (isUpdate) "Entry updated" else "Entry saved"
+            val targetRoute = if (date != null) Screen.DayView.createRoute(date) else Screen.Timeline.route
+            navController.getBackStackEntry(targetRoute).savedStateHandle.set("message", message)
+            navController.popBackStack(targetRoute, inclusive = false)
+        }
+
+        val onCancel: (Long?) -> Unit = { id ->
+            if (id != null) {
+                navController.previousBackStackEntry?.savedStateHandle?.set("message", "Edition canceled")
             }
+            navController.popBackStack()
         }
 
         composable(
@@ -159,8 +173,8 @@ fun NavGraph(navController: NavHostController) {
                 dateString = date,
                 locationString = location,
                 id = id,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { onSaveSuccess(date) }
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
         }
         composable(
@@ -176,8 +190,8 @@ fun NavGraph(navController: NavHostController) {
             AddDrugScreen(
                 dateString = date,
                 id = id,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { onSaveSuccess(date) }
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
         }
         composable(
@@ -195,8 +209,8 @@ fun NavGraph(navController: NavHostController) {
                 dateString = date,
                 locationString = location,
                 id = id,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { onSaveSuccess(date) }
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
         }
         composable(
@@ -212,8 +226,8 @@ fun NavGraph(navController: NavHostController) {
             AddActivityScreen(
                 dateString = date,
                 id = id,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { onSaveSuccess(date) }
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
         }
         composable(
@@ -229,8 +243,8 @@ fun NavGraph(navController: NavHostController) {
             AddMealScreen(
                 dateString = date,
                 id = id,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { onSaveSuccess(date) }
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
         }
         composable(
@@ -246,8 +260,8 @@ fun NavGraph(navController: NavHostController) {
             AddSleepScreen(
                 dateString = date,
                 id = id,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { onSaveSuccess(date) }
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
         }
         composable(
@@ -263,8 +277,8 @@ fun NavGraph(navController: NavHostController) {
             AddDiseaseScreen(
                 dateString = date,
                 id = id,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { onSaveSuccess(date) }
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
         }
         composable(
@@ -280,8 +294,8 @@ fun NavGraph(navController: NavHostController) {
             AddMedicalAppointmentScreen(
                 dateString = date,
                 id = id,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { onSaveSuccess(date) }
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
         }
         composable(
@@ -297,8 +311,8 @@ fun NavGraph(navController: NavHostController) {
             AddExternalFactorScreen(
                 dateString = date,
                 id = id,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { onSaveSuccess(date) }
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
         }
         composable(
@@ -314,8 +328,8 @@ fun NavGraph(navController: NavHostController) {
             AddJournalScreen(
                 dateString = date,
                 id = id,
-                onBackClick = { navController.popBackStack() },
-                onSaveSuccess = { onSaveSuccess(date) }
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
         }
     }

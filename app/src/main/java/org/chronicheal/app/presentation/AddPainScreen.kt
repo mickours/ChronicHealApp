@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -42,12 +43,21 @@ fun AddPainScreen(
         }
     }
 
+    val handleBack = {
+        if (id != null) {
+            viewModel.showMessage("Edition canceled")
+        }
+        onBackClick()
+    }
+
+    BackHandler(onBack = handleBack)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (id == null) "Log Pain" else "Edit Pain") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
+                    IconButton(onClick = handleBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
