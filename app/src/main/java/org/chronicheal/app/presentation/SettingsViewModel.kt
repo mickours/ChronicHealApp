@@ -7,13 +7,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.usecase.ExportDataUseCase
+import org.chronicheal.app.domain.usecase.ExportPdfUseCase
 import org.chronicheal.app.domain.usecase.ImportDataUseCase
+import java.io.OutputStream
 import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val exportDataUseCase: ExportDataUseCase,
-    private val importDataUseCase: ImportDataUseCase
+    private val importDataUseCase: ImportDataUseCase,
+    private val exportPdfUseCase: ExportPdfUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -42,6 +45,20 @@ class SettingsViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(message = "Import successful")
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(message = "Import failed: ${e.message}")
+            } finally {
+                _uiState.value = _uiState.value.copy(isLoading = false)
+            }
+        }
+    }
+
+    fun exportPdf(outputStream: OutputStream) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            try {
+                exportPdfUseCase(outputStream)
+                _uiState.value = _uiState.value.copy(message = "PDF Export successful")
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(message = "PDF Export failed: ${e.message}")
             } finally {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }

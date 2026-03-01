@@ -25,6 +25,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onSettingsClick = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onAnalyticsClick = {
+                    navController.navigate(Screen.Analytics.route)
                 }
             )
         }
@@ -51,6 +54,11 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(route = Screen.Settings.route) {
             SettingsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+        composable(route = Screen.Analytics.route) {
+            AnalyticsScreen(
                 onBackClick = { navController.popBackStack() }
             )
         }

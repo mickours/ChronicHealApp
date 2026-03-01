@@ -25,7 +25,7 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Launcher for saving JSON file
-    val createDocumentLauncher = rememberLauncherForActivityResult(
+    val createJsonLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         uri?.let {
@@ -46,6 +46,17 @@ fun SettingsScreen(
                 val reader = BufferedReader(InputStreamReader(inputStream))
                 val content = reader.readText()
                 viewModel.importData(content)
+            }
+        }
+    }
+
+    // Launcher for saving PDF file
+    val createPdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        uri?.let {
+            context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                viewModel.exportPdf(outputStream)
             }
         }
     }
@@ -80,7 +91,7 @@ fun SettingsScreen(
             Text(text = "Data Management", style = MaterialTheme.typography.titleMedium)
             
             Button(
-                onClick = { createDocumentLauncher.launch("chronicheal_backup.json") },
+                onClick = { createJsonLauncher.launch("chronicheal_backup.json") },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             ) {
@@ -93,6 +104,18 @@ fun SettingsScreen(
                 enabled = !uiState.isLoading
             ) {
                 Text("Import Data from JSON")
+            }
+
+            HorizontalDivider()
+
+            Text(text = "Reporting", style = MaterialTheme.typography.titleMedium)
+
+            Button(
+                onClick = { createPdfLauncher.launch("chronicheal_report.pdf") },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading
+            ) {
+                Text("Export Health Report (PDF)")
             }
             
             if (uiState.isLoading) {

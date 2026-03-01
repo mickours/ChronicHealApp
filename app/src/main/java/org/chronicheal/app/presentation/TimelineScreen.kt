@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ShowChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -32,6 +33,7 @@ fun TimelineScreen(
     onAddEntryClick: () -> Unit,
     onCalendarClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onAnalyticsClick: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -41,6 +43,9 @@ fun TimelineScreen(
             TopAppBar(
                 title = { Text("ChronicHeal") },
                 actions = {
+                    IconButton(onClick = onAnalyticsClick) {
+                        Icon(Icons.Default.ShowChart, contentDescription = "Analytics")
+                    }
                     IconButton(onClick = onCalendarClick) {
                         Icon(Icons.Default.CalendarMonth, contentDescription = "Calendar")
                     }
