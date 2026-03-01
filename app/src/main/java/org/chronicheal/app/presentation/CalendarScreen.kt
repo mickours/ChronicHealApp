@@ -4,7 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -14,8 +24,24 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,12 +53,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
-import org.chronicheal.app.ui.theme.*
+import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.TextStyle
-import java.util.*
+import java.util.Locale
 import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -234,15 +260,11 @@ fun CalendarGrid(
                                 val date = currentMonth.atDay(day)
                                 val dayEntries = entriesByDate[date] ?: emptyList()
                                 
-                                val occurrenceIntensitySum = remember(dayEntries) {
-                                    dayEntries
-                                        .filter { it.type.category == EntryType.Category.OCCURRENCE }
-                                        .sumOf { it.intensity ?: 0 }
-                                }
+                                val occurrenceIntensitySum = dayEntries
+                                    .filter { it.type.category == EntryType.Category.OCCURRENCE }
+                                    .sumOf { it.intensity ?: 0 }
                                 
-                                val hasManagement = remember(dayEntries) {
-                                    dayEntries.any { it.type.category == EntryType.Category.MANAGEMENT }
-                                }
+                                val hasManagement = dayEntries.any { it.type.category == EntryType.Category.MANAGEMENT }
                                 
                                 val isToday = date == today
                                 DayCell(
@@ -272,20 +294,21 @@ fun DayCell(
     onClick: () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
-    val occColor = if (isDark) OnOccurrenceColorDark else OccurrenceColorLight
-    val mangColor = if (isDark) OnManagementColorDark else ManagementColorLight
+    // Ultra-contrasted colors for indicators
+    val occColor = if (isDark) Color(0xFFFF5722) else Color(0xFFBF360C) // Deep Orange
+    val mangColor = if (isDark) Color(0xFF00BCD4) else Color(0xFF006064) // Bright Cyan
 
     Box(
         modifier = Modifier
             .aspectRatio(1f)
-            .padding(4.dp)
+            .padding(2.dp)
             .clip(CircleShape)
             .background(
                 if (isToday) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
             )
             .then(
                 if (isToday) {
-                    Modifier.border(1.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
                 } else {
                     Modifier
                 }
@@ -293,10 +316,15 @@ fun DayCell(
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
             Text(
                 text = day.toString(),
-                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.Bold,
                 color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
             )
             Row(
@@ -305,12 +333,12 @@ fun DayCell(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (occurrenceIntensity > 0) {
-                    // Size scales from 4dp to 10dp based on intensity sum
-                    val dotSize = min(10f, 4f + (occurrenceIntensity / 5f)).dp
+                    // Size scales from 10dp to 20dp based on intensity sum for maximum visibility
+                    val dotSize = min(20f, 10f + (occurrenceIntensity / 2f)).dp
                     CategoryDot(color = occColor, size = dotSize)
                 }
                 if (hasManagement) {
-                    CategoryDot(color = mangColor, size = 4.dp)
+                    CategoryDot(color = mangColor, size = 10.dp)
                 }
             }
         }
@@ -318,12 +346,13 @@ fun DayCell(
 }
 
 @Composable
-fun CategoryDot(color: Color, size: Dp = 4.dp) {
+fun CategoryDot(color: Color, size: Dp = 10.dp) {
     Box(
         modifier = Modifier
             .padding(horizontal = 1.dp)
             .size(size)
             .background(color, shape = CircleShape)
+            .border(1.2.dp, Color.White.copy(alpha = 0.5f), CircleShape) // Thicker border for contrast
     )
 }
 

@@ -18,7 +18,7 @@ Goal: Allow users to view their history and add new entries.
 - **Navigation**: Smart contextual navigation (Save -> Return to Day View).
 - **Grouped Timeline**: Date delimiters (Year, Month, Day) for better readability.
 - **Sticky Headers**: Pinned chronological context (Year, Month, Full Date) at the top of the timeline during scrolling.
-- **Visual Coding**: Categorized entries into "What occurs to you" (Red) and "What you can manage" (Green) using vertical color stripes on timeline cards.
+- **Visual Coding**: Categorized entries into "What occurs to you" (Red) cognizant and "What you can manage" (Green) using vertical color stripes on timeline cards.
 - **Adaptive Indicators**: Occurrence dots in the calendar now grow in size based on the sum of intensities for that day, creating a visual health heatmap.
 
 ## Phase 3: Analytics and Export (Completed)
@@ -59,5 +59,6 @@ Goal: Interactive tools and notifications.
         - **Stacked Pain Timeline**: Replaced simple charts with a stacked line chart showing pain intensity by location. This allows users to see cumulative pain impact while distinguishing between different body parts.
         - **Severity-based Symptom Analysis**: Symptom charts now reflect the **sum of severity** rather than just frequency, giving a more accurate picture of symptom burden.
         - **Readability Optimizations**: Implemented rotated X-axis labels and fixed Y-axis increments to handle dense data views across different time ranges (Week, Month, Year).
+    - **High-Visibility Calendar Markers**: Increased the size and contrast of health indicators in the calendar view. Dots now feature stronger colors and a subtle border to ensure they remain distinct and legible against all background shades.
 - Biometric Lock.
 - Search and Filters.
