@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import org.chronicheal.app.data.local.AppDatabase
 import org.chronicheal.app.data.local.EntryDao
+import org.chronicheal.app.data.local.ReminderDao
 import javax.inject.Singleton
 
 @Module
@@ -30,5 +31,10 @@ object AppModule {
     @Provides
     fun provideEntryDao(database: AppDatabase): EntryDao {
         return database.entryDao()
+    }
+
+    @Provides
+    fun provideReminderDao(database: AppDatabase): ReminderDao {
+        return database.reminderDao()
     }
 }

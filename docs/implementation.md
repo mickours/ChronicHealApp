@@ -23,17 +23,18 @@ Goal: Visualize data trends and ensure data portability.
 - **Analytics**: Grouped Charts (Pain Line Chart & Symptom Bar Chart) with period selection (Week, Month, Year).
 - **Medical Reporting**: PDF Export with embedded visual graphs and chronological logs.
 
-## Phase 4: Advanced Features (In Progress)
+## Phase 4: Advanced Features (Completed)
 Goal: Interactive tools and notifications.
 
 ### 1. Symptom Body Scan (Completed)
 - **Interactive Silhouette**: Tap on body regions to pre-fill location in logs.
 
-### 2. Reminders (Current)
-- **WorkManager**: Background tasks for medication and appointment alerts.
-- **Notifications**: Local system notifications for user-defined reminders.
+### 2. Reminders (Completed)
+- **Exact Scheduling**: Used `AlarmManager` instead of `WorkManager` for reminders. While `WorkManager` is great for background processing, `AlarmManager` is preferred for health apps to guarantee exact delivery times for medications and appointments, even when the device is idle.
+- **Notifications**: Local system notifications with a dedicated "Reminders" channel.
+- **Persistence**: Reminders are automatically rescheduled after device reboot via `BootReceiver`.
 
-## Phase 5: Polish and Privacy
+## Phase 5: Polish and Privacy (Current)
 - Biometric Lock.
 - Search and Filters.
 - UI/UX refinements.

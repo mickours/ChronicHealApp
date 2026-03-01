@@ -65,7 +65,20 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(route = Screen.Settings.route) {
             SettingsScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onRemindersClick = { navController.navigate(Screen.Reminders.route) }
+            )
+        }
+        composable(route = Screen.Reminders.route) {
+            RemindersScreen(
+                onBackClick = { navController.popBackStack() },
+                onAddReminderClick = { navController.navigate(Screen.AddReminder.route) }
+            )
+        }
+        composable(route = Screen.AddReminder.route) {
+            AddReminderScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = { navController.popBackStack() }
             )
         }
         composable(route = Screen.Analytics.route) {
