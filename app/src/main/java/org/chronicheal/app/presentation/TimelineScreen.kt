@@ -5,13 +5,11 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
@@ -22,7 +20,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -571,63 +568,5 @@ fun EntryItem(
                 )
             }
         }
-    }
-}
-
-@Composable
-fun VerticalIntensityGauge(
-    intensity: Int,
-    maxVal: Int,
-    color: Color,
-    label: String,
-    modifier: Modifier = Modifier
-) {
-    val isDark = isSystemInDarkTheme()
-    
-    val barBrush = remember(color) {
-        Brush.verticalGradient(
-            colors = listOf(
-                color, // Darker (Top)
-                color.copy(alpha = 0.4f) // Lighter (Bottom)
-            )
-        )
-    }
-
-    Column(
-        modifier = modifier
-            .fillMaxHeight()
-            .width(40.dp) // Enlarged gauge area
-            .background(color.copy(alpha = 0.1f)),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.ExtraBold,
-            color = color.copy(alpha = 0.8f),
-            modifier = Modifier.padding(vertical = 4.dp)
-        )
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .width(16.dp) // Enlarged bar width
-                .clip(RoundedCornerShape(8.dp))
-                .background(if (isDark) Color.DarkGray.copy(alpha = 0.3f) else Color.LightGray.copy(alpha = 0.3f)),
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight(fraction = intensity.toFloat() / maxVal)
-                    .fillMaxWidth()
-                    .background(barBrush)
-            )
-        }
-        Text(
-            text = intensity.toString(),
-            style = MaterialTheme.typography.titleMedium, // Enlarged value text
-            fontWeight = FontWeight.Black,
-            color = color,
-            modifier = Modifier.padding(vertical = 4.dp)
-        )
     }
 }

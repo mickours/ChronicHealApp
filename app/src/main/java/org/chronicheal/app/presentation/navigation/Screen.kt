@@ -6,8 +6,11 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     object Analytics : Screen("analytics")
     object BodyScan : Screen("body_scan")
+    object BodyScanReminders : Screen("body_scan_reminders")
     object Reminders : Screen("reminders")
-    object AddReminder : Screen("add_reminder")
+    object AddReminder : Screen("add_reminder?type={type}") {
+        fun createRoute(type: String? = null) = if (type != null) "add_reminder?type=$type" else "add_reminder"
+    }
     object DayView : Screen("day_view/{date}") {
         fun createRoute(date: String) = "day_view/$date"
     }

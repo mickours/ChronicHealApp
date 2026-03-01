@@ -42,14 +42,15 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddReminderScreen(
+    initialType: EntryType? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: RemindersViewModel = hiltViewModel()
 ) {
-    var title by remember { mutableStateOf("") }
+    var title by remember { mutableStateOf(if (initialType == EntryType.PAIN) "Body Scan" else "") }
     var selectedTime by remember { mutableStateOf(LocalTime.now()) }
     var selectedDays by remember { mutableStateOf(setOf(1, 2, 3, 4, 5, 6, 7)) }
-    var selectedType by remember { mutableStateOf<EntryType?>(null) }
+    var selectedType by remember { mutableStateOf<EntryType?>(initialType) }
     var showTimePicker by remember { mutableStateOf(false) }
 
     val timeState = rememberTimePickerState(

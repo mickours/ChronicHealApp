@@ -43,6 +43,13 @@ Goal: Interactive tools and notifications.
 - **In-place Creation**: Added a "Save" button to the Body Scan bottom sheet to allow direct creation of pain logs without leaving the interactive silhouette.
     - **Smart State Management**: The Body Scan now detects if a pain log already exists for a specific region on the current day, allowing users to update it instead of creating duplicates.
     - **Feedback Integration**: Added a `SnackbarHost` to provide immediate confirmation when a log is saved or updated.
+- **Interactive Intensity Selection**: Implemented "hold-to-increase" intensity logic. Users can press and hold a body region to see the intensity grow dynamically before logging.
+    - **Dynamic Visual Feedback**: Added a `VerticalIntensityGauge` overlay that appears during the hold gesture to show the current intensity level in real-time.
+    - **Integrated Deletion**: Added a delete button in the Body Scan drawer when editing an existing entry for quicker data management.
+- **Body Scan Reminders**: 
+    - Added a dedicated "Body Scan Reminders" screen to manage recurring prompts specifically for logging body pain.
+    - Integrated a "Reminders" option in the Body Scan Screen top bar menu for easy access.
+    - Enhanced `AddReminderScreen` to support pre-filling the category (e.g., pre-selecting "Pain" when coming from Body Scan).
 
 ### 2. Reminders (Completed)
 - **Exact Scheduling**: Used `AlarmManager` for high-precision health reminders.

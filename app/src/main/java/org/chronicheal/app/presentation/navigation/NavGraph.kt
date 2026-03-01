@@ -21,6 +21,7 @@ import org.chronicheal.app.presentation.AddReminderScreen
 import org.chronicheal.app.presentation.AddSleepScreen
 import org.chronicheal.app.presentation.AddSymptomScreen
 import org.chronicheal.app.presentation.AnalyticsScreen
+import org.chronicheal.app.presentation.BodyScanRemindersScreen
 import org.chronicheal.app.presentation.BodyScanScreen
 import org.chronicheal.app.presentation.CalendarScreen
 import org.chronicheal.app.presentation.DayViewScreen
@@ -89,7 +90,16 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(route = Screen.BodyScan.route) {
             BodyScanScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onRemindersClick = { navController.navigate(Screen.BodyScanReminders.route) }
+            )
+        }
+        composable(route = Screen.BodyScanReminders.route) {
+            BodyScanRemindersScreen(
+                onBackClick = { navController.popBackStack() },
+                onAddReminderClick = { 
+                    navController.navigate(Screen.AddReminder.createRoute(type = EntryType.PAIN.name)) 
+                }
             )
         }
         composable(
@@ -117,11 +127,19 @@ fun NavGraph(navController: NavHostController) {
         composable(route = Screen.Reminders.route) {
             RemindersScreen(
                 onBackClick = { navController.popBackStack() },
-                onAddReminderClick = { navController.navigate(Screen.AddReminder.route) }
+                onAddReminderClick = { navController.navigate(Screen.AddReminder.createRoute()) }
             )
         }
-        composable(route = Screen.AddReminder.route) {
+        composable(
+            route = Screen.AddReminder.route,
+            arguments = listOf(
+                navArgument("type") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val typeString = backStackEntry.arguments?.getString("type")
+            val initialType = typeString?.let { try { EntryType.valueOf(it) } catch(e: Exception) { null } }
             AddReminderScreen(
+                initialType = initialType,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { navController.popBackStack() }
             )
