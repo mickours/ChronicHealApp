@@ -126,9 +126,8 @@ fun BodyScanScreen(
                     selectedRegion = region
                     showBottomSheet = true
                 },
-                painMarkers = uiState.entries
+                painEntries = uiState.entries
                     .filter { it.type == EntryType.PAIN && it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() == LocalDate.now() }
-                    .mapNotNull { it.location }
             )
 
             if (showBottomSheet) {
@@ -185,7 +184,7 @@ fun BodyScanScreen(
 fun BodySilhouette(
     modifier: Modifier = Modifier,
     onRegionClick: (String, PointF) -> Unit,
-    painMarkers: List<String>
+    painEntries: List<HealthEntry>
 ) {
     val context = LocalContext.current
     var svgPaths by remember { mutableStateOf<List<SvgPath>>(emptyList()) }
@@ -265,7 +264,7 @@ fun BodySilhouette(
         val offsetY = (size.height - bounds.height() * baseScale) / 2f
 
         val strokeWidth = 1.dp.toPx()
-        val fillBrush = Brush.verticalGradient(
+        val defaultFillBrush = Brush.verticalGradient(
             colors = listOf(
                 PrimaryOrange.copy(alpha = 0.9f),
                 PrimaryOrange.copy(alpha = 0.4f)
@@ -279,14 +278,27 @@ fun BodySilhouette(
 
         svgPaths.forEach { svgPath ->
             val composePath = svgPath.path.asComposePath()
-            val isPained = painMarkers.any { marker ->
-                formatId(svgPath.id).contains(marker, ignoreCase = true) || 
-                marker.contains(formatId(svgPath.id), ignoreCase = true)
+            val formattedId = formatId(svgPath.id)
+            val painEntry = painEntries.find { entry ->
+                entry.location?.equals(formattedId, ignoreCase = true) == true
+            }
+
+            val intensity = painEntry?.intensity ?: 0
+            val fillBrush = if (intensity > 0) {
+                val alphaBase = 0.3f + (intensity / 10f) * 0.7f
+                Brush.verticalGradient(
+                    listOf(
+                        Color.Red.copy(alpha = alphaBase),
+                        Color.Red.copy(alpha = alphaBase * 0.6f)
+                    )
+                )
+            } else {
+                defaultFillBrush
             }
 
             drawPath(
                 path = composePath,
-                brush = if (isPained) Brush.verticalGradient(listOf(Color.Red, Color.Red.copy(alpha = 0.5f))) else fillBrush
+                brush = fillBrush
             )
             drawPath(
                 path = composePath,
@@ -295,12 +307,12 @@ fun BodySilhouette(
             )
             
             // Draw pain circle indicator if this path is marked
-            if (isPained) {
+            if (intensity > 0) {
                 val pBounds = RectF()
                 svgPath.path.computeBounds(pBounds, true)
                 drawCircle(
-                    color = Color.Red,
-                    radius = 8.dp.toPx() / baseScale,
+                    color = Color.Red.copy(alpha = 0.8f),
+                    radius = (4.dp + (intensity.dp * 0.8f)).toPx() / baseScale,
                     center = Offset(pBounds.centerX(), pBounds.centerY())
                 )
             }
