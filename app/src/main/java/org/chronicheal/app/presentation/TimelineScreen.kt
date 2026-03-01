@@ -1,10 +1,10 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,7 +26,7 @@ import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TimelineScreen(
     onAddEntryClick: () -> Unit,
@@ -50,6 +50,7 @@ fun TimelineScreen(
 
     LaunchedEffect(todayIndex) {
         if (todayIndex != -1) {
+            // scrollToItem puts the item at the top of the viewport
             listState.scrollToItem(todayIndex)
         }
     }
@@ -80,7 +81,7 @@ fun TimelineScreen(
             }
         }
     ) { innerPadding ->
-        if (uiState.entries.isEmpty()) {
+        if (uiState.entries.isEmpty() && timelineItems.none { it is TimelineItem.Entry }) {
             Text(
                 text = "No entries yet. Tap + to start tracking.",
                 modifier = Modifier
@@ -94,16 +95,32 @@ fun TimelineScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                itemsIndexed(timelineItems) { _, item ->
+                timelineItems.forEachIndexed { index, item ->
                     when (item) {
-                        is TimelineItem.YearHeader -> YearHeader(item.year)
-                        is TimelineItem.MonthHeader -> MonthHeader(item.month)
-                        is TimelineItem.DayHeader -> DayHeader(item.day, item.isToday)
-                        is TimelineItem.Entry -> EntryItem(
-                            entry = item.entry,
-                            onDeleteClick = { viewModel.deleteEntry(item.entry) },
-                            modifier = Modifier.clickable { onEntryClick(item.entry) }
-                        )
+                        is TimelineItem.YearHeader -> {
+                            item(key = "year_${item.year}_$index") {
+                                YearHeader(item.year)
+                            }
+                        }
+                        is TimelineItem.MonthHeader -> {
+                            item(key = "month_${item.month}_$index") {
+                                MonthHeader(item.month)
+                            }
+                        }
+                        is TimelineItem.DayHeader -> {
+                            stickyHeader(key = "day_${item.day}_$index") {
+                                DayHeader(item.day, item.isToday)
+                            }
+                        }
+                        is TimelineItem.Entry -> {
+                            item(key = "entry_${item.entry.id}") {
+                                EntryItem(
+                                    entry = item.entry,
+                                    onDeleteClick = { viewModel.deleteEntry(item.entry) },
+                                    modifier = Modifier.clickable { onEntryClick(item.entry) }
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -120,100 +137,119 @@ sealed class TimelineItem {
 
 fun buildTimelineItems(entries: List<HealthEntry>): List<TimelineItem> {
     val items = mutableListOf<TimelineItem>()
-    var lastYear = -1
-    var lastMonth = -1
-    var lastDay = -1
-
     val zoneId = ZoneId.systemDefault()
     val today = LocalDate.now()
 
-    entries.forEach { entry ->
-        val dateTime = entry.timestamp.atZone(zoneId)
-        val year = dateTime.year
-        val month = dateTime.monthValue
-        val day = dateTime.dayOfMonth
+    // Group entries by date
+    val entriesByDate = entries.groupBy {
+        it.timestamp.atZone(zoneId).toLocalDate()
+    }
 
-        if (year != lastYear) {
-            items.add(TimelineItem.YearHeader(year))
-            lastYear = year
+    // Include today in the set of dates to display, even if it has no entries
+    val allDates = (entriesByDate.keys + today).sortedDescending()
+
+    var lastYear = -1
+    var lastMonth = -1
+
+    allDates.forEach { date ->
+        if (date.year != lastYear) {
+            items.add(TimelineItem.YearHeader(date.year))
+            lastYear = date.year
             lastMonth = -1
-            lastDay = -1
         }
-        if (month != lastMonth) {
-            items.add(TimelineItem.MonthHeader(dateTime.month.getDisplayName(TextStyle.FULL, Locale.getDefault())))
-            lastMonth = month
-            lastDay = -1
+        if (date.monthValue != lastMonth) {
+            items.add(TimelineItem.MonthHeader(date.month.getDisplayName(TextStyle.FULL, Locale.getDefault())))
+            lastMonth = date.monthValue
         }
-        if (day != lastDay) {
-            val isToday = dateTime.toLocalDate() == today
-            items.add(TimelineItem.DayHeader(dateTime.format(DateTimeFormatter.ofPattern("EEEE d")), isToday))
-            lastDay = day
+        
+        val isToday = date == today
+        // Full date format: Monday, March 24, 2025
+        val fullDate = date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
+        items.add(TimelineItem.DayHeader(fullDate, isToday))
+        
+        entriesByDate[date]?.forEach { entry ->
+            items.add(TimelineItem.Entry(entry))
         }
-        items.add(TimelineItem.Entry(entry))
     }
     return items
 }
 
 @Composable
 fun YearHeader(year: Int) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 8.dp, start = 16.dp, end = 16.dp)
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = year.toString(),
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            Text(
+                text = year.toString(),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
     }
 }
 
 @Composable
 fun MonthHeader(month: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 8.dp, bottom = 4.dp, start = 16.dp, end = 16.dp)
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = month,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.secondary
-        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = month,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary
+            )
+        }
     }
 }
 
 @Composable
 fun DayHeader(day: String, isToday: Boolean) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 4.dp, bottom = 4.dp, start = 16.dp, end = 16.dp)
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 4.dp,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                text = day,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.Medium,
-                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
-            )
-            if (isToday) {
-                Spacer(Modifier.width(8.dp))
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "TODAY",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = day,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.Bold,
+                    color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+                if (isToday) {
+                    Spacer(Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .padding(horizontal = 6.dp, vertical = 2.dp)
+                    ) {
+                        Text(
+                            text = "TODAY",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
             }
         }
