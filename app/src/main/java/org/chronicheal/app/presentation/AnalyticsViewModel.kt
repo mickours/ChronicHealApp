@@ -3,7 +3,15 @@ package org.chronicheal.app.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.usecase.ExportPdfUseCase
@@ -41,7 +49,7 @@ class AnalyticsViewModel @Inject constructor(
         val filteredEntries = filterEntries(entries, range, start)
         AnalyticsUiState(
             painData = getPainData(filteredEntries, range, start),
-            symptomFrequency = getSymptomFrequency(filteredEntries)
+            symptomSeveritySum = getSymptomSeveritySum(filteredEntries)
         )
     }.stateIn(
         scope = viewModelScope,
@@ -137,13 +145,15 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 
-    private fun getSymptomFrequency(entries: List<HealthEntry>): Map<String, Int> {
+    private fun getSymptomSeveritySum(entries: List<HealthEntry>): Map<String, Int> {
         return entries
             .filter { it.type == EntryType.SYMPTOM && !it.name.isNullOrBlank() }
             .groupBy { 
                 it.name!!.trim().lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
             }
-            .mapValues { it.value.size }
+            .mapValues { entry -> 
+                entry.value.sumOf { it.intensity ?: 0 }
+            }
             .toList()
             .sortedByDescending { it.second }
             .take(5)
@@ -157,5 +167,5 @@ enum class TimeRange {
 
 data class AnalyticsUiState(
     val painData: Map<String, Map<LocalDate, Int>> = emptyMap(),
-    val symptomFrequency: Map<String, Int> = emptyMap()
+    val symptomSeveritySum: Map<String, Int> = emptyMap()
 )
