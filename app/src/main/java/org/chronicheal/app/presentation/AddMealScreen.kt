@@ -58,28 +58,31 @@ fun AddMealScreen(
         }
     }
 
+    val createEntry = {
+        HealthEntry(
+            id = id ?: 0,
+            timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
+            type = EntryType.MEAL,
+            name = name,
+            note = note,
+            hasReminder = setReminder,
+            reminderId = existingEntry?.reminderId,
+            isFinished = existingEntry?.isFinished ?: false,
+            durationMinutes = existingEntry?.durationMinutes
+        )
+    }
+
     AddEntryScaffold(
         title = if (id == null) "Log Meal" else "Edit Meal",
-        id = id,
+        existingEntry = existingEntry,
+        currentEntry = createEntry,
         onBackClick = onBackClick,
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-
-            val entry = HealthEntry(
-                id = id ?: 0,
-                timestamp = timestamp,
-                type = EntryType.MEAL,
-                name = name,
-                note = note,
-                hasReminder = setReminder,
-                reminderId = existingEntry?.reminderId,
-                isFinished = existingEntry?.isFinished ?: false
-            )
-
+            val entry = createEntry()
             if (setReminder) {
                 val reminder = Reminder(
                     id = existingEntry?.reminderId ?: 0,

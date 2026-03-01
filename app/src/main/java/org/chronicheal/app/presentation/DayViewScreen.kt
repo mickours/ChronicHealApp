@@ -1,6 +1,5 @@
 package org.chronicheal.app.presentation
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -66,7 +65,7 @@ fun DayViewScreen(
         }
     }
 
-    val titleDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
+    val titleDateFormatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },

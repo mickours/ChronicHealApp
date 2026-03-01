@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.Instant
 import java.time.LocalDate
@@ -27,19 +28,26 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AddEntryScaffold(
     title: String,
-    id: Long?,
+    existingEntry: HealthEntry?,
+    currentEntry: () -> HealthEntry,
     onBackClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onSaveClick: () -> Unit,
     saveButtonEnabled: Boolean,
-    saveButtonText: String = if (id == null) "Save" else "Update",
+    saveButtonText: String = if (existingEntry == null) "Save" else "Update",
     viewModel: TimelineViewModel,
     content: @Composable (PaddingValues) -> Unit
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
+    val hasChanges by remember(existingEntry) {
+        derivedStateOf {
+            existingEntry?.let { it != currentEntry() } ?: false
+        }
+    }
+
     val handleBack = {
-        if (id != null) {
+        if (existingEntry != null && hasChanges) {
             viewModel.showMessage("Edition canceled")
         }
         onBackClick()
@@ -57,7 +65,7 @@ fun AddEntryScaffold(
                     }
                 },
                 actions = {
-                    if (id != null) {
+                    if (existingEntry != null) {
                         IconButton(onClick = { showDeleteConfirmation = true }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }

@@ -18,8 +18,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -380,13 +380,17 @@ fun EntryItem(
     entry: HealthEntry,
     modifier: Modifier = Modifier
 ) {
-    val formatter = DateTimeFormatter
-        .ofLocalizedTime(FormatStyle.SHORT)
-        .withZone(ZoneId.systemDefault())
+    val formatter = remember {
+        DateTimeFormatter
+            .ofLocalizedTime(FormatStyle.SHORT)
+            .withZone(ZoneId.systemDefault())
+    }
 
-    val stripeColor = when (entry.type.category) {
-        EntryType.Category.OCCURRENCE -> PrimaryOrange
-        EntryType.Category.MANAGEMENT -> HeaderBlue
+    val stripeColor = remember(entry.type.category) {
+        when (entry.type.category) {
+            EntryType.Category.OCCURRENCE -> PrimaryOrange
+            EntryType.Category.MANAGEMENT -> HeaderBlue
+        }
     }
 
     Card(
@@ -409,7 +413,11 @@ fun EntryItem(
                     .background(if (entry.isFinished) Color.LightGray else stripeColor)
             )
             
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .weight(1f)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -457,21 +465,15 @@ fun EntryItem(
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
-                entry.intensity?.let {
-                    Text(
-                        text = "Intensity: $it/10", 
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+
                 entry.name?.let {
-                    Text(text = "Name: $it", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "Name: $it", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                 }
                 entry.location?.let {
-                    Text(text = "Location: $it", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "Location: $it", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                 }
                 entry.value?.let {
-                    Text(text = "Value: $it ${entry.unit ?: ""}", style = MaterialTheme.typography.bodyMedium)
+                    Text(text = "Value: $it ${entry.unit ?: ""}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                 }
                 
                 entry.durationMinutes?.let { duration ->
@@ -486,11 +488,81 @@ fun EntryItem(
                         Text(
                             text = "Duration: $durationText", 
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp)
                         )
                     }
                 }
             }
+
+            // Vertical intensity gauge on the right
+            entry.intensity?.let { intensity ->
+                val maxVal = if (entry.type == EntryType.SLEEP) 5 else 10
+                VerticalIntensityGauge(
+                    intensity = intensity,
+                    maxVal = maxVal,
+                    color = if (entry.isFinished) Color.LightGray else stripeColor,
+                    label = if (entry.type == EntryType.SLEEP) "QUAL" else "INT"
+                )
+            }
         }
+    }
+}
+
+@Composable
+fun VerticalIntensityGauge(
+    intensity: Int,
+    maxVal: Int,
+    color: Color,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    val isDark = isSystemInDarkTheme()
+    
+    val barBrush = remember(color) {
+        Brush.verticalGradient(
+            colors = listOf(
+                color, // Darker (Top)
+                color.copy(alpha = 0.4f) // Lighter (Bottom)
+            )
+        )
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxHeight()
+            .width(40.dp) // Enlarged gauge area
+            .background(color.copy(alpha = 0.1f)),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = color.copy(alpha = 0.8f),
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .width(16.dp) // Enlarged bar width
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (isDark) Color.DarkGray.copy(alpha = 0.3f) else Color.LightGray.copy(alpha = 0.3f)),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight(fraction = intensity.toFloat() / maxVal)
+                    .fillMaxWidth()
+                    .background(barBrush)
+            )
+        }
+        Text(
+            text = intensity.toString(),
+            style = MaterialTheme.typography.titleMedium, // Enlarged value text
+            fontWeight = FontWeight.Black,
+            color = color,
+            modifier = Modifier.padding(vertical = 4.dp)
+        )
     }
 }

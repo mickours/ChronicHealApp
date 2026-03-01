@@ -23,7 +23,7 @@ fun AddExternalFactorScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var factorName by remember { mutableStateOf("") }
-    var intensity by remember { mutableStateOf(5f) }
+    var intensity by remember { mutableFloatStateOf(5f) }
     var note by remember { mutableStateOf("") }
     var logDate by remember { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by remember { mutableStateOf(LocalTime.now()) }
@@ -43,28 +43,30 @@ fun AddExternalFactorScreen(
         }
     }
 
+    val createEntry = {
+        HealthEntry(
+            id = id ?: 0,
+            timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
+            type = EntryType.EXTERNAL_FACTOR,
+            name = factorName,
+            intensity = intensity.roundToInt(),
+            note = note,
+            isFinished = existingEntry?.isFinished ?: false,
+            durationMinutes = existingEntry?.durationMinutes
+        )
+    }
+
     AddEntryScaffold(
         title = if (id == null) "Log External Factor" else "Edit External Factor",
-        id = id,
+        existingEntry = existingEntry,
+        currentEntry = createEntry,
         onBackClick = onBackClick,
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-
-            val entry = HealthEntry(
-                id = id ?: 0,
-                timestamp = timestamp,
-                type = EntryType.EXTERNAL_FACTOR,
-                name = factorName,
-                intensity = intensity.roundToInt(),
-                note = note,
-                isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = existingEntry?.durationMinutes
-            )
-
+            val entry = createEntry()
             if (id == null) {
                 viewModel.addEntry(entry)
             } else {

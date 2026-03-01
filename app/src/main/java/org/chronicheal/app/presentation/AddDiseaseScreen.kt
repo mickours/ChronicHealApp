@@ -43,28 +43,30 @@ fun AddDiseaseScreen(
         }
     }
 
+    val createEntry = {
+        HealthEntry(
+            id = id ?: 0,
+            timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
+            type = EntryType.DISEASE,
+            name = name,
+            intensity = intensity.roundToInt(),
+            note = note,
+            isFinished = existingEntry?.isFinished ?: false,
+            durationMinutes = existingEntry?.durationMinutes
+        )
+    }
+
     AddEntryScaffold(
         title = if (id == null) "Log Disease/Condition" else "Edit Disease/Condition",
-        id = id,
+        existingEntry = existingEntry,
+        currentEntry = createEntry,
         onBackClick = onBackClick,
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-
-            val entry = HealthEntry(
-                id = id ?: 0,
-                timestamp = timestamp,
-                type = EntryType.DISEASE,
-                name = name,
-                intensity = intensity.roundToInt(),
-                note = note,
-                isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = existingEntry?.durationMinutes
-            )
-
+            val entry = createEntry()
             if (id == null) {
                 viewModel.addEntry(entry)
             } else {

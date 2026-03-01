@@ -46,29 +46,31 @@ fun AddSymptomScreen(
         }
     }
 
+    val createEntry = {
+        HealthEntry(
+            id = id ?: 0,
+            timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
+            type = EntryType.SYMPTOM,
+            name = name,
+            intensity = severity.roundToInt(),
+            location = location,
+            note = note,
+            isFinished = existingEntry?.isFinished ?: false,
+            durationMinutes = existingEntry?.durationMinutes
+        )
+    }
+
     AddEntryScaffold(
         title = if (id == null) "Log Symptom" else "Edit Symptom",
-        id = id,
+        existingEntry = existingEntry,
+        currentEntry = createEntry,
         onBackClick = onBackClick,
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-
-            val entry = HealthEntry(
-                id = id ?: 0,
-                timestamp = timestamp,
-                type = EntryType.SYMPTOM,
-                name = name,
-                intensity = severity.roundToInt(),
-                location = location,
-                note = note,
-                isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = existingEntry?.durationMinutes
-            )
-
+            val entry = createEntry()
             if (id == null) {
                 viewModel.addEntry(entry)
             } else {

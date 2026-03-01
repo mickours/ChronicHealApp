@@ -71,30 +71,32 @@ fun AddActivityScreen(
         }
     }
 
+    val createEntry = {
+        HealthEntry(
+            id = id ?: 0,
+            timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
+            type = EntryType.ACTIVITY,
+            name = name,
+            durationMinutes = (durationHours * 60) + durationMinutes,
+            intensity = intensity.roundToInt(),
+            note = note,
+            hasReminder = setReminder,
+            reminderId = existingEntry?.reminderId,
+            isFinished = existingEntry?.isFinished ?: false
+        )
+    }
+
     AddEntryScaffold(
         title = if (id == null) "Log Activity" else "Edit Activity",
-        id = id,
+        existingEntry = existingEntry,
+        currentEntry = createEntry,
         onBackClick = onBackClick,
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-
-            val entry = HealthEntry(
-                id = id ?: 0,
-                timestamp = timestamp,
-                type = EntryType.ACTIVITY,
-                name = name,
-                durationMinutes = (durationHours * 60) + durationMinutes,
-                intensity = intensity.roundToInt(),
-                note = note,
-                hasReminder = setReminder,
-                reminderId = existingEntry?.reminderId,
-                isFinished = existingEntry?.isFinished ?: false
-            )
-
+            val entry = createEntry()
             if (setReminder) {
                 val reminder = Reminder(
                     id = existingEntry?.reminderId ?: 0,

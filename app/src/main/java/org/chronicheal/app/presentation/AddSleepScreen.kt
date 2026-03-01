@@ -66,29 +66,31 @@ fun AddSleepScreen(
         }
     }
 
+    val createEntry = {
+        HealthEntry(
+            id = id ?: 0,
+            timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
+            type = EntryType.SLEEP,
+            intensity = quality.roundToInt(),
+            note = note,
+            hasReminder = setReminder,
+            reminderId = existingEntry?.reminderId,
+            isFinished = existingEntry?.isFinished ?: false,
+            durationMinutes = durationHours * 60
+        )
+    }
+
     AddEntryScaffold(
         title = if (id == null) "Log Sleep" else "Edit Sleep",
-        id = id,
+        existingEntry = existingEntry,
+        currentEntry = createEntry,
         onBackClick = onBackClick,
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-
-            val entry = HealthEntry(
-                id = id ?: 0,
-                timestamp = timestamp,
-                type = EntryType.SLEEP,
-                intensity = quality.roundToInt(),
-                note = note,
-                hasReminder = setReminder,
-                reminderId = existingEntry?.reminderId,
-                isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = durationHours * 60
-            )
-
+            val entry = createEntry()
             if (setReminder) {
                 val reminder = Reminder(
                     id = existingEntry?.reminderId ?: 0,

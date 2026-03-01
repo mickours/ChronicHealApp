@@ -47,6 +47,10 @@ fun CalendarScreen(
     val uiState by viewModel.uiState.collectAsState()
     val reminders by remindersViewModel.reminders.collectAsState()
     val currentMonth = remember { mutableStateOf(YearMonth.now()) }
+    
+    val activeReminders = remember(reminders) {
+        reminders.filter { it.isEnabled }
+    }
 
     Scaffold(
         topBar = {
@@ -98,7 +102,7 @@ fun CalendarScreen(
                 )
             }
             
-            if (reminders.isNotEmpty()) {
+            if (activeReminders.isNotEmpty()) {
                 item {
                     Text(
                         text = "Daily Reminders",
@@ -107,7 +111,7 @@ fun CalendarScreen(
                     )
                 }
                 
-                items(reminders.filter { it.isEnabled }) { reminder ->
+                items(activeReminders) { reminder ->
                     ReminderItemSmall(
                         reminder = reminder,
                         onToggle = { remindersViewModel.toggleReminder(reminder) }
@@ -123,7 +127,7 @@ fun ReminderItemSmall(
     reminder: org.chronicheal.app.domain.model.Reminder,
     onToggle: () -> Unit
 ) {
-    val timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+    val timeFormatter = remember { java.time.format.DateTimeFormatter.ofPattern("HH:mm") }
     
     Card(
         modifier = Modifier
@@ -193,8 +197,10 @@ fun CalendarGrid(
     val emptyDaysBefore = (0 until firstDayOfMonth).toList()
     val today = LocalDate.now()
 
-    val entriesByDate = entries.groupBy {
-        it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+    val entriesByDate = remember(entries) {
+        entries.groupBy {
+            it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+        }
     }
 
     Column(modifier = Modifier.padding(8.dp)) {
@@ -228,11 +234,15 @@ fun CalendarGrid(
                                 val date = currentMonth.atDay(day)
                                 val dayEntries = entriesByDate[date] ?: emptyList()
                                 
-                                val occurrenceIntensitySum = dayEntries
-                                    .filter { it.type.category == EntryType.Category.OCCURRENCE }
-                                    .sumOf { it.intensity ?: 0 }
+                                val occurrenceIntensitySum = remember(dayEntries) {
+                                    dayEntries
+                                        .filter { it.type.category == EntryType.Category.OCCURRENCE }
+                                        .sumOf { it.intensity ?: 0 }
+                                }
                                 
-                                val hasManagement = dayEntries.any { it.type.category == EntryType.Category.MANAGEMENT }
+                                val hasManagement = remember(dayEntries) {
+                                    dayEntries.any { it.type.category == EntryType.Category.MANAGEMENT }
+                                }
                                 
                                 val isToday = date == today
                                 DayCell(

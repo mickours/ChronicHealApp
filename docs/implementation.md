@@ -53,5 +53,6 @@ Goal: Interactive tools and notifications.
     - **Custom Theme**: Implemented a Soft Blue (`#a7c7d4`) and complementary Peach/Orange palette.
     - **Visual Indicators**: Added emojis to all entry types and improved card shapes to hint at swipability.
     - **Flexible Entry Logging**: Users can now edit both the **start time** and **duration** for every entry type.
+    - **Vertical Intensity Gauge**: Refactored the entry cards to move the intensity/quality gauge from a horizontal bar to a compact vertical gauge on the right side of the card. This optimizes space and provides a clearer visual hierarchy.
 - Biometric Lock.
 - Search and Filters.

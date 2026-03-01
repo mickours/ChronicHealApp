@@ -44,28 +44,30 @@ fun AddPainScreen(
         }
     }
 
+    val createEntry = {
+        HealthEntry(
+            id = id ?: 0,
+            timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
+            type = EntryType.PAIN,
+            intensity = intensity.roundToInt(),
+            location = location,
+            note = note,
+            isFinished = existingEntry?.isFinished ?: false,
+            durationMinutes = existingEntry?.durationMinutes
+        )
+    }
+
     AddEntryScaffold(
         title = if (id == null) "Log Pain" else "Edit Pain",
-        id = id,
+        existingEntry = existingEntry,
+        currentEntry = createEntry,
         onBackClick = onBackClick,
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-
-            val entry = HealthEntry(
-                id = id ?: 0,
-                timestamp = timestamp,
-                type = EntryType.PAIN,
-                intensity = intensity.roundToInt(),
-                location = location,
-                note = note,
-                isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = existingEntry?.durationMinutes
-            )
-
+            val entry = createEntry()
             if (id == null) {
                 viewModel.addEntry(entry)
             } else {

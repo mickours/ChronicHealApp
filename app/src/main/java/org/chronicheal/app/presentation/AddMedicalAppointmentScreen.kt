@@ -62,37 +62,32 @@ fun AddMedicalAppointmentScreen(
         }
     }
 
+    val createEntry = {
+        HealthEntry(
+            id = id ?: 0,
+            timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
+            type = EntryType.MEDICAL_APPOINTMENT,
+            name = doctorName,
+            location = purpose,
+            note = note,
+            hasReminder = setReminder,
+            reminderId = existingEntry?.reminderId,
+            isFinished = existingEntry?.isFinished ?: false,
+            durationMinutes = existingEntry?.durationMinutes
+        )
+    }
+
     AddEntryScaffold(
         title = if (id == null) "Medical Appointment" else "Edit Appointment",
-        id = id,
+        existingEntry = existingEntry,
+        currentEntry = createEntry,
         onBackClick = onBackClick,
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-
-            val finalNote = buildString {
-                append(note)
-                if (outcome.isNotBlank() && !note.contains("Outcome: $outcome")) {
-                    if (isNotEmpty()) append("\n\n")
-                    append("Outcome: $outcome")
-                }
-            }
-            val entry = HealthEntry(
-                id = id ?: 0,
-                timestamp = timestamp,
-                type = EntryType.MEDICAL_APPOINTMENT,
-                name = doctorName,
-                location = purpose,
-                note = finalNote,
-                hasReminder = setReminder,
-                reminderId = existingEntry?.reminderId,
-                isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = existingEntry?.durationMinutes
-            )
-
+            val entry = createEntry()
             if (setReminder) {
                 val reminder = Reminder(
                     id = existingEntry?.reminderId ?: 0,
