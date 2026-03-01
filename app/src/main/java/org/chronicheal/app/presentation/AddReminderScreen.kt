@@ -27,6 +27,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +43,7 @@ import java.time.format.DateTimeFormatter
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddReminderScreen(
+    id: Long? = null,
     initialType: EntryType? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
@@ -52,6 +54,19 @@ fun AddReminderScreen(
     var selectedDays by remember { mutableStateOf(setOf(1, 2, 3, 4, 5, 6, 7)) }
     var selectedType by remember { mutableStateOf<EntryType?>(initialType) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var existingReminder by remember { mutableStateOf<Reminder?>(null) }
+
+    LaunchedEffect(id) {
+        if (id != null) {
+            viewModel.getReminderById(id)?.let { reminder ->
+                existingReminder = reminder
+                title = reminder.title
+                selectedTime = reminder.time
+                selectedDays = reminder.daysOfWeek
+                selectedType = reminder.entryType
+            }
+        }
+    }
 
     val timeState = rememberTimePickerState(
         initialHour = selectedTime.hour,
@@ -61,7 +76,7 @@ fun AddReminderScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Add Reminder") },
+                title = { Text(if (id == null) "Add Reminder" else "Edit Reminder") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -71,12 +86,18 @@ fun AddReminderScreen(
                     Button(
                         onClick = {
                             val reminder = Reminder(
+                                id = id ?: 0,
                                 title = title.ifBlank { "Health Reminder" },
                                 time = selectedTime,
                                 daysOfWeek = selectedDays,
-                                entryType = selectedType
+                                entryType = selectedType,
+                                isEnabled = existingReminder?.isEnabled ?: true
                             )
-                            viewModel.addReminder(reminder)
+                            if (id == null) {
+                                viewModel.addReminder(reminder)
+                            } else {
+                                viewModel.updateReminder(reminder)
+                            }
                             onSaveSuccess()
                         },
                         modifier = Modifier.padding(end = 8.dp)

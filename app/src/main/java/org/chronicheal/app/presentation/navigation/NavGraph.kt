@@ -99,6 +99,9 @@ fun NavGraph(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() },
                 onAddReminderClick = { 
                     navController.navigate(Screen.AddReminder.createRoute(type = EntryType.PAIN.name)) 
+                },
+                onReminderClick = { reminderId ->
+                    navController.navigate(Screen.AddReminder.createRoute(id = reminderId))
                 }
             )
         }
@@ -127,18 +130,24 @@ fun NavGraph(navController: NavHostController) {
         composable(route = Screen.Reminders.route) {
             RemindersScreen(
                 onBackClick = { navController.popBackStack() },
-                onAddReminderClick = { navController.navigate(Screen.AddReminder.createRoute()) }
+                onAddReminderClick = { navController.navigate(Screen.AddReminder.createRoute()) },
+                onReminderClick = { reminderId ->
+                    navController.navigate(Screen.AddReminder.createRoute(id = reminderId))
+                }
             )
         }
         composable(
             route = Screen.AddReminder.route,
             arguments = listOf(
-                navArgument("type") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("type") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val typeString = backStackEntry.arguments?.getString("type")
             val initialType = typeString?.let { try { EntryType.valueOf(it) } catch(e: Exception) { null } }
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddReminderScreen(
+                id = id,
                 initialType = initialType,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { navController.popBackStack() }

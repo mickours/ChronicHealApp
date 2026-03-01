@@ -25,6 +25,7 @@ import org.chronicheal.app.domain.model.EntryType
 fun BodyScanRemindersScreen(
     onBackClick: () -> Unit,
     onAddReminderClick: () -> Unit,
+    onReminderClick: (Long) -> Unit,
     viewModel: RemindersViewModel = hiltViewModel()
 ) {
     val reminders by viewModel.reminders.collectAsState()
@@ -68,7 +69,8 @@ fun BodyScanRemindersScreen(
                     ReminderItem(
                         reminder = reminder,
                         onToggle = { viewModel.toggleReminder(reminder) },
-                        onDelete = { viewModel.deleteReminder(reminder) }
+                        onDelete = { viewModel.deleteReminder(reminder) },
+                        onClick = { onReminderClick(reminder.id) }
                     )
                 }
             }

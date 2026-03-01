@@ -49,4 +49,19 @@ class RemindersViewModel @Inject constructor(
             }
         }
     }
+
+    fun updateReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            repository.updateReminder(reminder)
+            if (reminder.isEnabled) {
+                scheduler.schedule(reminder)
+            } else {
+                scheduler.cancel(reminder)
+            }
+        }
+    }
+
+    suspend fun getReminderById(id: Long): Reminder? {
+        return repository.getReminderById(id)
+    }
 }

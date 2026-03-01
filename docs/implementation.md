@@ -49,7 +49,9 @@ Goal: Interactive tools and notifications.
 - **Body Scan Reminders**: 
     - Added a dedicated "Body Scan Reminders" screen to manage recurring prompts specifically for logging body pain.
     - Integrated a "Reminders" option in the Body Scan Screen top bar menu for easy access.
-    - Enhanced `AddReminderScreen` to support pre-filling the category (e.g., pre-selecting "Pain" when coming from Body Scan).
+    - Enhanced `AddReminderScreen` to support both creation and **edition** of existing reminders.
+    - Automated category pre-filling (e.g., pre-selecting "Pain" when coming from Body Scan).
+    - **Quick Actions**: Notifications now feature "Start Body Scan" and "Skip Today" actions for seamless user flow.
 
 ### 2. Reminders (Completed)
 - **Exact Scheduling**: Used `AlarmManager` for high-precision health reminders.
@@ -57,6 +59,7 @@ Goal: Interactive tools and notifications.
 - **Visual Feedback**: Entries with associated reminders now display a bell icon (`NotificationsActive`) in the Timeline.
 - **Persistence**: Reminders survive device reboots via `BootReceiver`.
 - **Centralized Hub**: Reminders are now listed and manageable directly from the Calendar view.
+- **Permissions**: Integrated mandatory runtime permission requests for notifications on Android 13+.
 
 ## Phase 5: Polish and Privacy (Completed)
 - **Enhanced Entry Model**: Added `durationMinutes` and `isFinished` properties to `HealthEntry`.

@@ -8,8 +8,13 @@ sealed class Screen(val route: String) {
     object BodyScan : Screen("body_scan")
     object BodyScanReminders : Screen("body_scan_reminders")
     object Reminders : Screen("reminders")
-    object AddReminder : Screen("add_reminder?type={type}") {
-        fun createRoute(type: String? = null) = if (type != null) "add_reminder?type=$type" else "add_reminder"
+    object AddReminder : Screen("add_reminder?type={type}&id={id}") {
+        fun createRoute(type: String? = null, id: Long? = null): String {
+            val typePart = if (type != null) "type=$type" else null
+            val idPart = if (id != null) "id=$id" else null
+            val query = listOfNotNull(typePart, idPart).joinToString("&")
+            return if (query.isNotEmpty()) "add_reminder?$query" else "add_reminder"
+        }
     }
     object DayView : Screen("day_view/{date}") {
         fun createRoute(date: String) = "day_view/$date"

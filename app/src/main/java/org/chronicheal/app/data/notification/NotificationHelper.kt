@@ -40,6 +40,10 @@ class NotificationHelper @Inject constructor(
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Channel for health reminders"
+                enableLights(true)
+                enableVibration(true)
+                setShowBadge(true)
+                setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC)
             }
             notificationManager.createNotificationChannel(channel)
         }
@@ -47,7 +51,9 @@ class NotificationHelper @Inject constructor(
 
     fun showReminderNotification(title: String, message: String, reminderId: Long, entryType: EntryType? = null) {
         val openIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            action = Intent.ACTION_MAIN
+            addCategory(Intent.CATEGORY_LAUNCHER)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
             if (entryType != null) {
                 putExtra(EXTRA_ENTRY_TYPE, entryType.name)
             }
@@ -57,7 +63,7 @@ class NotificationHelper @Inject constructor(
             context,
             reminderId.toInt(),
             openIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
         val skipIntent = Intent(context, ReminderReceiver::class.java).apply {
@@ -67,18 +73,22 @@ class NotificationHelper @Inject constructor(
         
         val skipPendingIntent = PendingIntent.getBroadcast(
             context,
-            reminderId.toInt() + 1000, // Unique ID
+            reminderId.toInt() + 1000,
             skipIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
+        // Using a more standard system icon for compatibility
         val builder = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_popup_reminder)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(openPendingIntent)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
+            .setContentIntent(openPendingIntent)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
         if (entryType == EntryType.PAIN) {
             builder.addAction(

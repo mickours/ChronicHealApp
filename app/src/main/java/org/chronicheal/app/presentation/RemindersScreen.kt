@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,6 +24,7 @@ import java.util.Locale
 fun RemindersScreen(
     onBackClick: () -> Unit,
     onAddReminderClick: () -> Unit,
+    onReminderClick: (Long) -> Unit,
     viewModel: RemindersViewModel = hiltViewModel()
 ) {
     val reminders by viewModel.reminders.collectAsState()
@@ -65,7 +67,8 @@ fun RemindersScreen(
                     ReminderItem(
                         reminder = reminder,
                         onToggle = { viewModel.toggleReminder(reminder) },
-                        onDelete = { viewModel.deleteReminder(reminder) }
+                        onDelete = { viewModel.deleteReminder(reminder) },
+                        onClick = { onReminderClick(reminder.id) }
                     )
                 }
             }
@@ -77,12 +80,15 @@ fun RemindersScreen(
 fun ReminderItem(
     reminder: Reminder,
     onToggle: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onClick: () -> Unit
 ) {
     val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
     
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
     ) {
         Row(
             modifier = Modifier
