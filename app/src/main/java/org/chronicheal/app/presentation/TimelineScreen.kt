@@ -15,10 +15,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
 import java.time.ZoneId
@@ -296,6 +298,14 @@ fun DayHeader(day: String, isToday: Boolean) {
 }
 
 @Composable
+fun getCategoryColor(type: EntryType): Color {
+    return when (type.category) {
+        EntryType.Category.OCCURRENCE -> Color(0xFFE57373) // Light Red/Coral
+        EntryType.Category.MANAGEMENT -> Color(0xFF81C784) // Light Green
+    }
+}
+
+@Composable
 fun EntryItem(
     entry: HealthEntry,
     onDeleteClick: () -> Unit,
@@ -305,64 +315,78 @@ fun EntryItem(
         .ofLocalizedTime(FormatStyle.SHORT)
         .withZone(ZoneId.systemDefault())
 
+    val categoryColor = getCategoryColor(entry.type)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = entry.type.name.replace("_", " ").lowercase()
-                                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        if (entry.hasReminder) {
-                            Spacer(Modifier.width(8.dp))
-                            Icon(
-                                imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = "Reminder set",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                    Text(
-                        text = formatter.format(entry.timestamp),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-                IconButton(onClick = onDeleteClick) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Entry",
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
+        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+            // Category color stripe
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(6.dp)
+                    .background(categoryColor)
+            )
             
-            if (entry.note.isNotEmpty()) {
-                Text(
-                    text = entry.note,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-            entry.intensity?.let {
-                Text(text = "Intensity: $it/10", style = MaterialTheme.typography.bodyMedium)
-            }
-            entry.name?.let {
-                Text(text = "Name: $it", style = MaterialTheme.typography.bodyMedium)
-            }
-            entry.location?.let {
-                Text(text = "Location: $it", style = MaterialTheme.typography.bodyMedium)
-            }
-            entry.value?.let {
-                Text(text = "Value: $it ${entry.unit ?: ""}", style = MaterialTheme.typography.bodyMedium)
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = entry.type.name.replace("_", " ").lowercase()
+                                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                                style = MaterialTheme.typography.titleMedium,
+                                color = categoryColor.copy(alpha = 0.8f) // Optional: subtly color the title too
+                            )
+                            if (entry.hasReminder) {
+                                Spacer(Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.Default.NotificationsActive,
+                                    contentDescription = "Reminder set",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = formatter.format(entry.timestamp),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    IconButton(onClick = onDeleteClick) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Entry",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                
+                if (entry.note.isNotEmpty()) {
+                    Text(
+                        text = entry.note,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                entry.intensity?.let {
+                    Text(text = "Intensity: $it/10", style = MaterialTheme.typography.bodyMedium)
+                }
+                entry.name?.let {
+                    Text(text = "Name: $it", style = MaterialTheme.typography.bodyMedium)
+                }
+                entry.location?.let {
+                    Text(text = "Location: $it", style = MaterialTheme.typography.bodyMedium)
+                }
+                entry.value?.let {
+                    Text(text = "Value: $it ${entry.unit ?: ""}", style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
     }

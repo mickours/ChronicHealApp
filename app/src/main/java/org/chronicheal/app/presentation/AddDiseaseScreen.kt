@@ -12,8 +12,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
@@ -25,6 +27,7 @@ import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,6 +39,7 @@ fun AddDiseaseScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
+    var intensity by remember { mutableFloatStateOf(5f) }
     var note by remember { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
@@ -45,6 +49,7 @@ fun AddDiseaseScreen(
             if (entry != null) {
                 existingEntry = entry
                 name = entry.name ?: ""
+                intensity = entry.intensity?.toFloat() ?: 5f
                 note = entry.note
             }
         }
@@ -77,6 +82,19 @@ fun AddDiseaseScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            Text(
+                text = "Impact/Intensity: ${intensity.roundToInt()}/10",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Slider(
+                value = intensity,
+                onValueChange = { intensity = it },
+                valueRange = 1f..10f,
+                steps = 8
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
@@ -104,6 +122,7 @@ fun AddDiseaseScreen(
                         timestamp = timestamp,
                         type = EntryType.DISEASE,
                         name = name,
+                        intensity = intensity.roundToInt(),
                         note = note
                     )
 

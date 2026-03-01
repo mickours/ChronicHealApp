@@ -16,17 +16,20 @@ No account needed for you or them.
 ## Features
 
 ### 1.0
-- [ ] simple way to add entry specialized for each entry type
-    - [ ] drugs
-    - [ ] symptoms
-    - [ ] pain (level)
-    - [ ] disease
-    - [ ] meals
-    - [ ] sleep
-    - [ ] medical appointments
-    - [ ] activities
-    - [ ] external factors
-    - [ ] journal
+
+- A journal for your thoughts
+- [X] simple way to add entry specialized for each entry type
+  - What occurs to you:
+      - [X] symptoms
+      - [X] pain (level)
+      - [X] disease
+      - [X] external factors
+  - What you can manage:
+      - [X] drugs
+      - [X] meals
+      - [X] sleep
+      - [x] medical appointments
+      - [X] activities
 - [ ] A calendar that show events history and allow event edition
 - [ ] visualize the disease evolution with graph
 - [ ] PDF export for a time range to share with care givers

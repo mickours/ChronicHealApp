@@ -21,14 +21,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.*
+import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -215,11 +218,19 @@ fun CalendarGrid(
                             if (dayIndex < days.size) {
                                 val day = days[dayIndex]
                                 val date = currentMonth.atDay(day)
-                                val hasEntries = entriesByDate.containsKey(date)
+                                val dayEntries = entriesByDate[date] ?: emptyList()
+                                
+                                val occurrenceIntensitySum = dayEntries
+                                    .filter { it.type.category == EntryType.Category.OCCURRENCE }
+                                    .sumOf { it.intensity ?: 0 }
+                                
+                                val hasManagement = dayEntries.any { it.type.category == EntryType.Category.MANAGEMENT }
+                                
                                 val isToday = date == today
                                 DayCell(
                                     day = day, 
-                                    hasEntries = hasEntries,
+                                    occurrenceIntensity = occurrenceIntensitySum,
+                                    hasManagement = hasManagement,
                                     isToday = isToday,
                                     onClick = { onDateClick(date) }
                                 )
@@ -237,7 +248,8 @@ fun CalendarGrid(
 @Composable
 fun DayCell(
     day: Int, 
-    hasEntries: Boolean,
+    occurrenceIntensity: Int,
+    hasManagement: Boolean,
     isToday: Boolean,
     onClick: () -> Unit
 ) {
@@ -265,18 +277,32 @@ fun DayCell(
                 fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                 color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
             )
-            if (hasEntries) {
-                Box(
-                    modifier = Modifier
-                        .size(4.dp)
-                        .background(
-                            if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primary, 
-                            shape = CircleShape
-                        )
-                )
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (occurrenceIntensity > 0) {
+                    // Size scales from 4dp to 10dp based on intensity sum
+                    val dotSize = min(10f, 4f + (occurrenceIntensity / 5f)).dp
+                    CategoryDot(color = Color(0xFFE57373), size = dotSize)
+                }
+                if (hasManagement) {
+                    CategoryDot(color = Color(0xFF81C784), size = 4.dp)
+                }
             }
         }
     }
+}
+
+@Composable
+fun CategoryDot(color: Color, size: Dp = 4.dp) {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 1.dp)
+            .size(size)
+            .background(color, shape = CircleShape)
+    )
 }
 
 private fun formatDaysOfWeek(days: Set<Int>): String {

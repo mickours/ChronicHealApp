@@ -67,8 +67,8 @@ fun AddPainScreen(
             Slider(
                 value = intensity,
                 onValueChange = { intensity = it },
-                valueRange = 0f..10f,
-                steps = 9
+                valueRange = 1f..10f,
+                steps = 8
             )
 
             Spacer(modifier = Modifier.height(16.dp))

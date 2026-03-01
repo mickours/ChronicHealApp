@@ -9,7 +9,6 @@ import androidx.navigation.navArgument
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.presentation.*
-import java.time.ZoneId
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -17,18 +16,18 @@ fun NavGraph(navController: NavHostController) {
         navController = navController,
         startDestination = Screen.Timeline.route
     ) {
-        val onEntryClick: (HealthEntry, String?) -> Unit = { entry, date ->
+        val onEntryClick: (HealthEntry) -> Unit = { entry ->
             val route = when (entry.type) {
-                EntryType.PAIN -> Screen.AddPain.createRoute(id = entry.id, date = date)
-                EntryType.DRUG -> Screen.AddDrug.createRoute(id = entry.id, date = date)
-                EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(id = entry.id, date = date)
-                EntryType.DISEASE -> Screen.AddDisease.createRoute(id = entry.id, date = date)
-                EntryType.MEAL -> Screen.AddMeal.createRoute(id = entry.id, date = date)
-                EntryType.SLEEP -> Screen.AddSleep.createRoute(id = entry.id, date = date)
-                EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.createRoute(id = entry.id, date = date)
-                EntryType.ACTIVITY -> Screen.AddActivity.createRoute(id = entry.id, date = date)
-                EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(id = entry.id, date = date)
-                EntryType.JOURNAL -> Screen.AddJournal.createRoute(id = entry.id, date = date)
+                EntryType.PAIN -> Screen.AddPain.createRoute(id = entry.id)
+                EntryType.DRUG -> Screen.AddDrug.createRoute(id = entry.id)
+                EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(id = entry.id)
+                EntryType.DISEASE -> Screen.AddDisease.createRoute(id = entry.id)
+                EntryType.MEAL -> Screen.AddMeal.createRoute(id = entry.id)
+                EntryType.SLEEP -> Screen.AddSleep.createRoute(id = entry.id)
+                EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.createRoute(id = entry.id)
+                EntryType.ACTIVITY -> Screen.AddActivity.createRoute(id = entry.id)
+                EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(id = entry.id)
+                EntryType.JOURNAL -> Screen.AddJournal.createRoute(id = entry.id)
             }
             navController.navigate(route)
         }
@@ -50,7 +49,7 @@ fun NavGraph(navController: NavHostController) {
                 onBodyScanClick = {
                     navController.navigate(Screen.BodyScan.route)
                 },
-                onEntryClick = { entry -> onEntryClick(entry, null) }
+                onEntryClick = onEntryClick
             )
         }
         composable(route = Screen.Calendar.route) {
@@ -83,7 +82,7 @@ fun NavGraph(navController: NavHostController) {
                 onAddEntryClick = { clickedDate ->
                     navController.navigate(Screen.EntryTypeSelection.createRoute(clickedDate.toString()))
                 },
-                onEntryClick = { entry -> onEntryClick(entry, date) }
+                onEntryClick = onEntryClick
             )
         }
         composable(route = Screen.Settings.route) {
