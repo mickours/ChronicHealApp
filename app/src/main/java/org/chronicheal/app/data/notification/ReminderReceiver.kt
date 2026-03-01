@@ -27,6 +27,11 @@ class ReminderReceiver : BroadcastReceiver() {
         val reminderId = intent.getLongExtra("reminder_id", -1L)
         if (reminderId == -1L) return
 
+        if (intent.action == NotificationHelper.ACTION_SKIP) {
+            notificationHelper.cancelNotification(reminderId.toInt())
+            return
+        }
+
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -37,7 +42,8 @@ class ReminderReceiver : BroadcastReceiver() {
                         notificationHelper.showReminderNotification(
                             title = "Reminder: ${reminder.title}",
                             message = "It's time for your scheduled activity.",
-                            reminderId = reminder.id
+                            reminderId = reminder.id,
+                            entryType = reminder.entryType
                         )
                     }
                     // Reschedule for next occurrence

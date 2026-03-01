@@ -1,5 +1,6 @@
 package org.chronicheal.app
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -19,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import org.chronicheal.app.data.notification.NotificationHelper
 import org.chronicheal.app.presentation.SecurityViewModel
 import org.chronicheal.app.presentation.navigation.NavGraph
+import org.chronicheal.app.presentation.navigation.Screen
 import org.chronicheal.app.ui.theme.ChronicHealTheme
 
 @AndroidEntryPoint
@@ -48,6 +52,22 @@ class MainActivity : AppCompatActivity() {
                         }
                     } else {
                         val navController = rememberNavController()
+                        
+                        // Handle navigation from notification actions
+                        val entryType = intent.getStringExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
+                        LaunchedEffect(entryType) {
+                            if (entryType == "PAIN") {
+                                navController.navigate(Screen.BodyScan.route) {
+                                    // Ensure we don't build up a large stack
+                                    popUpTo(Screen.Timeline.route) { saveState = true }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                                // Clear intent to avoid re-triggering on config change
+                                intent.removeExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
+                            }
+                        }
+                        
                         NavGraph(navController = navController)
                     }
                 }
@@ -86,5 +106,10 @@ class MainActivity : AppCompatActivity() {
             .build()
 
         biometricPrompt.authenticate(promptInfo)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
     }
 }
