@@ -1,13 +1,17 @@
 package org.chronicheal.app.presentation
 
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
@@ -52,6 +56,7 @@ fun TimelineScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
+    var isSearchVisible by rememberSaveable { mutableStateOf(false) }
     var hasPerformedInitialScroll by rememberSaveable { mutableStateOf(false) }
 
     val timelineItems = remember(uiState.entries) {
@@ -90,28 +95,92 @@ fun TimelineScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("ChronicHeal") },
-                actions = {
-                    IconButton(onClick = onBodyScanClick) {
-                        Icon(Icons.Default.Accessibility, contentDescription = "Body Scan")
-                    }
-                    IconButton(onClick = onAnalyticsClick) {
-                        Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = "Analytics")
-                    }
-                    IconButton(onClick = onCalendarClick) {
-                        Icon(Icons.Default.CalendarMonth, contentDescription = "Calendar")
-                    }
-                    IconButton(onClick = onSettingsClick) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = HeaderBlue,
-                    titleContentColor = Color.Black,
-                    actionIconContentColor = Color.Black
+            Column {
+                TopAppBar(
+                    title = { Text("ChronicHeal") },
+                    actions = {
+                        IconButton(onClick = { 
+                            isSearchVisible = !isSearchVisible 
+                            if (!isSearchVisible) {
+                                viewModel.setSearchQuery("")
+                            }
+                        }) {
+                            Icon(
+                                imageVector = if (isSearchVisible) Icons.Default.SearchOff else Icons.Default.Search, 
+                                contentDescription = "Toggle Search"
+                            )
+                        }
+                        IconButton(onClick = onBodyScanClick) {
+                            Icon(Icons.Default.Accessibility, contentDescription = "Body Scan")
+                        }
+                        IconButton(onClick = onAnalyticsClick) {
+                            Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = "Analytics")
+                        }
+                        IconButton(onClick = onCalendarClick) {
+                            Icon(Icons.Default.CalendarMonth, contentDescription = "Calendar")
+                        }
+                        IconButton(onClick = onSettingsClick) {
+                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = HeaderBlue,
+                        titleContentColor = Color.Black,
+                        actionIconContentColor = Color.Black
+                    )
                 )
-            )
+                AnimatedVisibility(
+                    visible = isSearchVisible,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(HeaderBlue)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.searchQuery,
+                            onValueChange = viewModel::setSearchQuery,
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Search by name, location or note...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            trailingIcon = {
+                                if (uiState.searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(24.dp),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White,
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent
+                            )
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(EntryType.entries) { type ->
+                                FilterChip(
+                                    selected = type in uiState.selectedTypes,
+                                    onClick = { viewModel.toggleTypeFilter(type) },
+                                    label = { Text("${type.emoji} ${type.name.lowercase().replaceFirstChar { it.uppercase() }}") },
+                                    leadingIcon = if (type in uiState.selectedTypes) {
+                                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                    } else null
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddEntryClick) {
@@ -119,13 +188,15 @@ fun TimelineScreen(
             }
         }
     ) { innerPadding ->
-        if (uiState.entries.isEmpty() && (timelineItems.isEmpty() || timelineItems.none { it is TimelineItem.Entry })) {
-            Text(
-                text = "No entries yet. Tap + to start tracking.",
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .padding(16.dp)
-            )
+        if (uiState.entries.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Text(
+                    text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedTypes.isNotEmpty()) 
+                        "No matches found." else "No entries yet. Tap + to start tracking.",
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.padding(32.dp)
+                )
+            }
         } else {
             LazyColumn(
                 state = listState,
