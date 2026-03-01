@@ -26,6 +26,8 @@ fun AddPainScreen(
     var intensity by remember { mutableFloatStateOf(5f) }
     var location by remember { mutableStateOf(locationString ?: "") }
     var note by remember { mutableStateOf("") }
+    var startTime by remember { mutableStateOf(LocalTime.now()) }
+    var durationMinutes by remember { mutableIntStateOf(EntryType.PAIN.defaultDurationMinutes) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
     LaunchedEffect(id) {
@@ -36,6 +38,8 @@ fun AddPainScreen(
                 intensity = entry.intensity?.toFloat() ?: 5f
                 location = entry.location ?: ""
                 note = entry.note
+                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                durationMinutes = entry.durationMinutes ?: EntryType.PAIN.defaultDurationMinutes
             }
         }
     }
@@ -49,15 +53,8 @@ fun AddPainScreen(
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = if (id == null) {
-                if (dateString != null) {
-                    LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
-                } else {
-                    java.time.Instant.now()
-                }
-            } else {
-                existingEntry?.timestamp ?: java.time.Instant.now()
-            }
+            val date = if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()
+            val timestamp = date.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
 
             val entry = HealthEntry(
                 id = id ?: 0,
@@ -67,7 +64,7 @@ fun AddPainScreen(
                 location = location,
                 note = note,
                 isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = existingEntry?.durationMinutes
+                durationMinutes = durationMinutes
             )
 
             if (id == null) {
@@ -86,6 +83,15 @@ fun AddPainScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
+            EntryTimeAndDurationPicker(
+                startTime = startTime,
+                onStartTimeChange = { startTime = it },
+                durationMinutes = durationMinutes,
+                onDurationChange = { durationMinutes = it }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
                 text = "Intensity: ${intensity.roundToInt()}/10",
                 style = MaterialTheme.typography.titleMedium

@@ -3,6 +3,7 @@ package org.chronicheal.app.presentation
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,6 +28,8 @@ fun AddMedicalAppointmentScreen(
     var purpose by remember { mutableStateOf("") }
     var outcome by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    var startTime by remember { mutableStateOf(LocalTime.now()) }
+    var durationMinutes by remember { mutableIntStateOf(EntryType.MEDICAL_APPOINTMENT.defaultDurationMinutes) }
     
     var setReminder by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf(LocalTime.now()) }
@@ -46,6 +49,8 @@ fun AddMedicalAppointmentScreen(
                 doctorName = entry.name ?: ""
                 purpose = entry.location ?: ""
                 note = entry.note
+                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                durationMinutes = entry.durationMinutes ?: EntryType.MEDICAL_APPOINTMENT.defaultDurationMinutes
                 setReminder = entry.hasReminder
                 
                 if (entry.hasReminder && entry.reminderId != null) {
@@ -66,15 +71,9 @@ fun AddMedicalAppointmentScreen(
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = if (id == null) {
-                if (dateString != null) {
-                    LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
-                } else {
-                    java.time.Instant.now()
-                }
-            } else {
-                existingEntry?.timestamp ?: java.time.Instant.now()
-            }
+            val date = if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()
+            val timestamp = date.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
+
             val finalNote = buildString {
                 append(note)
                 if (outcome.isNotBlank() && !note.contains("Outcome: $outcome")) {
@@ -92,7 +91,7 @@ fun AddMedicalAppointmentScreen(
                 hasReminder = setReminder,
                 reminderId = existingEntry?.reminderId,
                 isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = existingEntry?.durationMinutes
+                durationMinutes = durationMinutes
             )
 
             if (setReminder) {
@@ -126,6 +125,15 @@ fun AddMedicalAppointmentScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
+            EntryTimeAndDurationPicker(
+                startTime = startTime,
+                onStartTimeChange = { startTime = it },
+                durationMinutes = durationMinutes,
+                onDurationChange = { durationMinutes = it }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = doctorName,
                 onValueChange = { doctorName = it },
@@ -164,7 +172,7 @@ fun AddMedicalAppointmentScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(

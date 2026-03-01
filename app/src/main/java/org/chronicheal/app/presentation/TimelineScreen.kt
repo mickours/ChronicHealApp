@@ -4,6 +4,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,6 +27,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.ui.theme.*
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -103,7 +105,12 @@ fun TimelineScreen(
                     IconButton(onClick = onSettingsClick) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = HeaderBlue,
+                    titleContentColor = Color.Black,
+                    actionIconContentColor = Color.Black
+                )
             )
         },
         floatingActionButton = {
@@ -220,6 +227,8 @@ fun SwipeableEntryItem(
             Box(
                 Modifier
                     .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .clip(RoundedCornerShape(24.dp))
                     .background(color)
                     .padding(horizontal = 20.dp),
                 contentAlignment = alignment
@@ -367,14 +376,6 @@ fun DayHeader(day: String, isToday: Boolean) {
 }
 
 @Composable
-fun getCategoryColor(type: EntryType): Color {
-    return when (type.category) {
-        EntryType.Category.OCCURRENCE -> Color(0xFFD4A7A7) // Soft Red/Dusty Rose to match #a7c7d4 tone
-        EntryType.Category.MANAGEMENT -> Color(0xFFA7D4C7) // Soft Teal/Green to match #a7c7d4 tone
-    }
-}
-
-@Composable
 fun EntryItem(
     entry: HealthEntry,
     modifier: Modifier = Modifier
@@ -383,12 +384,20 @@ fun EntryItem(
         .ofLocalizedTime(FormatStyle.SHORT)
         .withZone(ZoneId.systemDefault())
 
-    val categoryColor = getCategoryColor(entry.type)
+    val stripeColor = when (entry.type.category) {
+        EntryType.Category.OCCURRENCE -> PrimaryOrange
+        EntryType.Category.MANAGEMENT -> HeaderBlue
+    }
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(24.dp), // Semi-stadium shape to reflect swipability
+        colors = CardDefaults.cardColors(
+            containerColor = if (entry.isFinished) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
@@ -396,8 +405,8 @@ fun EntryItem(
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(6.dp)
-                    .background(if (entry.isFinished) Color.LightGray else categoryColor)
+                    .width(8.dp)
+                    .background(if (entry.isFinished) Color.LightGray else stripeColor)
             )
             
             Column(modifier = Modifier.padding(16.dp)) {
@@ -408,10 +417,11 @@ fun EntryItem(
                     Column(modifier = Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                text = entry.type.name.replace("_", " ").lowercase()
-                                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                                text = "${entry.type.emoji} ${entry.type.name.replace("_", " ").lowercase()
+                                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = if (entry.isFinished) Color.Gray else categoryColor
+                                fontWeight = FontWeight.Bold,
+                                color = if (entry.isFinished) Color.Gray else MaterialTheme.colorScheme.onSurface
                             )
                             if (entry.hasReminder) {
                                 Spacer(Modifier.width(8.dp))
@@ -434,7 +444,8 @@ fun EntryItem(
                         }
                         Text(
                             text = formatter.format(entry.timestamp),
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -442,11 +453,16 @@ fun EntryItem(
                 if (entry.note.isNotEmpty()) {
                     Text(
                         text = entry.note,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp),
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
                 entry.intensity?.let {
-                    Text(text = "Intensity: $it/10", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "Intensity: $it/10", 
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
                 entry.name?.let {
                     Text(text = "Name: $it", style = MaterialTheme.typography.bodyMedium)
@@ -460,7 +476,11 @@ fun EntryItem(
                 
                 val duration = entry.durationMinutes ?: entry.type.defaultDurationMinutes
                 if (duration > 0) {
-                    Text(text = "Duration: $duration min", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        text = "Duration: $duration min", 
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }

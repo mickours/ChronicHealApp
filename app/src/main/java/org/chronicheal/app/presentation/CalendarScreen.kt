@@ -3,6 +3,7 @@ package org.chronicheal.app.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.ui.theme.*
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
@@ -58,7 +60,7 @@ fun CalendarScreen(
                 actions = {
                     TextButton(
                         onClick = { currentMonth.value = YearMonth.now() },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
                     ) {
                         Icon(Icons.Default.Today, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
@@ -67,7 +69,13 @@ fun CalendarScreen(
                     IconButton(onClick = onManageRemindersClick) {
                         Icon(Icons.Default.Notifications, contentDescription = "Manage Reminders")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = HeaderBlue,
+                    titleContentColor = Color.Black,
+                    navigationIconContentColor = Color.Black,
+                    actionIconContentColor = Color.Black
+                )
             )
         }
     ) { innerPadding ->
@@ -253,6 +261,10 @@ fun DayCell(
     isToday: Boolean,
     onClick: () -> Unit
 ) {
+    val isDark = isSystemInDarkTheme()
+    val occColor = if (isDark) OnOccurrenceColorDark else OccurrenceColorLight
+    val mangColor = if (isDark) OnManagementColorDark else ManagementColorLight
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -285,10 +297,10 @@ fun DayCell(
                 if (occurrenceIntensity > 0) {
                     // Size scales from 4dp to 10dp based on intensity sum
                     val dotSize = min(10f, 4f + (occurrenceIntensity / 5f)).dp
-                    CategoryDot(color = Color(0xFFE57373), size = dotSize)
+                    CategoryDot(color = occColor, size = dotSize)
                 }
                 if (hasManagement) {
-                    CategoryDot(color = Color(0xFF81C784), size = 4.dp)
+                    CategoryDot(color = mangColor, size = 4.dp)
                 }
             }
         }

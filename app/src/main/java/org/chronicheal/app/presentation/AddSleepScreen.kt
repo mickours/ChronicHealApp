@@ -24,7 +24,8 @@ fun AddSleepScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
-    var durationHours by remember { mutableStateOf("") }
+    var startTime by remember { mutableStateOf(LocalTime.now()) }
+    var durationMinutes by remember { mutableIntStateOf(EntryType.SLEEP.defaultDurationMinutes) }
     var quality by remember { mutableFloatStateOf(3f) }
     var note by remember { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
@@ -43,9 +44,10 @@ fun AddSleepScreen(
             val entry = viewModel.getEntryById(id)
             if (entry != null) {
                 existingEntry = entry
-                durationHours = entry.value?.toString() ?: ""
                 quality = entry.intensity?.toFloat() ?: 3f
                 note = entry.note
+                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                durationMinutes = entry.durationMinutes ?: EntryType.SLEEP.defaultDurationMinutes
                 setReminder = entry.hasReminder
                 
                 if (entry.hasReminder && entry.reminderId != null) {
@@ -66,27 +68,19 @@ fun AddSleepScreen(
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = if (id == null) {
-                if (dateString != null) {
-                    LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
-                } else {
-                    java.time.Instant.now()
-                }
-            } else {
-                existingEntry?.timestamp ?: java.time.Instant.now()
-            }
+            val date = if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()
+            val timestamp = date.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
 
             val entry = HealthEntry(
                 id = id ?: 0,
                 timestamp = timestamp,
                 type = EntryType.SLEEP,
-                value = durationHours.toDoubleOrNull(),
                 intensity = quality.roundToInt(),
                 note = note,
                 hasReminder = setReminder,
                 reminderId = existingEntry?.reminderId,
                 isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = existingEntry?.durationMinutes
+                durationMinutes = durationMinutes
             )
 
             if (setReminder) {
@@ -120,11 +114,11 @@ fun AddSleepScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            OutlinedTextField(
-                value = durationHours,
-                onValueChange = { durationHours = it },
-                label = { Text("Duration (Hours)") },
-                modifier = Modifier.fillMaxWidth()
+            EntryTimeAndDurationPicker(
+                startTime = startTime,
+                onStartTimeChange = { startTime = it },
+                durationMinutes = durationMinutes,
+                onDurationChange = { durationMinutes = it }
             )
 
             Spacer(modifier = Modifier.height(16.dp))

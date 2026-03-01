@@ -25,6 +25,8 @@ fun AddMealScreen(
 ) {
     var name by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    var startTime by remember { mutableStateOf(LocalTime.now()) }
+    var durationMinutes by remember { mutableIntStateOf(EntryType.MEAL.defaultDurationMinutes) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
     var setReminder by remember { mutableStateOf(false) }
@@ -43,6 +45,8 @@ fun AddMealScreen(
                 existingEntry = entry
                 name = entry.name ?: ""
                 note = entry.note
+                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                durationMinutes = entry.durationMinutes ?: EntryType.MEAL.defaultDurationMinutes
                 setReminder = entry.hasReminder
                 
                 if (entry.hasReminder && entry.reminderId != null) {
@@ -63,15 +67,8 @@ fun AddMealScreen(
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = if (id == null) {
-                if (dateString != null) {
-                    LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
-                } else {
-                    java.time.Instant.now()
-                }
-            } else {
-                existingEntry?.timestamp ?: java.time.Instant.now()
-            }
+            val date = if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()
+            val timestamp = date.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
 
             val entry = HealthEntry(
                 id = id ?: 0,
@@ -82,7 +79,7 @@ fun AddMealScreen(
                 hasReminder = setReminder,
                 reminderId = existingEntry?.reminderId,
                 isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = existingEntry?.durationMinutes
+                durationMinutes = durationMinutes
             )
 
             if (setReminder) {
@@ -116,6 +113,15 @@ fun AddMealScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
+            EntryTimeAndDurationPicker(
+                startTime = startTime,
+                onStartTimeChange = { startTime = it },
+                durationMinutes = durationMinutes,
+                onDurationChange = { durationMinutes = it }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },

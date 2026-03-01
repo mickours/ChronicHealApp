@@ -48,6 +48,10 @@ Goal: Interactive tools and notifications.
 - **Swipe-to-Action**: Implemented `SwipeToDismissBox` in Timeline and Day View.
     - **Swipe Left**: Delete entry with undo snackbar.
     - **Swipe Right**: Mark entry as "finished" (visual change to grey and checkmark icon).
+- **UI/UX Refinements**:
+    - **Factorized Add Screens**: Introduced `AddEntryScaffold` to share common logic (cancel/delete/update).
+    - **Custom Theme**: Implemented a Soft Blue (`#a7c7d4`) and complementary Peach/Orange palette.
+    - **Visual Indicators**: Added emojis to all entry types and improved card shapes to hint at swipability.
+    - **Flexible Entry Logging**: Users can now edit both the **start time** and **duration** for every entry type.
 - Biometric Lock.
 - Search and Filters.
-- UI/UX refinements.

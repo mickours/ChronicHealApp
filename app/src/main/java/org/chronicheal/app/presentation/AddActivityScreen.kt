@@ -1,11 +1,9 @@
 package org.chronicheal.app.presentation
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
@@ -27,7 +25,7 @@ fun AddActivityScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
-    var durationText by remember { mutableStateOf("") }
+    var startTime by remember { mutableStateOf(LocalTime.now()) }
     var durationMinutes by remember { mutableIntStateOf(EntryType.ACTIVITY.defaultDurationMinutes) }
     var intensity by remember { mutableFloatStateOf(3f) }
     var note by remember { mutableStateOf("") }
@@ -48,8 +46,8 @@ fun AddActivityScreen(
             if (entry != null) {
                 existingEntry = entry
                 name = entry.name ?: ""
+                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
                 durationMinutes = entry.durationMinutes ?: EntryType.ACTIVITY.defaultDurationMinutes
-                durationText = durationMinutes.toString()
                 intensity = entry.intensity?.toFloat() ?: 3f
                 note = entry.note
                 setReminder = entry.hasReminder
@@ -60,8 +58,6 @@ fun AddActivityScreen(
                     }
                 }
             }
-        } else {
-            durationText = durationMinutes.toString()
         }
     }
 
@@ -74,15 +70,8 @@ fun AddActivityScreen(
             onSaveSuccess()
         },
         onSaveClick = {
-            val timestamp = if (id == null) {
-                if (dateString != null) {
-                    LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
-                } else {
-                    java.time.Instant.now()
-                }
-            } else {
-                existingEntry?.timestamp ?: java.time.Instant.now()
-            }
+            val date = if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()
+            val timestamp = date.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
 
             val entry = HealthEntry(
                 id = id ?: 0,
@@ -128,24 +117,20 @@ fun AddActivityScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Activity Name (e.g. Walking, Yoga)") },
-                modifier = Modifier.fillMaxWidth()
+            EntryTimeAndDurationPicker(
+                startTime = startTime,
+                onStartTimeChange = { startTime = it },
+                durationMinutes = durationMinutes,
+                onDurationChange = { durationMinutes = it }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = durationText,
-                onValueChange = { 
-                    durationText = it
-                    it.toIntOrNull()?.let { minutes -> durationMinutes = minutes }
-                },
-                label = { Text("Duration (minutes)") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Activity Name (e.g. Walking, Yoga)") },
+                modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(16.dp))

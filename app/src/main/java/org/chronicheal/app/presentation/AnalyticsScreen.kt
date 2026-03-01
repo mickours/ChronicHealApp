@@ -34,6 +34,7 @@ import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.patrykandpatrick.vico.core.entry.FloatEntry
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -86,7 +87,13 @@ fun AnalyticsScreen(
                     ) {
                         Icon(Icons.Default.PictureAsPdf, contentDescription = "Export PDF")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = HeaderBlue,
+                    titleContentColor = Color.Black,
+                    navigationIconContentColor = Color.Black,
+                    actionIconContentColor = Color.Black
+                )
             )
         }
     ) { innerPadding ->
