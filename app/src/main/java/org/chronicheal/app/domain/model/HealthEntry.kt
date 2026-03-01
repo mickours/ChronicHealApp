@@ -19,5 +19,6 @@ data class HealthEntry(
     val location: String? = null,
     val name: String? = null,
     val value: Double? = null,
-    val unit: String? = null
+    val unit: String? = null,
+    val hasReminder: Boolean = false
 )

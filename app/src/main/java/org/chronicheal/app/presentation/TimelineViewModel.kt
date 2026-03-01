@@ -8,7 +8,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.chronicheal.app.data.notification.ReminderScheduler
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.model.Reminder
+import org.chronicheal.app.domain.repository.ReminderRepository
 import org.chronicheal.app.domain.usecase.AddEntryUseCase
 import org.chronicheal.app.domain.usecase.DeleteEntryUseCase
 import org.chronicheal.app.domain.usecase.GetEntriesUseCase
@@ -20,7 +23,9 @@ class TimelineViewModel @Inject constructor(
     private val getEntriesUseCase: GetEntriesUseCase,
     private val addEntryUseCase: AddEntryUseCase,
     private val deleteEntryUseCase: DeleteEntryUseCase,
-    private val updateEntryUseCase: UpdateEntryUseCase
+    private val updateEntryUseCase: UpdateEntryUseCase,
+    private val reminderRepository: ReminderRepository,
+    private val reminderScheduler: ReminderScheduler
 ) : ViewModel() {
 
     val uiState: StateFlow<TimelineUiState> = getEntriesUseCase()
@@ -34,6 +39,17 @@ class TimelineViewModel @Inject constructor(
     fun addEntry(entry: HealthEntry) {
         viewModelScope.launch {
             addEntryUseCase(entry)
+        }
+    }
+
+    fun addEntryWithReminder(entry: HealthEntry, reminder: Reminder) {
+        viewModelScope.launch {
+            addEntryUseCase(entry)
+            val id = reminderRepository.insertReminder(reminder)
+            val savedReminder = reminder.copy(id = id)
+            if (savedReminder.isEnabled) {
+                reminderScheduler.schedule(savedReminder)
+            }
         }
     }
 

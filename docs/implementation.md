@@ -30,9 +30,10 @@ Goal: Interactive tools and notifications.
 - **Interactive Silhouette**: Tap on body regions to pre-fill location in logs.
 
 ### 2. Reminders (Completed)
-- **Exact Scheduling**: Used `AlarmManager` instead of `WorkManager` for reminders. While `WorkManager` is great for background processing, `AlarmManager` is preferred for health apps to guarantee exact delivery times for medications and appointments, even when the device is idle.
-- **Notifications**: Local system notifications with a dedicated "Reminders" channel.
-- **Persistence**: Reminders are automatically rescheduled after device reboot via `BootReceiver`.
+- **Exact Scheduling**: Used `AlarmManager` for high-precision health reminders.
+- **Integrated Creation**: Users can now set reminders directly from the Medication and Medical Appointment entry screens.
+- **Visual Feedback**: Entries with associated reminders now display a bell icon (`NotificationsActive`) in the Timeline.
+- **Persistence**: Reminders survive device reboots via `BootReceiver`.
 
 ## Phase 5: Polish and Privacy (Current)
 - Biometric Lock.

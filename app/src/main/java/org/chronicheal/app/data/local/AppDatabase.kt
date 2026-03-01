@@ -6,7 +6,7 @@ import androidx.room.TypeConverters
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
 
-@Database(entities = [HealthEntry::class, Reminder::class], version = 2, exportSchema = false)
+@Database(entities = [HealthEntry::class, Reminder::class], version = 3, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun entryDao(): EntryDao

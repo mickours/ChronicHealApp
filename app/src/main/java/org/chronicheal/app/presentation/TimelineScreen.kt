@@ -201,11 +201,22 @@ fun EntryItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = entry.type.name.replace("_", " ").lowercase()
-                            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = entry.type.name.replace("_", " ").lowercase()
+                                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        if (entry.hasReminder) {
+                            Spacer(Modifier.width(8.dp))
+                            Icon(
+                                imageVector = Icons.Default.NotificationsActive,
+                                contentDescription = "Reminder set",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                     Text(
                         text = formatter.format(entry.timestamp),
                         style = MaterialTheme.typography.bodySmall
