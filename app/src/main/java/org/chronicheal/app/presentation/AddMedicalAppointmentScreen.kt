@@ -50,6 +50,12 @@ fun AddMedicalAppointmentScreen(
                 purpose = entry.location ?: ""
                 note = entry.note
                 setReminder = entry.hasReminder
+                
+                if (entry.hasReminder && entry.reminderId != null) {
+                    viewModel.getReminderById(entry.reminderId)?.let { reminder ->
+                        reminderTime = reminder.time
+                    }
+                }
             }
         }
     }
@@ -109,25 +115,26 @@ fun AddMedicalAppointmentScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            if (id == null) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Checkbox(
-                        checked = setReminder,
-                        onCheckedChange = { setReminder = it }
-                    )
-                    Text("Set daily reminder for this appointment", style = MaterialTheme.typography.bodyLarge)
-                }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Checkbox(
+                    checked = setReminder,
+                    onCheckedChange = { setReminder = it }
+                )
+                Text(
+                    text = if (existingEntry?.hasReminder == true) "Update daily reminder" else "Set daily reminder for this appointment",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
 
-                if (setReminder) {
-                    OutlinedButton(
-                        onClick = { showTimePicker = true },
-                        modifier = Modifier.padding(start = 32.dp)
-                    ) {
-                        Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
-                    }
+            if (setReminder) {
+                OutlinedButton(
+                    onClick = { showTimePicker = true },
+                    modifier = Modifier.padding(start = 32.dp)
+                ) {
+                    Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
                 }
             }
 
@@ -158,23 +165,29 @@ fun AddMedicalAppointmentScreen(
                         name = doctorName,
                         location = purpose,
                         note = finalNote,
-                        hasReminder = if (id == null) setReminder else existingEntry?.hasReminder ?: false
+                        hasReminder = setReminder,
+                        reminderId = existingEntry?.reminderId
                     )
 
-                    if (id == null) {
-                        if (setReminder) {
-                            val reminder = Reminder(
-                                title = "Appointment with $doctorName",
-                                time = reminderTime,
-                                daysOfWeek = (1..7).toSet(),
-                                entryType = EntryType.MEDICAL_APPOINTMENT
-                            )
+                    if (setReminder) {
+                        val reminder = Reminder(
+                            id = existingEntry?.reminderId ?: 0,
+                            title = "Appointment with $doctorName",
+                            time = reminderTime,
+                            daysOfWeek = (1..7).toSet(),
+                            entryType = EntryType.MEDICAL_APPOINTMENT
+                        )
+                        if (id == null) {
                             viewModel.addEntryWithReminder(entry, reminder)
                         } else {
-                            viewModel.addEntry(entry)
+                            viewModel.updateEntryWithReminder(entry, reminder)
                         }
                     } else {
-                        viewModel.updateEntry(entry)
+                        if (id == null) {
+                            viewModel.addEntry(entry)
+                        } else {
+                            viewModel.updateEntry(entry)
+                        }
                     }
                     onSaveSuccess()
                 },

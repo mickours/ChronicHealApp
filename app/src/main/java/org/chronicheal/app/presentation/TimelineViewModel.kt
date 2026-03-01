@@ -22,6 +22,7 @@ class TimelineViewModel @Inject constructor(
     private val deleteEntryUseCase: DeleteEntryUseCase,
     private val updateEntryUseCase: UpdateEntryUseCase,
     private val getEntryByIdUseCase: GetEntryByIdUseCase,
+    private val getReminderByIdUseCase: GetReminderByIdUseCase,
     private val reminderRepository: ReminderRepository,
     private val reminderScheduler: ReminderScheduler
 ) : ViewModel() {
@@ -44,18 +45,29 @@ class TimelineViewModel @Inject constructor(
 
     fun addEntryWithReminder(entry: HealthEntry, reminder: Reminder) {
         viewModelScope.launch {
-            addEntryUseCase(entry)
-            val id = reminderRepository.insertReminder(reminder)
-            val savedReminder = reminder.copy(id = id)
+            val reminderId = reminderRepository.insertReminder(reminder)
+            val savedReminder = reminder.copy(id = reminderId)
             if (savedReminder.isEnabled) {
                 reminderScheduler.schedule(savedReminder)
             }
+            addEntryUseCase(entry.copy(reminderId = reminderId))
         }
     }
 
     fun updateEntry(entry: HealthEntry) {
         viewModelScope.launch {
             updateEntryUseCase(entry)
+        }
+    }
+
+    fun updateEntryWithReminder(entry: HealthEntry, reminder: Reminder) {
+        viewModelScope.launch {
+            val reminderId = reminderRepository.insertReminder(reminder)
+            val savedReminder = reminder.copy(id = reminderId)
+            if (savedReminder.isEnabled) {
+                reminderScheduler.schedule(savedReminder)
+            }
+            updateEntryUseCase(entry.copy(reminderId = reminderId))
         }
     }
 
@@ -77,6 +89,10 @@ class TimelineViewModel @Inject constructor(
 
     suspend fun getEntryById(id: Long): HealthEntry? {
         return getEntryByIdUseCase(id)
+    }
+
+    suspend fun getReminderById(id: Long): Reminder? {
+        return getReminderByIdUseCase(id)
     }
 }
 

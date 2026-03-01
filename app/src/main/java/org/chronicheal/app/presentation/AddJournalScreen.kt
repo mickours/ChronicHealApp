@@ -1,30 +1,21 @@
 package org.chronicheal.app.presentation
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.model.Reminder
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,12 +29,22 @@ fun AddJournalScreen(
     var content by remember { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
+    var setReminder by remember { mutableStateOf(false) }
+    var reminderTime by remember { mutableStateOf(LocalTime.now()) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    val timeState = rememberTimePickerState(
+        initialHour = reminderTime.hour,
+        initialMinute = reminderTime.minute
+    )
+
     LaunchedEffect(id) {
         if (id != null) {
             val entry = viewModel.getEntryById(id)
             if (entry != null) {
                 existingEntry = entry
                 content = entry.note
+                setReminder = entry.hasReminder
             }
         }
     }
@@ -70,9 +71,36 @@ fun AddJournalScreen(
                 value = content,
                 onValueChange = { content = it },
                 label = { Text("How are you feeling today?") },
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
                 minLines = 10
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Checkbox(
+                    checked = setReminder,
+                    onCheckedChange = { setReminder = it }
+                )
+                Text(
+                    text = if (existingEntry?.hasReminder == true) "Update daily reminder" else "Set daily journal reminder",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
+            if (setReminder) {
+                OutlinedButton(
+                    onClick = { showTimePicker = true },
+                    modifier = Modifier.padding(start = 32.dp)
+                ) {
+                    Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -92,13 +120,30 @@ fun AddJournalScreen(
                         id = id ?: 0,
                         timestamp = timestamp,
                         type = EntryType.JOURNAL,
-                        note = content
+                        note = content,
+                        hasReminder = setReminder,
+                        reminderId = existingEntry?.reminderId
                     )
 
-                    if (id == null) {
-                        viewModel.addEntry(entry)
+                    if (setReminder) {
+                        val reminder = Reminder(
+                            id = existingEntry?.reminderId ?: 0,
+                            title = "Journal Reminder",
+                            time = reminderTime,
+                            daysOfWeek = (1..7).toSet(),
+                            entryType = EntryType.JOURNAL
+                        )
+                        if (id == null) {
+                            viewModel.addEntryWithReminder(entry, reminder)
+                        } else {
+                            viewModel.updateEntryWithReminder(entry, reminder)
+                        }
                     } else {
-                        viewModel.updateEntry(entry)
+                        if (id == null) {
+                            viewModel.addEntry(entry)
+                        } else {
+                            viewModel.updateEntry(entry)
+                        }
                     }
                     onSaveSuccess()
                 },
@@ -106,6 +151,27 @@ fun AddJournalScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(if (id == null) "Save" else "Update")
+            }
+        }
+
+        if (showTimePicker) {
+            TimePickerDialog(
+                onDismissRequest = { showTimePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        reminderTime = LocalTime.of(timeState.hour, timeState.minute)
+                        showTimePicker = false
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showTimePicker = false }) {
+                        Text("Cancel")
+                    }
+                }
+            ) {
+                TimePicker(state = timeState)
             }
         }
     }
