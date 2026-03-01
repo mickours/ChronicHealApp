@@ -57,11 +57,11 @@ class SvgBodyParser(private val context: Context) {
                                         val path = PathParser.createPathFromPathData(d)
                                         path.transform(currentMatrix)
                                         result.add(SvgPath(partId, path))
-                                    } catch (e: Exception) {
+                                    } catch (_: Exception) {
                                         // Ignore malformed paths
                                     }
                                 }
-                            } else if (tagName == "ellipse") {
+                            } else { // (tagName == "ellipse")
                                 val cx = parser.getAttributeValue(null, "cx")?.toFloatOrNull() ?: 0f
                                 val cy = parser.getAttributeValue(null, "cy")?.toFloatOrNull() ?: 0f
                                 val rx = parser.getAttributeValue(null, "rx")?.toFloatOrNull() ?: 0f
