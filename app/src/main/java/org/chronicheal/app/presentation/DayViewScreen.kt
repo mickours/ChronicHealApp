@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,6 +21,7 @@ import java.time.format.FormatStyle
 fun DayViewScreen(
     dateString: String,
     onBackClick: () -> Unit,
+    onAddEntryClick: (LocalDate) -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -43,6 +45,11 @@ fun DayViewScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { onAddEntryClick(date) }) {
+                Icon(Icons.Default.Add, contentDescription = "Add Entry")
+            }
         }
     ) { innerPadding ->
         if (dayEntries.isEmpty()) {

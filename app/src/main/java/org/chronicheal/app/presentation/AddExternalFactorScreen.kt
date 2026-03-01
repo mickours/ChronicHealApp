@@ -26,10 +26,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddExternalFactorScreen(
+    dateString: String? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -76,8 +80,14 @@ fun AddExternalFactorScreen(
 
             Button(
                 onClick = {
+                    val timestamp = if (dateString != null) {
+                        LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                    } else {
+                        java.time.Instant.now()
+                    }
                     viewModel.addEntry(
                         HealthEntry(
+                            timestamp = timestamp,
                             type = EntryType.EXTERNAL_FACTOR,
                             name = factorName,
                             note = note
