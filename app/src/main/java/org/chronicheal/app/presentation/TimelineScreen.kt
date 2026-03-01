@@ -1,10 +1,7 @@
 package org.chronicheal.app.presentation
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -17,14 +14,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.time.format.TextStyle
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +39,10 @@ fun TimelineScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    val timelineItems = remember(uiState.entries) {
+        buildTimelineItems(uiState.entries)
+    }
 
     Scaffold(
         topBar = {
@@ -74,14 +80,108 @@ fun TimelineScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                items(uiState.entries) { entry ->
-                    EntryItem(
-                        entry = entry,
-                        onDeleteClick = { viewModel.deleteEntry(entry) }
-                    )
+                items(timelineItems) { item ->
+                    when (item) {
+                        is TimelineItem.YearHeader -> YearHeader(item.year)
+                        is TimelineItem.MonthHeader -> MonthHeader(item.month)
+                        is TimelineItem.DayHeader -> DayHeader(item.day)
+                        is TimelineItem.Entry -> EntryItem(
+                            entry = item.entry,
+                            onDeleteClick = { viewModel.deleteEntry(item.entry) }
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+sealed class TimelineItem {
+    data class YearHeader(val year: Int) : TimelineItem()
+    data class MonthHeader(val month: String) : TimelineItem()
+    data class DayHeader(val day: String) : TimelineItem()
+    data class Entry(val entry: HealthEntry) : TimelineItem()
+}
+
+fun buildTimelineItems(entries: List<HealthEntry>): List<TimelineItem> {
+    val items = mutableListOf<TimelineItem>()
+    var lastYear = -1
+    var lastMonth = -1
+    var lastDay = -1
+
+    val zoneId = ZoneId.systemDefault()
+
+    entries.forEach { entry ->
+        val dateTime = entry.timestamp.atZone(zoneId)
+        val year = dateTime.year
+        val month = dateTime.monthValue
+        val day = dateTime.dayOfMonth
+
+        if (year != lastYear) {
+            items.add(TimelineItem.YearHeader(year))
+            lastYear = year
+            lastMonth = -1
+            lastDay = -1
+        }
+        if (month != lastMonth) {
+            items.add(TimelineItem.MonthHeader(dateTime.month.getDisplayName(TextStyle.FULL, Locale.getDefault())))
+            lastMonth = month
+            lastDay = -1
+        }
+        if (day != lastDay) {
+            items.add(TimelineItem.DayHeader(dateTime.format(DateTimeFormatter.ofPattern("EEEE d"))))
+            lastDay = day
+        }
+        items.add(TimelineItem.Entry(entry))
+    }
+    return items
+}
+
+@Composable
+fun YearHeader(year: Int) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, bottom = 8.dp, start = 16.dp, end = 16.dp)
+    ) {
+        Text(
+            text = year.toString(),
+            style = MaterialTheme.typography.headlineLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+fun MonthHeader(month: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 4.dp, start = 16.dp, end = 16.dp)
+    ) {
+        Text(
+            text = month,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.secondary
+        )
+    }
+}
+
+@Composable
+fun DayHeader(day: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp, bottom = 4.dp, start = 16.dp, end = 16.dp)
+    ) {
+        Text(
+            text = day,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.outline
+        )
     }
 }
 
@@ -91,13 +191,13 @@ fun EntryItem(
     onDeleteClick: () -> Unit
 ) {
     val formatter = DateTimeFormatter
-        .ofLocalizedDateTime(FormatStyle.MEDIUM)
+        .ofLocalizedTime(FormatStyle.SHORT)
         .withZone(ZoneId.systemDefault())
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
