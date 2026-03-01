@@ -1,5 +1,7 @@
 package org.chronicheal.app.presentation
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -7,15 +9,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
@@ -31,6 +32,8 @@ import com.patrykandpatrick.vico.core.chart.line.LineChart
 import com.patrykandpatrick.vico.core.component.shape.Shapes
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.patrykandpatrick.vico.core.entry.FloatEntry
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -43,14 +46,45 @@ fun AnalyticsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val timeRange by viewModel.timeRange.collectAsState()
     val startDate by viewModel.startDate.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val createPdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                context.contentResolver.openOutputStream(it)?.use { outputStream ->
+                    viewModel.exportPdf(outputStream)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.message.collectLatest {
+            snackbarHostState.showSnackbar(it)
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Analytics") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(
+                        onClick = { createPdfLauncher.launch("chronicheal_report_${startDate}.pdf") },
+                        enabled = !isLoading
+                    ) {
+                        Icon(Icons.Default.PictureAsPdf, contentDescription = "Export PDF")
                     }
                 }
             )
@@ -70,6 +104,10 @@ fun AnalyticsScreen(
                 onRangeChange = viewModel::setTimeRange,
                 onMovePeriod = viewModel::movePeriod
             )
+
+            if (isLoading) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
 
             HorizontalDivider()
 
@@ -159,7 +197,7 @@ fun TimeRangeSelector(
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(onClick = { onMovePeriod(-1) }) {
-                Icon(Icons.Default.ChevronLeft, contentDescription = "Previous")
+                Icon(androidx.compose.material.icons.Icons.Default.ChevronLeft, contentDescription = "Previous")
             }
             
             val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
@@ -170,7 +208,7 @@ fun TimeRangeSelector(
             )
 
             IconButton(onClick = { onMovePeriod(1) }) {
-                Icon(Icons.Default.ChevronRight, contentDescription = "Next")
+                Icon(androidx.compose.material.icons.Icons.Default.ChevronRight, contentDescription = "Next")
             }
         }
 

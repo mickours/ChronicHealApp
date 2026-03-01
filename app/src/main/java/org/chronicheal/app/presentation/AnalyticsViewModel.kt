@@ -4,9 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.usecase.ExportPdfUseCase
 import org.chronicheal.app.domain.usecase.GetEntriesUseCase
+import java.io.OutputStream
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
@@ -14,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
-    private val getEntriesUseCase: GetEntriesUseCase
+    private val getEntriesUseCase: GetEntriesUseCase,
+    private val exportPdfUseCase: ExportPdfUseCase
 ) : ViewModel() {
 
     private val _timeRange = MutableStateFlow(TimeRange.WEEK)
@@ -22,6 +26,12 @@ class AnalyticsViewModel @Inject constructor(
 
     private val _startDate = MutableStateFlow(LocalDate.now().minusDays(6))
     val startDate = _startDate.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
+    private val _message = MutableSharedFlow<String>()
+    val message = _message.asSharedFlow()
 
     val uiState: StateFlow<AnalyticsUiState> = combine(
         getEntriesUseCase(),
@@ -61,6 +71,24 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 
+    suspend fun exportPdf(outputStream: OutputStream) {
+        _isLoading.value = true
+        try {
+            val start = _startDate.value
+            val end = when (_timeRange.value) {
+                TimeRange.WEEK -> start.plusDays(6)
+                TimeRange.MONTH -> start.plusMonths(1).minusDays(1)
+                TimeRange.YEAR -> start.plusYears(1).minusDays(1)
+            }
+            exportPdfUseCase(outputStream, start, end)
+            _message.emit("PDF exported successfully")
+        } catch (e: Exception) {
+            _message.emit("Failed to export PDF: ${e.message}")
+        } finally {
+            _isLoading.value = false
+        }
+    }
+
     private fun filterEntries(entries: List<HealthEntry>, range: TimeRange, start: LocalDate): List<HealthEntry> {
         val end = when (range) {
             TimeRange.WEEK -> start.plusDays(7)
@@ -81,7 +109,6 @@ class AnalyticsViewModel @Inject constructor(
                 dayEntries.mapNotNull { it.intensity }.average().toInt()
             }
         
-        // Fill missing days with 0 for the chart to be continuous
         val result = mutableMapOf<LocalDate, Int>()
         val daysCount = when (range) {
             TimeRange.WEEK -> 7L
