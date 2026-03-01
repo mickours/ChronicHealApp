@@ -34,6 +34,11 @@ Goal: Interactive tools and notifications.
 
 ### 1. Symptom Body Scan (Completed)
 - **Interactive Silhouette**: Tap on body regions to pre-fill location in logs.
+- **SVG Integration**: Replaced the hardcoded humanoid drawing with a professional SVG-based silhouette.
+    - **Asset Management**: Moved `body-shape.svg` to the `assets` folder for raw parsing.
+    - **Custom Parser**: Developed `SvgBodyParser` using `XmlPullParser` and `PathParser` to convert SVG elements into `android.graphics.Path` objects while preserving element IDs.
+    - **Precise Hit Detection**: Implemented path-based hit detection using `android.graphics.Region`, allowing users to interact with complex anatomical shapes accurately.
+    - **Auto-scaling**: Silhouette automatically scales to fit the screen while maintaining aspect ratio.
 
 ### 2. Reminders (Completed)
 - **Exact Scheduling**: Used `AlarmManager` for high-precision health reminders.

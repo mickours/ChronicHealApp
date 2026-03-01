@@ -9,7 +9,26 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
-import org.chronicheal.app.presentation.*
+import org.chronicheal.app.presentation.AddActivityScreen
+import org.chronicheal.app.presentation.AddDiseaseScreen
+import org.chronicheal.app.presentation.AddDrugScreen
+import org.chronicheal.app.presentation.AddExternalFactorScreen
+import org.chronicheal.app.presentation.AddJournalScreen
+import org.chronicheal.app.presentation.AddMealScreen
+import org.chronicheal.app.presentation.AddMedicalAppointmentScreen
+import org.chronicheal.app.presentation.AddPainScreen
+import org.chronicheal.app.presentation.AddReminderScreen
+import org.chronicheal.app.presentation.AddSleepScreen
+import org.chronicheal.app.presentation.AddSymptomScreen
+import org.chronicheal.app.presentation.AnalyticsScreen
+import org.chronicheal.app.presentation.BodyScanScreen
+import org.chronicheal.app.presentation.CalendarScreen
+import org.chronicheal.app.presentation.DayViewScreen
+import org.chronicheal.app.presentation.EntryTypeSelectionScreen
+import org.chronicheal.app.presentation.RemindersScreen
+import org.chronicheal.app.presentation.SettingsScreen
+import org.chronicheal.app.presentation.TimelineScreen
+import org.chronicheal.app.presentation.TimelineViewModel
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -72,7 +91,7 @@ fun NavGraph(navController: NavHostController) {
             BodyScanScreen(
                 onBackClick = { navController.popBackStack() },
                 onRegionClick = { region ->
-                    navController.navigate(Screen.EntryTypeSelection.createRoute(location = region))
+                    navController.navigate(Screen.AddPain.createRoute(location = region))
                 }
             )
         }

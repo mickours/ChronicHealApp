@@ -2,20 +2,38 @@ package org.chronicheal.app.presentation
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import org.chronicheal.app.presentation.util.SvgBodyParser
+import org.chronicheal.app.presentation.util.SvgPath
+import org.chronicheal.app.ui.theme.HeaderBlue
+import org.chronicheal.app.ui.theme.PrimaryOrange
+import android.graphics.RectF
+import androidx.compose.ui.graphics.nativeCanvas
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,32 +49,22 @@ fun BodyScanScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = HeaderBlue,
+                    titleContentColor = Color.Black,
+                    navigationIconContentColor = Color.Black
+                )
             )
         }
     ) { innerPadding ->
-        Column(
+        BodySilhouette(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Tap on a body part to log pain or symptom",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.outline
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-
-            BodySilhouette(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                onRegionClick = onRegionClick
-            )
-        }
+            onRegionClick = onRegionClick
+        )
     }
 }
 
@@ -65,111 +73,97 @@ fun BodySilhouette(
     modifier: Modifier = Modifier,
     onRegionClick: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    var svgPaths by remember { mutableStateOf<List<SvgPath>>(emptyList()) }
+    var bounds by remember { mutableStateOf(RectF()) }
+
+    LaunchedEffect(Unit) {
+        val parser = SvgBodyParser(context)
+        val paths = parser.parse("body-shape.svg")
+        svgPaths = paths
+        
+        val allBounds = RectF()
+        paths.forEach { 
+            val pBounds = RectF()
+            it.path.computeBounds(pBounds, true)
+            allBounds.union(pBounds)
+        }
+        bounds = allBounds
+    }
+
+    if (svgPaths.isEmpty()) return
+
     Canvas(
         modifier = modifier
-            .pointerInput(Unit) {
+            .pointerInput(svgPaths, bounds) {
                 detectTapGestures { offset ->
-                    val canvasSize = Size(size.width.toFloat(), size.height.toFloat())
-                    val region = detectRegion(offset, canvasSize)
-                    if (region != null) {
-                        onRegionClick(region)
+                    val scaleX = size.width / bounds.width()
+                    val scaleY = size.height / bounds.height()
+                    val scale = minOf(scaleX, scaleY)
+                    
+                    val offsetX = (size.width - bounds.width() * scale) / 2f
+                    val offsetY = (size.height - bounds.height() * scale) / 2f
+
+                    val invertedX = (offset.x - offsetX) / scale + bounds.left
+                    val invertedY = (offset.y - offsetY) / scale + bounds.top
+
+                    val region = svgPaths.findLast { svgPath ->
+                        val region = android.graphics.Region()
+                        val clip = android.graphics.Region(
+                            (invertedX - 1).toInt(), 
+                            (invertedY - 1).toInt(), 
+                            (invertedX + 1).toInt(), 
+                            (invertedY + 1).toInt()
+                        )
+                        region.setPath(svgPath.path, clip)
+                        !region.isEmpty
                     }
+                    
+                    region?.let { onRegionClick(formatId(it.id)) }
                 }
             }
     ) {
-        val strokeWidth = 2.dp.toPx()
-        val bodyColor = Color.LightGray
+        val scaleX = size.width / bounds.width()
+        val scaleY = size.height / bounds.height()
+        val scale = minOf(scaleX, scaleY)
         
-        drawBody(bodyColor, strokeWidth)
+        val offsetX = (size.width - bounds.width() * scale) / 2f
+        val offsetY = (size.height - bounds.height() * scale) / 2f
+
+        val strokeWidth = 1.dp.toPx()
+        val fillBrush = Brush.verticalGradient(
+            colors = listOf(
+                PrimaryOrange.copy(alpha = 0.9f),
+                PrimaryOrange.copy(alpha = 0.4f)
+            )
+        )
+
+        drawContext.canvas.nativeCanvas.save()
+        drawContext.canvas.nativeCanvas.translate(offsetX, offsetY)
+        drawContext.canvas.nativeCanvas.scale(scale, scale)
+        drawContext.canvas.nativeCanvas.translate(-bounds.left, -bounds.top)
+
+        svgPaths.forEach { svgPath ->
+            val composePath = svgPath.path.asComposePath()
+            // Draw fill
+            drawPath(
+                path = composePath,
+                brush = fillBrush
+            )
+            // Draw stroke
+            drawPath(
+                path = composePath,
+                color = Color.Black,
+                style = Stroke(width = strokeWidth / scale)
+            )
+        }
+        drawContext.canvas.nativeCanvas.restore()
     }
 }
 
-private fun DrawScope.drawBody(color: Color, strokeWidth: Float) {
-    val centerX = size.width / 2
-    val headRadius = size.width * 0.1f
-    val bodyWidth = size.width * 0.3f
-    val bodyHeight = size.height * 0.4f
-    
-    // Head
-    drawCircle(
-        color = color,
-        radius = headRadius,
-        center = Offset(centerX, margin + headRadius),
-        style = Stroke(width = strokeWidth)
-    )
-    
-    // Torso
-    drawRect(
-        color = color,
-        topLeft = Offset(centerX - bodyWidth / 2, margin + headRadius * 2 + 10f),
-        size = Size(bodyWidth, bodyHeight),
-        style = Stroke(width = strokeWidth)
-    )
-    
-    // Arms
-    val armWidth = 20f
-    val armHeight = bodyHeight * 0.8f
-    drawRect(
-        color = color,
-        topLeft = Offset(centerX - bodyWidth / 2 - armWidth - 10f, margin + headRadius * 2 + 20f),
-        size = Size(armWidth, armHeight),
-        style = Stroke(width = strokeWidth)
-    )
-    drawRect(
-        color = color,
-        topLeft = Offset(centerX + bodyWidth / 2 + 10f, margin + headRadius * 2 + 20f),
-        size = Size(armWidth, armHeight),
-        style = Stroke(width = strokeWidth)
-    )
-    
-    // Legs
-    val legWidth = bodyWidth * 0.4f
-    val legHeight = size.height * 0.35f
-    drawRect(
-        color = color,
-        topLeft = Offset(centerX - bodyWidth / 2, margin + headRadius * 2 + bodyHeight + 20f),
-        size = Size(legWidth, legHeight),
-        style = Stroke(width = strokeWidth)
-    )
-    drawRect(
-        color = color,
-        topLeft = Offset(centerX + bodyWidth / 2 - legWidth, margin + headRadius * 2 + bodyHeight + 20f),
-        size = Size(legWidth, legHeight),
-        style = Stroke(width = strokeWidth)
-    )
-}
-
-private val margin = 40f
-
-private fun detectRegion(offset: Offset, size: Size): String? {
-    val centerX = size.width / 2
-    val headRadius = size.width * 0.1f
-    val bodyWidth = size.width * 0.3f
-    val bodyHeight = size.height * 0.4f
-    
-    // Check Head
-    val headCenter = Offset(centerX, margin + headRadius)
-    if (offset.distanceTo(headCenter) <= headRadius) return "Head"
-    
-    // Check Torso
-    val torsoTop = margin + headRadius * 2 + 10f
-    if (offset.x in (centerX - bodyWidth / 2)..(centerX + bodyWidth / 2) &&
-        offset.y in torsoTop..(torsoTop + bodyHeight)) return "Torso"
-        
-    // Simple check for arms and legs
-    if (offset.y > torsoTop && offset.y < torsoTop + bodyHeight) {
-        if (offset.x < centerX - bodyWidth / 2) return "Left Arm"
-        if (offset.x > centerX + bodyWidth / 2) return "Right Arm"
-    }
-    
-    if (offset.y > torsoTop + bodyHeight) {
-        if (offset.x in (centerX - bodyWidth / 2)..(centerX)) return "Left Leg"
-        if (offset.x in (centerX)..(centerX + bodyWidth / 2)) return "Right Leg"
-    }
-
-    return null
-}
-
-private fun Offset.distanceTo(other: Offset): Float {
-    return kotlin.math.sqrt((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y))
+private fun formatId(id: String): String {
+    return id.replace("-", " ")
+        .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+        .replace(" R", " (Right)")
+        .replace(" L", " (Left)")
 }
