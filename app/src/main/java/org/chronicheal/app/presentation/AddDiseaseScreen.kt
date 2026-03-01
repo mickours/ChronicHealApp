@@ -1,15 +1,6 @@
 package org.chronicheal.app.presentation
 
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -35,7 +26,6 @@ fun AddDiseaseScreen(
     var intensity by remember { mutableFloatStateOf(5f) }
     var note by remember { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(id) {
         if (id != null) {
@@ -49,33 +39,45 @@ fun AddDiseaseScreen(
         }
     }
 
-    val handleBack = {
-        if (id != null) {
-            viewModel.showMessage("Edition canceled")
-        }
-        onBackClick()
-    }
-
-    BackHandler(onBack = handleBack)
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (id == null) "Log Disease/Condition" else "Edit Disease/Condition") },
-                navigationIcon = {
-                    IconButton(onClick = handleBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (id != null) {
-                        IconButton(onClick = { showDeleteConfirmation = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
-                        }
-                    }
+    AddEntryScaffold(
+        title = if (id == null) "Log Disease/Condition" else "Edit Disease/Condition",
+        id = id,
+        onBackClick = onBackClick,
+        onDeleteClick = {
+            existingEntry?.let { viewModel.deleteEntry(it) }
+            onSaveSuccess()
+        },
+        onSaveClick = {
+            val timestamp = if (id == null) {
+                if (dateString != null) {
+                    LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                } else {
+                    java.time.Instant.now()
                 }
+            } else {
+                existingEntry?.timestamp ?: java.time.Instant.now()
+            }
+
+            val entry = HealthEntry(
+                id = id ?: 0,
+                timestamp = timestamp,
+                type = EntryType.DISEASE,
+                name = name,
+                intensity = intensity.roundToInt(),
+                note = note,
+                isFinished = existingEntry?.isFinished ?: false,
+                durationMinutes = existingEntry?.durationMinutes
             )
-        }
+
+            if (id == null) {
+                viewModel.addEntry(entry)
+            } else {
+                viewModel.updateEntry(entry)
+            }
+            onSaveSuccess()
+        },
+        saveButtonEnabled = name.isNotBlank(),
+        viewModel = viewModel
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -111,68 +113,6 @@ fun AddDiseaseScreen(
                 label = { Text("Notes/Details") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = {
-                    val timestamp = if (id == null) {
-                        if (dateString != null) {
-                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
-                        } else {
-                            java.time.Instant.now()
-                        }
-                    } else {
-                        existingEntry?.timestamp ?: java.time.Instant.now()
-                    }
-
-                    val entry = HealthEntry(
-                        id = id ?: 0,
-                        timestamp = timestamp,
-                        type = EntryType.DISEASE,
-                        name = name,
-                        intensity = intensity.roundToInt(),
-                        note = note,
-                        isFinished = existingEntry?.isFinished ?: false,
-                        durationMinutes = existingEntry?.durationMinutes
-                    )
-
-                    if (id == null) {
-                        viewModel.addEntry(entry)
-                    } else {
-                        viewModel.updateEntry(entry)
-                    }
-                    onSaveSuccess()
-                },
-                enabled = name.isNotBlank(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (id == null) "Save" else "Update")
-            }
-        }
-
-        if (showDeleteConfirmation) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirmation = false },
-                title = { Text("Delete Entry") },
-                text = { Text("Are you sure you want to delete this disease log?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            existingEntry?.let { viewModel.deleteEntry(it) }
-                            showDeleteConfirmation = false
-                            onSaveSuccess()
-                        }
-                    ) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirmation = false }) {
-                        Text("Cancel")
-                    }
-                }
             )
         }
     }

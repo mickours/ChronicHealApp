@@ -1,8 +1,6 @@
 package org.chronicheal.app.presentation
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,21 +43,70 @@ fun AddJournalScreen(
                 existingEntry = entry
                 content = entry.note
                 setReminder = entry.hasReminder
+                
+                if (entry.hasReminder && entry.reminderId != null) {
+                    viewModel.getReminderById(entry.reminderId)?.let { reminder ->
+                        reminderTime = reminder.time
+                    }
+                }
             }
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (id == null) "Journal Entry" else "Edit Journal Entry") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
+    AddEntryScaffold(
+        title = if (id == null) "Journal Entry" else "Edit Journal Entry",
+        id = id,
+        onBackClick = onBackClick,
+        onDeleteClick = {
+            existingEntry?.let { viewModel.deleteEntry(it) }
+            onSaveSuccess()
+        },
+        onSaveClick = {
+            val timestamp = if (id == null) {
+                if (dateString != null) {
+                    LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                } else {
+                    java.time.Instant.now()
                 }
+            } else {
+                existingEntry?.timestamp ?: java.time.Instant.now()
+            }
+
+            val entry = HealthEntry(
+                id = id ?: 0,
+                timestamp = timestamp,
+                type = EntryType.JOURNAL,
+                note = content,
+                hasReminder = setReminder,
+                reminderId = existingEntry?.reminderId,
+                isFinished = existingEntry?.isFinished ?: false,
+                durationMinutes = existingEntry?.durationMinutes
             )
-        }
+
+            if (setReminder) {
+                val reminder = Reminder(
+                    id = existingEntry?.reminderId ?: 0,
+                    title = "Journal Reminder",
+                    time = reminderTime,
+                    daysOfWeek = (1..7).toSet(),
+                    entryType = EntryType.JOURNAL
+                )
+                if (id == null) {
+                    viewModel.addEntryWithReminder(entry, reminder)
+                } else {
+                    viewModel.updateEntryWithReminder(entry, reminder)
+                }
+            } else {
+                if (id == null) {
+                    viewModel.addEntry(entry)
+                } else {
+                    viewModel.updateEntry(entry)
+                }
+            }
+            onSaveSuccess()
+        },
+        saveButtonEnabled = content.isNotBlank(),
+        viewModel = viewModel
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -100,57 +147,6 @@ fun AddJournalScreen(
                 ) {
                     Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
                 }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    val timestamp = if (id == null) {
-                        if (dateString != null) {
-                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
-                        } else {
-                            java.time.Instant.now()
-                        }
-                    } else {
-                        existingEntry?.timestamp ?: java.time.Instant.now()
-                    }
-
-                    val entry = HealthEntry(
-                        id = id ?: 0,
-                        timestamp = timestamp,
-                        type = EntryType.JOURNAL,
-                        note = content,
-                        hasReminder = setReminder,
-                        reminderId = existingEntry?.reminderId
-                    )
-
-                    if (setReminder) {
-                        val reminder = Reminder(
-                            id = existingEntry?.reminderId ?: 0,
-                            title = "Journal Reminder",
-                            time = reminderTime,
-                            daysOfWeek = (1..7).toSet(),
-                            entryType = EntryType.JOURNAL
-                        )
-                        if (id == null) {
-                            viewModel.addEntryWithReminder(entry, reminder)
-                        } else {
-                            viewModel.updateEntryWithReminder(entry, reminder)
-                        }
-                    } else {
-                        if (id == null) {
-                            viewModel.addEntry(entry)
-                        } else {
-                            viewModel.updateEntry(entry)
-                        }
-                    }
-                    onSaveSuccess()
-                },
-                enabled = content.isNotBlank(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (id == null) "Save" else "Update")
             }
         }
 

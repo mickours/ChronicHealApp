@@ -1,14 +1,9 @@
 package org.chronicheal.app.presentation
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -41,7 +36,6 @@ fun AddActivityScreen(
     var setReminder by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf(LocalTime.now()) }
     var showTimePicker by remember { mutableStateOf(false) }
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     val timeState = rememberTimePickerState(
         initialHour = reminderTime.hour,
@@ -71,33 +65,62 @@ fun AddActivityScreen(
         }
     }
 
-    val handleBack = {
-        if (id != null) {
-            viewModel.showMessage("Edition canceled")
-        }
-        onBackClick()
-    }
-
-    BackHandler(onBack = handleBack)
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (id == null) "Log Activity" else "Edit Activity") },
-                navigationIcon = {
-                    IconButton(onClick = handleBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (id != null) {
-                        IconButton(onClick = { showDeleteConfirmation = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
-                        }
-                    }
+    AddEntryScaffold(
+        title = if (id == null) "Log Activity" else "Edit Activity",
+        id = id,
+        onBackClick = onBackClick,
+        onDeleteClick = {
+            existingEntry?.let { viewModel.deleteEntry(it) }
+            onSaveSuccess()
+        },
+        onSaveClick = {
+            val timestamp = if (id == null) {
+                if (dateString != null) {
+                    LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                } else {
+                    java.time.Instant.now()
                 }
+            } else {
+                existingEntry?.timestamp ?: java.time.Instant.now()
+            }
+
+            val entry = HealthEntry(
+                id = id ?: 0,
+                timestamp = timestamp,
+                type = EntryType.ACTIVITY,
+                name = name,
+                durationMinutes = durationMinutes,
+                intensity = intensity.roundToInt(),
+                note = note,
+                hasReminder = setReminder,
+                reminderId = existingEntry?.reminderId,
+                isFinished = existingEntry?.isFinished ?: false
             )
-        }
+
+            if (setReminder) {
+                val reminder = Reminder(
+                    id = existingEntry?.reminderId ?: 0,
+                    title = "Activity: $name",
+                    time = reminderTime,
+                    daysOfWeek = (1..7).toSet(),
+                    entryType = EntryType.ACTIVITY
+                )
+                if (id == null) {
+                    viewModel.addEntryWithReminder(entry, reminder)
+                } else {
+                    viewModel.updateEntryWithReminder(entry, reminder)
+                }
+            } else {
+                if (id == null) {
+                    viewModel.addEntry(entry)
+                } else {
+                    viewModel.updateEntry(entry)
+                }
+            }
+            onSaveSuccess()
+        },
+        saveButtonEnabled = name.isNotBlank(),
+        viewModel = viewModel
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -151,7 +174,7 @@ fun AddActivityScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(
@@ -171,61 +194,6 @@ fun AddActivityScreen(
                 ) {
                     Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
                 }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = {
-                    val timestamp = if (id == null) {
-                        if (dateString != null) {
-                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
-                        } else {
-                            java.time.Instant.now()
-                        }
-                    } else {
-                        existingEntry?.timestamp ?: java.time.Instant.now()
-                    }
-
-                    val entry = HealthEntry(
-                        id = id ?: 0,
-                        timestamp = timestamp,
-                        type = EntryType.ACTIVITY,
-                        name = name,
-                        durationMinutes = durationMinutes,
-                        intensity = intensity.roundToInt(),
-                        note = note,
-                        hasReminder = setReminder,
-                        reminderId = existingEntry?.reminderId,
-                        isFinished = existingEntry?.isFinished ?: false
-                    )
-
-                    if (setReminder) {
-                        val reminder = Reminder(
-                            id = existingEntry?.reminderId ?: 0,
-                            title = "Activity: $name",
-                            time = reminderTime,
-                            daysOfWeek = (1..7).toSet(),
-                            entryType = EntryType.ACTIVITY
-                        )
-                        if (id == null) {
-                            viewModel.addEntryWithReminder(entry, reminder)
-                        } else {
-                            viewModel.updateEntryWithReminder(entry, reminder)
-                        }
-                    } else {
-                        if (id == null) {
-                            viewModel.addEntry(entry)
-                        } else {
-                            viewModel.updateEntry(entry)
-                        }
-                    }
-                    onSaveSuccess()
-                },
-                enabled = name.isNotBlank(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (id == null) "Save" else "Update")
             }
         }
 
@@ -248,30 +216,6 @@ fun AddActivityScreen(
             ) {
                 TimePicker(state = timeState)
             }
-        }
-
-        if (showDeleteConfirmation) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirmation = false },
-                title = { Text("Delete Entry") },
-                text = { Text("Are you sure you want to delete this activity log?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            existingEntry?.let { viewModel.deleteEntry(it) }
-                            showDeleteConfirmation = false
-                            onSaveSuccess()
-                        }
-                    ) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirmation = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
         }
     }
 }

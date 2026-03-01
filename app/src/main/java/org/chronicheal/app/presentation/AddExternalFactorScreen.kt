@@ -1,24 +1,7 @@
 package org.chronicheal.app.presentation
 
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -56,19 +39,45 @@ fun AddExternalFactorScreen(
         }
     }
 
-    BackHandler(onBack = onBackClick)
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (id == null) "Log External Factor" else "Edit External Factor") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
+    AddEntryScaffold(
+        title = if (id == null) "Log External Factor" else "Edit External Factor",
+        id = id,
+        onBackClick = onBackClick,
+        onDeleteClick = {
+            existingEntry?.let { viewModel.deleteEntry(it) }
+            onSaveSuccess()
+        },
+        onSaveClick = {
+            val timestamp = if (id == null) {
+                if (dateString != null) {
+                    LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                } else {
+                    java.time.Instant.now()
                 }
+            } else {
+                existingEntry?.timestamp ?: java.time.Instant.now()
+            }
+
+            val entry = HealthEntry(
+                id = id ?: 0,
+                timestamp = timestamp,
+                type = EntryType.EXTERNAL_FACTOR,
+                name = factorName,
+                intensity = intensity.roundToInt(),
+                note = note,
+                isFinished = existingEntry?.isFinished ?: false,
+                durationMinutes = existingEntry?.durationMinutes
             )
-        }
+
+            if (id == null) {
+                viewModel.addEntry(entry)
+            } else {
+                viewModel.updateEntry(entry)
+            }
+            onSaveSuccess()
+        },
+        saveButtonEnabled = factorName.isNotBlank(),
+        viewModel = viewModel
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -105,42 +114,6 @@ fun AddExternalFactorScreen(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = {
-                    val timestamp = if (id == null) {
-                        if (dateString != null) {
-                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
-                        } else {
-                            java.time.Instant.now()
-                        }
-                    } else {
-                        existingEntry?.timestamp ?: java.time.Instant.now()
-                    }
-
-                    val entry = HealthEntry(
-                        id = id ?: 0,
-                        timestamp = timestamp,
-                        type = EntryType.EXTERNAL_FACTOR,
-                        name = factorName,
-                        intensity = intensity.roundToInt(),
-                        note = note
-                    )
-
-                    if (id == null) {
-                        viewModel.addEntry(entry)
-                    } else {
-                        viewModel.updateEntry(entry)
-                    }
-                    onSaveSuccess()
-                },
-                enabled = factorName.isNotBlank(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (id == null) "Save" else "Update")
-            }
         }
     }
 }

@@ -12,7 +12,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,7 +50,7 @@ fun AddReminderScreen(
     var selectedTime by remember { mutableStateOf(LocalTime.now()) }
     var selectedDays by remember { mutableStateOf(setOf(1, 2, 3, 4, 5, 6, 7)) }
     var selectedType by remember { mutableStateOf<EntryType?>(null) }
-    val showTimePicker = remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
 
     val timeState = rememberTimePickerState(
         initialHour = selectedTime.hour,
@@ -105,7 +104,7 @@ fun AddReminderScreen(
             Text("Time", style = MaterialTheme.typography.titleMedium)
             
             Button(
-                onClick = { showTimePicker.value = true },
+                onClick = { showTimePicker = true },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -159,19 +158,19 @@ fun AddReminderScreen(
             }
         }
 
-        if (showTimePicker.value) {
+        if (showTimePicker) {
             TimePickerDialog(
-                onDismissRequest = { showTimePicker.value = false },
+                onDismissRequest = { showTimePicker = false },
                 confirmButton = {
                     TextButton(onClick = {
                         selectedTime = LocalTime.of(timeState.hour, timeState.minute)
-                        showTimePicker.value = false
+                        showTimePicker = false
                     }) {
                         Text("OK")
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { showTimePicker.value = false }) {
+                    TextButton(onClick = { showTimePicker = false }) {
                         Text("Cancel")
                     }
                 }
@@ -180,19 +179,4 @@ fun AddReminderScreen(
             }
         }
     }
-}
-
-@Composable
-fun TimePickerDialog(
-    onDismissRequest: () -> Unit,
-    confirmButton: @Composable () -> Unit,
-    dismissButton: @Composable () -> Unit,
-    content: @Composable () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        confirmButton = confirmButton,
-        dismissButton = dismissButton,
-        text = { content() }
-    )
 }

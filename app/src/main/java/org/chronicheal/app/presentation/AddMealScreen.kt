@@ -1,13 +1,8 @@
 package org.chronicheal.app.presentation
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -35,7 +30,6 @@ fun AddMealScreen(
     var setReminder by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf(LocalTime.now()) }
     var showTimePicker by remember { mutableStateOf(false) }
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     val timeState = rememberTimePickerState(
         initialHour = reminderTime.hour,
@@ -60,33 +54,61 @@ fun AddMealScreen(
         }
     }
 
-    val handleBack = {
-        if (id != null) {
-            viewModel.showMessage("Edition canceled")
-        }
-        onBackClick()
-    }
-
-    BackHandler(onBack = handleBack)
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (id == null) "Log Meal" else "Edit Meal") },
-                navigationIcon = {
-                    IconButton(onClick = handleBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    if (id != null) {
-                        IconButton(onClick = { showDeleteConfirmation = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
-                        }
-                    }
+    AddEntryScaffold(
+        title = if (id == null) "Log Meal" else "Edit Meal",
+        id = id,
+        onBackClick = onBackClick,
+        onDeleteClick = {
+            existingEntry?.let { viewModel.deleteEntry(it) }
+            onSaveSuccess()
+        },
+        onSaveClick = {
+            val timestamp = if (id == null) {
+                if (dateString != null) {
+                    LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                } else {
+                    java.time.Instant.now()
                 }
+            } else {
+                existingEntry?.timestamp ?: java.time.Instant.now()
+            }
+
+            val entry = HealthEntry(
+                id = id ?: 0,
+                timestamp = timestamp,
+                type = EntryType.MEAL,
+                name = name,
+                note = note,
+                hasReminder = setReminder,
+                reminderId = existingEntry?.reminderId,
+                isFinished = existingEntry?.isFinished ?: false,
+                durationMinutes = existingEntry?.durationMinutes
             )
-        }
+
+            if (setReminder) {
+                val reminder = Reminder(
+                    id = existingEntry?.reminderId ?: 0,
+                    title = "Meal: $name",
+                    time = reminderTime,
+                    daysOfWeek = (1..7).toSet(),
+                    entryType = EntryType.MEAL
+                )
+                if (id == null) {
+                    viewModel.addEntryWithReminder(entry, reminder)
+                } else {
+                    viewModel.updateEntryWithReminder(entry, reminder)
+                }
+            } else {
+                if (id == null) {
+                    viewModel.addEntry(entry)
+                } else {
+                    viewModel.updateEntry(entry)
+                }
+            }
+            onSaveSuccess()
+        },
+        saveButtonEnabled = name.isNotBlank(),
+        viewModel = viewModel
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -114,7 +136,7 @@ fun AddMealScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(
@@ -134,60 +156,6 @@ fun AddMealScreen(
                 ) {
                     Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
                 }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = {
-                    val timestamp = if (id == null) {
-                        if (dateString != null) {
-                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
-                        } else {
-                            java.time.Instant.now()
-                        }
-                    } else {
-                        existingEntry?.timestamp ?: java.time.Instant.now()
-                    }
-
-                    val entry = HealthEntry(
-                        id = id ?: 0,
-                        timestamp = timestamp,
-                        type = EntryType.MEAL,
-                        name = name,
-                        note = note,
-                        hasReminder = setReminder,
-                        reminderId = existingEntry?.reminderId,
-                        isFinished = existingEntry?.isFinished ?: false,
-                        durationMinutes = existingEntry?.durationMinutes
-                    )
-
-                    if (setReminder) {
-                        val reminder = Reminder(
-                            id = existingEntry?.reminderId ?: 0,
-                            title = "Meal: $name",
-                            time = reminderTime,
-                            daysOfWeek = (1..7).toSet(),
-                            entryType = EntryType.MEAL
-                        )
-                        if (id == null) {
-                            viewModel.addEntryWithReminder(entry, reminder)
-                        } else {
-                            viewModel.updateEntryWithReminder(entry, reminder)
-                        }
-                    } else {
-                        if (id == null) {
-                            viewModel.addEntry(entry)
-                        } else {
-                            viewModel.updateEntry(entry)
-                        }
-                    }
-                    onSaveSuccess()
-                },
-                enabled = name.isNotBlank(),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (id == null) "Save" else "Update")
             }
         }
 
@@ -210,30 +178,6 @@ fun AddMealScreen(
             ) {
                 TimePicker(state = timeState)
             }
-        }
-
-        if (showDeleteConfirmation) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirmation = false },
-                title = { Text("Delete Entry") },
-                text = { Text("Are you sure you want to delete this meal log?") },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            existingEntry?.let { viewModel.deleteEntry(it) }
-                            showDeleteConfirmation = false
-                            onSaveSuccess()
-                        }
-                    ) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDeleteConfirmation = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
         }
     }
 }
