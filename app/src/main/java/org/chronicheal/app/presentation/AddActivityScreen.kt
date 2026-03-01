@@ -2,12 +2,15 @@ package org.chronicheal.app.presentation
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
@@ -29,7 +32,8 @@ fun AddActivityScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
-    var duration by remember { mutableStateOf("") }
+    var durationText by remember { mutableStateOf("") }
+    var durationMinutes by remember { mutableIntStateOf(EntryType.ACTIVITY.defaultDurationMinutes) }
     var intensity by remember { mutableFloatStateOf(3f) }
     var note by remember { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
@@ -37,6 +41,7 @@ fun AddActivityScreen(
     var setReminder by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf(LocalTime.now()) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     val timeState = rememberTimePickerState(
         initialHour = reminderTime.hour,
@@ -49,7 +54,8 @@ fun AddActivityScreen(
             if (entry != null) {
                 existingEntry = entry
                 name = entry.name ?: ""
-                duration = entry.unit ?: ""
+                durationMinutes = entry.durationMinutes ?: EntryType.ACTIVITY.defaultDurationMinutes
+                durationText = durationMinutes.toString()
                 intensity = entry.intensity?.toFloat() ?: 3f
                 note = entry.note
                 setReminder = entry.hasReminder
@@ -60,6 +66,8 @@ fun AddActivityScreen(
                     }
                 }
             }
+        } else {
+            durationText = durationMinutes.toString()
         }
     }
 
@@ -79,6 +87,13 @@ fun AddActivityScreen(
                 navigationIcon = {
                     IconButton(onClick = handleBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (id != null) {
+                        IconButton(onClick = { showDeleteConfirmation = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
                     }
                 }
             )
@@ -100,10 +115,14 @@ fun AddActivityScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = duration,
-                onValueChange = { duration = it },
-                label = { Text("Duration (e.g. 30 min)") },
-                modifier = Modifier.fillMaxWidth()
+                value = durationText,
+                onValueChange = { 
+                    durationText = it
+                    it.toIntOrNull()?.let { minutes -> durationMinutes = minutes }
+                },
+                label = { Text("Duration (minutes)") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -173,11 +192,12 @@ fun AddActivityScreen(
                         timestamp = timestamp,
                         type = EntryType.ACTIVITY,
                         name = name,
-                        unit = duration,
+                        durationMinutes = durationMinutes,
                         intensity = intensity.roundToInt(),
                         note = note,
                         hasReminder = setReminder,
-                        reminderId = existingEntry?.reminderId
+                        reminderId = existingEntry?.reminderId,
+                        isFinished = existingEntry?.isFinished ?: false
                     )
 
                     if (setReminder) {
@@ -228,6 +248,30 @@ fun AddActivityScreen(
             ) {
                 TimePicker(state = timeState)
             }
+        }
+
+        if (showDeleteConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmation = false },
+                title = { Text("Delete Entry") },
+                text = { Text("Are you sure you want to delete this activity log?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            existingEntry?.let { viewModel.deleteEntry(it) }
+                            showDeleteConfirmation = false
+                            onSaveSuccess()
+                        }
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmation = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

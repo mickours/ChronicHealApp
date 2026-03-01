@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +35,7 @@ fun AddDrugScreen(
     var setReminder by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf(LocalTime.now()) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
     val timeState = rememberTimePickerState(
@@ -76,6 +78,13 @@ fun AddDrugScreen(
                 navigationIcon = {
                     IconButton(onClick = handleBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (id != null) {
+                        IconButton(onClick = { showDeleteConfirmation = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
                     }
                 }
             )
@@ -160,7 +169,9 @@ fun AddDrugScreen(
                         unit = dosage,
                         note = note,
                         hasReminder = setReminder,
-                        reminderId = existingEntry?.reminderId
+                        reminderId = existingEntry?.reminderId,
+                        isFinished = existingEntry?.isFinished ?: false,
+                        durationMinutes = existingEntry?.durationMinutes
                     )
 
                     if (setReminder) {
@@ -211,6 +222,30 @@ fun AddDrugScreen(
             ) {
                 TimePicker(state = timeState)
             }
+        }
+
+        if (showDeleteConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmation = false },
+                title = { Text("Delete Entry") },
+                text = { Text("Are you sure you want to delete this medication log?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            existingEntry?.let { viewModel.deleteEntry(it) }
+                            showDeleteConfirmation = false
+                            onSaveSuccess()
+                        }
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmation = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

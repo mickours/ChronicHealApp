@@ -3,11 +3,7 @@ package org.chronicheal.app.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.chronicheal.app.data.notification.ReminderScheduler
 import org.chronicheal.app.domain.model.HealthEntry
@@ -29,6 +25,7 @@ class TimelineViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var recentlyDeletedEntry: HealthEntry? = null
+
     private val _message = MutableStateFlow<String?>(null)
 
     val uiState: StateFlow<TimelineUiState> = combine(
@@ -36,8 +33,7 @@ class TimelineViewModel @Inject constructor(
         _message
     ) { entries, message ->
         TimelineUiState(entries = entries, message = message)
-    }
-    .stateIn(
+    }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = TimelineUiState()
@@ -84,6 +80,13 @@ class TimelineViewModel @Inject constructor(
         }
     }
 
+    fun markEntryAsFinished(entry: HealthEntry) {
+        viewModelScope.launch {
+            updateEntryUseCase(entry.copy(isFinished = true))
+            showMessage("${entry.type.name} marked as finished")
+        }
+    }
+
     fun restoreDeletedEntry() {
         viewModelScope.launch {
             recentlyDeletedEntry?.let {
@@ -93,20 +96,20 @@ class TimelineViewModel @Inject constructor(
         }
     }
 
-    fun showMessage(msg: String) {
-        _message.value = msg
-    }
-
-    fun clearMessage() {
-        _message.value = null
-    }
-
     suspend fun getEntryById(id: Long): HealthEntry? {
         return getEntryByIdUseCase(id)
     }
 
     suspend fun getReminderById(id: Long): Reminder? {
         return getReminderByIdUseCase(id)
+    }
+
+    fun showMessage(message: String) {
+        _message.value = message
+    }
+
+    fun clearMessage() {
+        _message.value = null
     }
 }
 

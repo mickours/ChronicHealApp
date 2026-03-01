@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -30,6 +31,7 @@ fun AddPainScreen(
     var location by remember { mutableStateOf(locationString ?: "") }
     var note by remember { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(id) {
         if (id != null) {
@@ -59,6 +61,13 @@ fun AddPainScreen(
                 navigationIcon = {
                     IconButton(onClick = handleBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (id != null) {
+                        IconButton(onClick = { showDeleteConfirmation = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
                     }
                 }
             )
@@ -120,7 +129,9 @@ fun AddPainScreen(
                         type = EntryType.PAIN,
                         intensity = intensity.roundToInt(),
                         location = location,
-                        note = note
+                        note = note,
+                        isFinished = existingEntry?.isFinished ?: false,
+                        durationMinutes = existingEntry?.durationMinutes
                     )
 
                     if (id == null) {
@@ -134,6 +145,30 @@ fun AddPainScreen(
             ) {
                 Text(if (id == null) "Save" else "Update")
             }
+        }
+
+        if (showDeleteConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmation = false },
+                title = { Text("Delete Entry") },
+                text = { Text("Are you sure you want to delete this pain log?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            existingEntry?.let { viewModel.deleteEntry(it) }
+                            showDeleteConfirmation = false
+                            onSaveSuccess()
+                        }
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmation = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

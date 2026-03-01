@@ -9,16 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -43,6 +35,7 @@ fun AddDiseaseScreen(
     var intensity by remember { mutableFloatStateOf(5f) }
     var note by remember { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(id) {
         if (id != null) {
@@ -72,6 +65,13 @@ fun AddDiseaseScreen(
                 navigationIcon = {
                     IconButton(onClick = handleBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    if (id != null) {
+                        IconButton(onClick = { showDeleteConfirmation = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                        }
                     }
                 }
             )
@@ -133,7 +133,9 @@ fun AddDiseaseScreen(
                         type = EntryType.DISEASE,
                         name = name,
                         intensity = intensity.roundToInt(),
-                        note = note
+                        note = note,
+                        isFinished = existingEntry?.isFinished ?: false,
+                        durationMinutes = existingEntry?.durationMinutes
                     )
 
                     if (id == null) {
@@ -148,6 +150,30 @@ fun AddDiseaseScreen(
             ) {
                 Text(if (id == null) "Save" else "Update")
             }
+        }
+
+        if (showDeleteConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmation = false },
+                title = { Text("Delete Entry") },
+                text = { Text("Are you sure you want to delete this disease log?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            existingEntry?.let { viewModel.deleteEntry(it) }
+                            showDeleteConfirmation = false
+                            onSaveSuccess()
+                        }
+                    ) {
+                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmation = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
         }
     }
 }

@@ -43,6 +43,11 @@ Goal: Interactive tools and notifications.
 - **Centralized Hub**: Reminders are now listed and manageable directly from the Calendar view.
 
 ## Phase 5: Polish and Privacy (Current)
+- **Enhanced Entry Model**: Added `durationMinutes` and `isFinished` properties to `HealthEntry`.
+- **Default Durations**: Each `EntryType` now has a default duration (e.g., Sleep: 8h, Meal: 30min, Activity: 30min).
+- **Swipe-to-Action**: Implemented `SwipeToDismissBox` in Timeline and Day View.
+    - **Swipe Left**: Delete entry with undo snackbar.
+    - **Swipe Right**: Mark entry as "finished" (visual change to grey and checkmark icon).
 - Biometric Lock.
 - Search and Filters.
 - UI/UX refinements.

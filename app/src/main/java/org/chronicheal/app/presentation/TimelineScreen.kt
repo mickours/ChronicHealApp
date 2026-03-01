@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,10 +13,12 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -47,7 +50,7 @@ fun TimelineScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
-    var entryToDelete by remember { mutableStateOf<HealthEntry?>(null) }
+    var hasPerformedInitialScroll by rememberSaveable { mutableStateOf(false) }
 
     val timelineItems = remember(uiState.entries) {
         buildTimelineItems(uiState.entries)
@@ -58,24 +61,20 @@ fun TimelineScreen(
     }
 
     LaunchedEffect(todayIndex) {
-        if (todayIndex != -1) {
+        if (!hasPerformedInitialScroll && todayIndex != -1) {
             listState.scrollToItem(todayIndex)
+            hasPerformedInitialScroll = true
         }
     }
 
-    // Observe messages from SavedStateHandle (e.g. "Edition canceled")
+    // Observe messages from SavedStateHandle (e.g. "Edition canceled", "Entry updated")
     val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
-    val navMessageFlow = remember(savedStateHandle) {
-        savedStateHandle?.getStateFlow<String?>("message", null)
-    }
-    val navMessage by (navMessageFlow?.collectAsState() ?: remember { mutableStateOf<String?>(null) })
+    val navMessage = savedStateHandle?.getStateFlow<String?>("message", null)?.collectAsState()
 
-    LaunchedEffect(navMessage) {
-        navMessage?.let { msg ->
-            scope.launch {
-                snackbarHostState.showSnackbar(msg)
-                savedStateHandle?.remove<String>("message")
-            }
+    LaunchedEffect(navMessage?.value) {
+        navMessage?.value?.let { msg ->
+            snackbarHostState.showSnackbar(msg)
+            savedStateHandle?.remove<String>("message")
         }
     }
 
@@ -146,10 +145,23 @@ fun TimelineScreen(
                         }
                         is TimelineItem.Entry -> {
                             item(key = "entry_${item.entry.id}") {
-                                EntryItem(
+                                SwipeableEntryItem(
                                     entry = item.entry,
-                                    onDeleteClick = { entryToDelete = item.entry },
-                                    modifier = Modifier.clickable { onEntryClick(item.entry) }
+                                    onDelete = {
+                                        viewModel.deleteEntry(item.entry)
+                                        scope.launch {
+                                            val result = snackbarHostState.showSnackbar(
+                                                message = "Entry deleted",
+                                                actionLabel = "Undo",
+                                                duration = SnackbarDuration.Short
+                                            )
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                viewModel.restoreDeletedEntry()
+                                            }
+                                        }
+                                    },
+                                    onMarkFinished = { viewModel.markEntryAsFinished(item.entry) },
+                                    onClick = { onEntryClick(item.entry) }
                                 )
                             }
                         }
@@ -158,40 +170,72 @@ fun TimelineScreen(
             }
         }
     }
+}
 
-    if (entryToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { entryToDelete = null },
-            title = { Text("Delete Entry") },
-            text = { Text("Are you sure you want to delete this entry?") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val entry = entryToDelete!!
-                        viewModel.deleteEntry(entry)
-                        entryToDelete = null
-                        scope.launch {
-                            val result = snackbarHostState.showSnackbar(
-                                message = "Entry deleted",
-                                actionLabel = "Undo",
-                                duration = SnackbarDuration.Short
-                            )
-                            if (result == SnackbarResult.ActionPerformed) {
-                                viewModel.restoreDeletedEntry()
-                            }
-                        }
-                    }
-                ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SwipeableEntryItem(
+    entry: HealthEntry,
+    onDelete: () -> Unit,
+    onMarkFinished: () -> Unit,
+    onClick: () -> Unit
+) {
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { value ->
+            when (value) {
+                SwipeToDismissBoxValue.EndToStart -> {
+                    onDelete()
+                    true
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { entryToDelete = null }) {
-                    Text("Cancel")
+                SwipeToDismissBoxValue.StartToEnd -> {
+                    onMarkFinished()
+                    false // Don't dismiss, just trigger action
+                }
+                else -> false
+            }
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        backgroundContent = {
+            val color by animateColorAsState(
+                when (dismissState.targetValue) {
+                    SwipeToDismissBoxValue.StartToEnd -> Color.Green.copy(alpha = 0.5f)
+                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
+                    else -> Color.Transparent
+                }, label = "swipe_color"
+            )
+            val icon = when (dismissState.targetValue) {
+                SwipeToDismissBoxValue.StartToEnd -> Icons.Default.Check
+                SwipeToDismissBoxValue.EndToStart -> Icons.Default.Delete
+                else -> null
+            }
+            val alignment = when (dismissState.targetValue) {
+                SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
+                SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
+                else -> Alignment.Center
+            }
+
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(color)
+                    .padding(horizontal = 20.dp),
+                contentAlignment = alignment
+            ) {
+                if (icon != null) {
+                    Icon(icon, contentDescription = null)
                 }
             }
-        )
-    }
+        },
+        content = {
+            EntryItem(
+                entry = entry,
+                modifier = Modifier.clickable { onClick() }
+            )
+        }
+    )
 }
 
 sealed class TimelineItem {
@@ -333,7 +377,6 @@ fun getCategoryColor(type: EntryType): Color {
 @Composable
 fun EntryItem(
     entry: HealthEntry,
-    onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val formatter = DateTimeFormatter
@@ -354,7 +397,7 @@ fun EntryItem(
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(6.dp)
-                    .background(categoryColor)
+                    .background(if (entry.isFinished) Color.Gray else categoryColor)
             )
             
             Column(modifier = Modifier.padding(16.dp)) {
@@ -368,7 +411,7 @@ fun EntryItem(
                                 text = entry.type.name.replace("_", " ").lowercase()
                                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
                                 style = MaterialTheme.typography.titleMedium,
-                                color = categoryColor.copy(alpha = 0.8f)
+                                color = if (entry.isFinished) Color.Gray else categoryColor.copy(alpha = 0.8f)
                             )
                             if (entry.hasReminder) {
                                 Spacer(Modifier.width(8.dp))
@@ -379,17 +422,19 @@ fun EntryItem(
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
+                            if (entry.isFinished) {
+                                Spacer(Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = "Finished",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
                         }
                         Text(
                             text = formatter.format(entry.timestamp),
                             style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    IconButton(onClick = onDeleteClick) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Entry",
-                            tint = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -411,6 +456,11 @@ fun EntryItem(
                 }
                 entry.value?.let {
                     Text(text = "Value: $it ${entry.unit ?: ""}", style = MaterialTheme.typography.bodyMedium)
+                }
+                
+                val duration = entry.durationMinutes ?: entry.type.defaultDurationMinutes
+                if (duration > 0) {
+                    Text(text = "Duration: $duration min", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }

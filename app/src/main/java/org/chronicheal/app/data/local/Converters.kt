@@ -19,13 +19,19 @@ class Converters {
     }
 
     @TypeConverter
-    fun fromEntryType(value: EntryType): String {
-        return value.name
+    fun fromEntryType(value: EntryType?): String? {
+        return value?.name
     }
 
     @TypeConverter
-    fun toEntryType(value: String): EntryType {
-        return EntryType.valueOf(value)
+    fun toEntryType(value: String?): EntryType? {
+        return value?.let {
+            try {
+                EntryType.valueOf(it)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        }
     }
 
     @TypeConverter
