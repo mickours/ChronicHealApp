@@ -40,6 +40,9 @@ Goal: Interactive tools and notifications.
     - **Precise Hit Detection**: Implemented path-based hit detection using `android.graphics.Region`, allowing users to interact with complex anatomical shapes accurately.
     - **Auto-scaling**: Silhouette automatically scales to fit the screen while maintaining aspect ratio.
 - **Visual Polish**: Added a vertical gradient fill and refined the stroke for a modern look. Fixed nested transformation bugs in the parser to ensure anatomical accuracy.
+- **In-place Creation**: Added a "Save" button to the Body Scan bottom sheet to allow direct creation of pain logs without leaving the interactive silhouette.
+    - **Smart State Management**: The Body Scan now detects if a pain log already exists for a specific region on the current day, allowing users to update it instead of creating duplicates.
+    - **Feedback Integration**: Added a `SnackbarHost` to provide immediate confirmation when a log is saved or updated.
 
 ### 2. Reminders (Completed)
 - **Exact Scheduling**: Used `AlarmManager` for high-precision health reminders.

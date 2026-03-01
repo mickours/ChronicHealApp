@@ -136,7 +136,7 @@ fun PainEntryForm(
 
     Column(
         modifier = modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .padding(16.dp)
     ) {
         EntryDateTimePicker(

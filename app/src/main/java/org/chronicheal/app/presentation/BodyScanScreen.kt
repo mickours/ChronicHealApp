@@ -9,15 +9,17 @@ import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -43,12 +45,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
+import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.presentation.util.SvgBodyParser
 import org.chronicheal.app.presentation.util.SvgPath
 import org.chronicheal.app.ui.theme.HeaderBlue
 import org.chronicheal.app.ui.theme.PrimaryOrange
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,13 +64,22 @@ fun BodyScanScreen(
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedRegion by remember { mutableStateOf<String?>(null) }
-    var tapLocation by remember { mutableStateOf<PointF?>(null) }
+    var existingEntryId by remember { mutableStateOf<Long?>(null) }
 
     // State for entry form
     var intensity by remember { mutableFloatStateOf(5f) }
     var note by remember { mutableStateOf("") }
     var logDate by remember { mutableStateOf(LocalDate.now()) }
     var startTime by remember { mutableStateOf(LocalTime.now()) }
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.message) {
+        uiState.message?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.clearMessage()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -83,18 +96,38 @@ fun BodyScanScreen(
                     navigationIconContentColor = Color.Black
                 )
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
             BodySilhouette(
                 modifier = Modifier.fillMaxSize(),
-                onRegionClick = { region, point ->
+                onRegionClick = { region, _ ->
+                    val existing = uiState.entries.find { 
+                        it.type == EntryType.PAIN && 
+                        it.location?.equals(region, ignoreCase = true) == true && 
+                        it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() == LocalDate.now() 
+                    }
+                    
+                    if (existing != null) {
+                        existingEntryId = existing.id
+                        intensity = existing.intensity?.toFloat() ?: 5f
+                        note = existing.note
+                        logDate = existing.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                        startTime = existing.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                    } else {
+                        existingEntryId = null
+                        intensity = 5f
+                        note = ""
+                        logDate = LocalDate.now()
+                        startTime = LocalTime.now()
+                    }
+                    
                     selectedRegion = region
-                    tapLocation = point
                     showBottomSheet = true
                 },
                 painMarkers = uiState.entries
-                    .filter { it.type == EntryType.PAIN && it.timestamp.atZone(java.time.ZoneId.systemDefault()).toLocalDate() == LocalDate.now() }
+                    .filter { it.type == EntryType.PAIN && it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() == LocalDate.now() }
                     .mapNotNull { it.location }
             )
 
@@ -103,6 +136,32 @@ fun BodyScanScreen(
                     onDismissRequest = { showBottomSheet = false },
                     sheetState = sheetState
                 ) {
+                    Button(
+                        onClick = {
+                            val entry = HealthEntry(
+                                id = existingEntryId ?: 0,
+                                type = EntryType.PAIN,
+                                intensity = intensity.toInt(),
+                                location = selectedRegion,
+                                note = note,
+                                timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
+                            )
+                            if (existingEntryId == null) {
+                                viewModel.addEntry(entry)
+                                viewModel.showMessage("Pain log added for $selectedRegion")
+                            } else {
+                                viewModel.updateEntry(entry)
+                                viewModel.showMessage("Pain log updated for $selectedRegion")
+                            }
+                            showBottomSheet = false
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(if (existingEntryId == null) "Save Pain Log" else "Update Pain Log")
+                    }
+
                     PainEntryForm(
                         intensity = intensity,
                         onIntensityChange = { intensity = it },
@@ -116,23 +175,6 @@ fun BodyScanScreen(
                         onStartTimeChange = { startTime = it },
                         viewModel = viewModel
                     )
-                    androidx.compose.material3.Button(
-                        onClick = {
-                            viewModel.addEntry(
-                                org.chronicheal.app.domain.model.HealthEntry(
-                                    type = EntryType.PAIN,
-                                    intensity = intensity.toInt(),
-                                    location = selectedRegion,
-                                    note = note,
-                                    timestamp = logDate.atTime(startTime).atZone(java.time.ZoneId.systemDefault()).toInstant()
-                                )
-                            )
-                            showBottomSheet = false
-                        },
-                        modifier = Modifier.fillMaxWidth().padding(16.dp)
-                    ) {
-                        Text("Save Pain Log")
-                    }
                 }
             }
         }
