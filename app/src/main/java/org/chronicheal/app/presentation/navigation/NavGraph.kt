@@ -78,124 +78,123 @@ fun NavGraph(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() }
             )
         }
+        
+        fun onSaveSuccess(date: String?) {
+            if (date != null) {
+                navController.popBackStack(Screen.DayView.createRoute(date), inclusive = false)
+            } else {
+                navController.popBackStack(Screen.Timeline.route, inclusive = false)
+            }
+        }
+
         composable(
             route = Screen.AddPain.route,
             arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
         ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             AddPainScreen(
-                dateString = backStackEntry.arguments?.getString("date"),
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = {
-                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                }
+                onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddDrug.route,
             arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
         ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             AddDrugScreen(
-                dateString = backStackEntry.arguments?.getString("date"),
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = {
-                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                }
+                onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddSymptom.route,
             arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
         ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             AddSymptomScreen(
-                dateString = backStackEntry.arguments?.getString("date"),
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = {
-                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                }
+                onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddActivity.route,
             arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
         ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             AddActivityScreen(
-                dateString = backStackEntry.arguments?.getString("date"),
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = {
-                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                }
+                onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddMeal.route,
             arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
         ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             AddMealScreen(
-                dateString = backStackEntry.arguments?.getString("date"),
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = {
-                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                }
+                onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddSleep.route,
             arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
         ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             AddSleepScreen(
-                dateString = backStackEntry.arguments?.getString("date"),
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = {
-                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                }
+                onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddDisease.route,
             arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
         ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             AddDiseaseScreen(
-                dateString = backStackEntry.arguments?.getString("date"),
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = {
-                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                }
+                onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddMedicalAppointment.route,
             arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
         ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             AddMedicalAppointmentScreen(
-                dateString = backStackEntry.arguments?.getString("date"),
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = {
-                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                }
+                onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddExternalFactor.route,
             arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
         ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             AddExternalFactorScreen(
-                dateString = backStackEntry.arguments?.getString("date"),
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = {
-                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                }
+                onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddJournal.route,
             arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
         ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             AddJournalScreen(
-                dateString = backStackEntry.arguments?.getString("date"),
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
-                onSaveSuccess = {
-                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                }
+                onSaveSuccess = { onSaveSuccess(date) }
             )
         }
     }
