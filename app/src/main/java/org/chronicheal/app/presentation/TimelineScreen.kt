@@ -8,13 +8,13 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -63,7 +63,7 @@ fun TimelineScreen(
                         Icon(Icons.Default.Accessibility, contentDescription = "Body Scan")
                     }
                     IconButton(onClick = onAnalyticsClick) {
-                        Icon(Icons.Default.ShowChart, contentDescription = "Analytics")
+                        Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = "Analytics")
                     }
                     IconButton(onClick = onCalendarClick) {
                         Icon(Icons.Default.CalendarMonth, contentDescription = "Calendar")
@@ -94,7 +94,7 @@ fun TimelineScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                itemsIndexed(timelineItems) { index, item ->
+                itemsIndexed(timelineItems) { _, item ->
                     when (item) {
                         is TimelineItem.YearHeader -> YearHeader(item.year)
                         is TimelineItem.MonthHeader -> MonthHeader(item.month)
