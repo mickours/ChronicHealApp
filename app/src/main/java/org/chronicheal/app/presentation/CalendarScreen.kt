@@ -1,6 +1,7 @@
 package org.chronicheal.app.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -13,11 +14,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.HealthEntry
+import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.TextStyle
@@ -27,6 +30,7 @@ import java.util.*
 @Composable
 fun CalendarScreen(
     onBackClick: () -> Unit,
+    onDateClick: (LocalDate) -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -55,7 +59,8 @@ fun CalendarScreen(
             )
             CalendarGrid(
                 currentMonth = currentMonth,
-                entries = uiState.entries
+                entries = uiState.entries,
+                onDateClick = onDateClick
             )
         }
     }
@@ -90,7 +95,8 @@ fun CalendarHeader(
 @Composable
 fun CalendarGrid(
     currentMonth: YearMonth,
-    entries: List<HealthEntry>
+    entries: List<HealthEntry>,
+    onDateClick: (LocalDate) -> Unit
 ) {
     val daysInMonth = currentMonth.lengthOfMonth()
     val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek.value % 7 // 0 for Sunday, 1 for Monday...
@@ -126,18 +132,28 @@ fun CalendarGrid(
             items(days) { day ->
                 val date = currentMonth.atDay(day)
                 val hasEntries = entriesByDate.containsKey(date)
-                DayCell(day = day, hasEntries = hasEntries)
+                DayCell(
+                    day = day, 
+                    hasEntries = hasEntries,
+                    onClick = { onDateClick(date) }
+                )
             }
         }
     }
 }
 
 @Composable
-fun DayCell(day: Int, hasEntries: Boolean) {
+fun DayCell(
+    day: Int, 
+    hasEntries: Boolean,
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .aspectRatio(1f)
-            .padding(2.dp),
+            .padding(2.dp)
+            .clip(MaterialTheme.shapes.small)
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {

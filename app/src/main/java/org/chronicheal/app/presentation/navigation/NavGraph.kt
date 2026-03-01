@@ -2,8 +2,10 @@ package org.chronicheal.app.presentation.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.presentation.*
 
@@ -28,6 +30,19 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(route = Screen.Calendar.route) {
             CalendarScreen(
+                onBackClick = { navController.popBackStack() },
+                onDateClick = { date ->
+                    navController.navigate(Screen.DayView.createRoute(date.toString()))
+                }
+            )
+        }
+        composable(
+            route = Screen.DayView.route,
+            arguments = listOf(navArgument("date") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date") ?: ""
+            DayViewScreen(
+                dateString = date,
                 onBackClick = { navController.popBackStack() }
             )
         }

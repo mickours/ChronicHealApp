@@ -5,6 +5,9 @@ sealed class Screen(val route: String) {
     object Calendar : Screen("calendar")
     object Settings : Screen("settings")
     object Analytics : Screen("analytics")
+    object DayView : Screen("day_view/{date}") {
+        fun createRoute(date: String) = "day_view/$date"
+    }
     object EntryTypeSelection : Screen("entry_type_selection")
     object AddPain : Screen("add_pain")
     object AddDrug : Screen("add_drug")
