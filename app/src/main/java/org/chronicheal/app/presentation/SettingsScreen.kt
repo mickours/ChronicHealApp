@@ -50,17 +50,6 @@ fun SettingsScreen(
         }
     }
 
-    // Launcher for saving PDF file
-    val createPdfLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/pdf")
-    ) { uri ->
-        uri?.let {
-            context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                viewModel.exportPdf(outputStream)
-            }
-        }
-    }
-
     LaunchedEffect(uiState.message) {
         uiState.message?.let {
             snackbarHostState.showSnackbar(it)
@@ -104,18 +93,6 @@ fun SettingsScreen(
                 enabled = !uiState.isLoading
             ) {
                 Text("Import Data from JSON")
-            }
-
-            HorizontalDivider()
-
-            Text(text = "Reporting", style = MaterialTheme.typography.titleMedium)
-
-            Button(
-                onClick = { createPdfLauncher.launch("chronicheal_report.pdf") },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isLoading
-            ) {
-                Text("Export Health Report (PDF)")
             }
             
             if (uiState.isLoading) {

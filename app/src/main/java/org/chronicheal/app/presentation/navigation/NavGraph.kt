@@ -28,6 +28,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onAnalyticsClick = {
                     navController.navigate(Screen.Analytics.route)
+                },
+                onBodyScanClick = {
+                    navController.navigate(Screen.BodyScan.route)
                 }
             )
         }
@@ -36,6 +39,14 @@ fun NavGraph(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() },
                 onDateClick = { date ->
                     navController.navigate(Screen.DayView.createRoute(date.toString()))
+                }
+            )
+        }
+        composable(route = Screen.BodyScan.route) {
+            BodyScanScreen(
+                onBackClick = { navController.popBackStack() },
+                onRegionClick = { region ->
+                    navController.navigate(Screen.EntryTypeSelection.createRoute(location = region))
                 }
             )
         }
@@ -64,29 +75,33 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.EntryTypeSelection.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val location = backStackEntry.arguments?.getString("location")
             EntryTypeSelectionScreen(
                 onTypeSelected = { type ->
                     val route = when (type) {
-                        EntryType.PAIN -> Screen.AddPain.createRoute(date)
-                        EntryType.DRUG -> Screen.AddDrug.createRoute(date)
-                        EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(date)
-                        EntryType.DISEASE -> Screen.AddDisease.createRoute(date)
-                        EntryType.MEAL -> Screen.AddMeal.createRoute(date)
-                        EntryType.SLEEP -> Screen.AddSleep.createRoute(date)
-                        EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.createRoute(date)
-                        EntryType.ACTIVITY -> Screen.AddActivity.createRoute(date)
-                        EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(date)
-                        EntryType.JOURNAL -> Screen.AddJournal.createRoute(date)
+                        EntryType.PAIN -> Screen.AddPain.createRoute(date, location)
+                        EntryType.DRUG -> Screen.AddDrug.createRoute(date, location)
+                        EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(date, location)
+                        EntryType.DISEASE -> Screen.AddDisease.createRoute(date, location)
+                        EntryType.MEAL -> Screen.AddMeal.createRoute(date, location)
+                        EntryType.SLEEP -> Screen.AddSleep.createRoute(date, location)
+                        EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.createRoute(date, location)
+                        EntryType.ACTIVITY -> Screen.AddActivity.createRoute(date, location)
+                        EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(date, location)
+                        EntryType.JOURNAL -> Screen.AddJournal.createRoute(date, location)
                     }
                     navController.navigate(route)
                 },
                 onBackClick = { navController.popBackStack() }
             )
         }
-        
+
         fun onSaveSuccess(date: String?) {
             if (date != null) {
                 navController.popBackStack(Screen.DayView.createRoute(date), inclusive = false)
@@ -97,18 +112,26 @@ fun NavGraph(navController: NavHostController) {
 
         composable(
             route = Screen.AddPain.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val location = backStackEntry.arguments?.getString("location")
             AddPainScreen(
                 dateString = date,
+                locationString = location,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddDrug.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             AddDrugScreen(
@@ -119,18 +142,26 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.AddSymptom.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val location = backStackEntry.arguments?.getString("location")
             AddSymptomScreen(
                 dateString = date,
+                locationString = location,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
         }
         composable(
             route = Screen.AddActivity.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             AddActivityScreen(
@@ -141,7 +172,10 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.AddMeal.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             AddMealScreen(
@@ -152,7 +186,10 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.AddSleep.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             AddSleepScreen(
@@ -163,7 +200,10 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.AddDisease.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             AddDiseaseScreen(
@@ -174,7 +214,10 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.AddMedicalAppointment.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             AddMedicalAppointmentScreen(
@@ -185,7 +228,10 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.AddExternalFactor.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             AddExternalFactorScreen(
@@ -196,7 +242,10 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(
             route = Screen.AddJournal.route,
-            arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             AddJournalScreen(

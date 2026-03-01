@@ -13,21 +13,27 @@ Goal: Allow users to view their history and add new entries.
 - **Calendar View**: Added a monthly overview with data markers for active days.
 - **Day View**: Contextual list of events for a specific day with adding support.
 - **Navigation**: Smart contextual navigation (Save -> Return to Day View).
+- **Grouped Timeline**: Date delimiters (Year, Month, Day) for better readability.
 
-## Phase 3: Analytics and Export (In Progress)
+## Phase 3: Analytics and Export (Completed)
 Goal: Visualize data trends and ensure data portability.
 
-### 1. Data Portability (Completed)
-- **JSON Export**: Users can save their entire history to a local file.
-- **JSON Import**: Users can restore data from a previous backup.
+### Accomplishments:
+- **Data Portability**: JSON Export/Import via Storage Access Framework.
+- **Analytics**: Grouped Charts (Pain Line Chart & Symptom Bar Chart) with period selection (Week, Month, Year).
+- **Medical Reporting**: PDF Export with embedded visual graphs and chronological logs.
 
-### 2. Analytics & Visualization (Completed)
-- **Graphing**: Integrated Vico library for daily Pain Evolution (Line Chart) and Top Symptoms frequency (Bar Chart).
+## Phase 4: Advanced Features (In Progress)
+Goal: Interactive tools and notifications.
 
-### 3. Medical Reporting (Current)
-- **PDF Export**: Generate a medical-friendly report for a specific time range or full history.
+### 1. Symptom Body Scan (Completed)
+- **Interactive Silhouette**: Tap on body regions to pre-fill location in logs.
 
-## Phase 4: Advanced Features
-- Body scan UI.
-- Reminders via WorkManager.
+### 2. Reminders (Current)
+- **WorkManager**: Background tasks for medication and appointment alerts.
+- **Notifications**: Local system notifications for user-defined reminders.
+
+## Phase 5: Polish and Privacy
 - Biometric Lock.
+- Search and Filters.
+- UI/UX refinements.

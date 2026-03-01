@@ -1,15 +1,10 @@
 package org.chronicheal.app.presentation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.ShowChart
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -17,10 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.ZoneId
@@ -36,6 +28,7 @@ fun TimelineScreen(
     onCalendarClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onAnalyticsClick: () -> Unit,
+    onBodyScanClick: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -49,6 +42,9 @@ fun TimelineScreen(
             TopAppBar(
                 title = { Text("ChronicHeal") },
                 actions = {
+                    IconButton(onClick = onBodyScanClick) {
+                        Icon(Icons.Default.Accessibility, contentDescription = "Body Scan")
+                    }
                     IconButton(onClick = onAnalyticsClick) {
                         Icon(Icons.Default.ShowChart, contentDescription = "Analytics")
                     }
@@ -147,7 +143,7 @@ fun YearHeader(year: Int) {
         Text(
             text = year.toString(),
             style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
     }
@@ -163,7 +159,7 @@ fun MonthHeader(month: String) {
         Text(
             text = month,
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.secondary
         )
     }
@@ -179,7 +175,7 @@ fun DayHeader(day: String) {
         Text(
             text = day,
             style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
             color = MaterialTheme.colorScheme.outline
         )
     }

@@ -19,12 +19,13 @@ import kotlin.math.roundToInt
 @Composable
 fun AddPainScreen(
     dateString: String? = null,
+    locationString: String? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var intensity by remember { mutableFloatStateOf(5f) }
-    var location by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf(locationString ?: "") }
     var note by remember { mutableStateOf("") }
 
     Scaffold(

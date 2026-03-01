@@ -19,12 +19,14 @@ import kotlin.math.roundToInt
 @Composable
 fun AddSymptomScreen(
     dateString: String? = null,
+    locationString: String? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
     var severity by remember { mutableFloatStateOf(3f) }
+    var location by remember { mutableStateOf(locationString ?: "") }
     var note by remember { mutableStateOf("") }
 
     Scaffold(
@@ -68,6 +70,15 @@ fun AddSymptomScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
+                value = location,
+                onValueChange = { location = it },
+                label = { Text("Location (Optional)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
                 label = { Text("Notes") },
@@ -90,6 +101,7 @@ fun AddSymptomScreen(
                             type = EntryType.SYMPTOM,
                             name = name,
                             intensity = severity.roundToInt(),
+                            location = location,
                             note = note
                         )
                     )
