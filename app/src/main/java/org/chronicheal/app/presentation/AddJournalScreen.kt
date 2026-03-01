@@ -25,8 +25,8 @@ fun AddJournalScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var content by remember { mutableStateOf("") }
+    var logDate by remember { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by remember { mutableStateOf(LocalTime.now()) }
-    var durationMinutes by remember { mutableIntStateOf(EntryType.JOURNAL.defaultDurationMinutes) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
     var setReminder by remember { mutableStateOf(false) }
@@ -44,8 +44,8 @@ fun AddJournalScreen(
             if (entry != null) {
                 existingEntry = entry
                 content = entry.note
+                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                durationMinutes = entry.durationMinutes ?: EntryType.JOURNAL.defaultDurationMinutes
                 setReminder = entry.hasReminder
                 
                 if (entry.hasReminder && entry.reminderId != null) {
@@ -66,8 +66,7 @@ fun AddJournalScreen(
             onSaveSuccess()
         },
         onSaveClick = {
-            val date = if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()
-            val timestamp = date.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
+            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
 
             val entry = HealthEntry(
                 id = id ?: 0,
@@ -77,7 +76,7 @@ fun AddJournalScreen(
                 hasReminder = setReminder,
                 reminderId = existingEntry?.reminderId,
                 isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = durationMinutes
+                durationMinutes = existingEntry?.durationMinutes
             )
 
             if (setReminder) {
@@ -111,11 +110,11 @@ fun AddJournalScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            EntryTimeAndDurationPicker(
+            EntryDateTimePicker(
+                date = logDate,
+                onDateChange = { logDate = it },
                 startTime = startTime,
-                onStartTimeChange = { startTime = it },
-                durationMinutes = durationMinutes,
-                onDurationChange = { durationMinutes = it }
+                onStartTimeChange = { startTime = it }
             )
 
             Spacer(modifier = Modifier.height(16.dp))

@@ -27,8 +27,8 @@ fun AddSymptomScreen(
     var severity by remember { mutableFloatStateOf(3f) }
     var location by remember { mutableStateOf(locationString ?: "") }
     var note by remember { mutableStateOf("") }
+    var logDate by remember { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by remember { mutableStateOf(LocalTime.now()) }
-    var durationMinutes by remember { mutableIntStateOf(EntryType.SYMPTOM.defaultDurationMinutes) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
     LaunchedEffect(id) {
@@ -40,8 +40,8 @@ fun AddSymptomScreen(
                 severity = entry.intensity?.toFloat() ?: 3f
                 location = entry.location ?: ""
                 note = entry.note
+                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                durationMinutes = entry.durationMinutes ?: EntryType.SYMPTOM.defaultDurationMinutes
             }
         }
     }
@@ -55,8 +55,7 @@ fun AddSymptomScreen(
             onSaveSuccess()
         },
         onSaveClick = {
-            val date = if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()
-            val timestamp = date.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
+            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
 
             val entry = HealthEntry(
                 id = id ?: 0,
@@ -67,7 +66,7 @@ fun AddSymptomScreen(
                 location = location,
                 note = note,
                 isFinished = existingEntry?.isFinished ?: false,
-                durationMinutes = durationMinutes
+                durationMinutes = existingEntry?.durationMinutes
             )
 
             if (id == null) {
@@ -86,11 +85,11 @@ fun AddSymptomScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            EntryTimeAndDurationPicker(
+            EntryDateTimePicker(
+                date = logDate,
+                onDateChange = { logDate = it },
                 startTime = startTime,
-                onStartTimeChange = { startTime = it },
-                durationMinutes = durationMinutes,
-                onDurationChange = { durationMinutes = it }
+                onStartTimeChange = { startTime = it }
             )
 
             Spacer(modifier = Modifier.height(16.dp))

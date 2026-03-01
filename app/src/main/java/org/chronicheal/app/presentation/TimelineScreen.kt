@@ -474,13 +474,21 @@ fun EntryItem(
                     Text(text = "Value: $it ${entry.unit ?: ""}", style = MaterialTheme.typography.bodyMedium)
                 }
                 
-                val duration = entry.durationMinutes ?: entry.type.defaultDurationMinutes
-                if (duration > 0) {
-                    Text(
-                        text = "Duration: $duration min", 
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                entry.durationMinutes?.let { duration ->
+                    if (duration > 0) {
+                        val hours = duration / 60
+                        val mins = duration % 60
+                        val durationText = when {
+                            hours > 0 && mins > 0 -> "${hours}h ${mins}min"
+                            hours > 0 -> "${hours}h"
+                            else -> "${mins}min"
+                        }
+                        Text(
+                            text = "Duration: $durationText", 
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

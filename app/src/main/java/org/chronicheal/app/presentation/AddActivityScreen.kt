@@ -1,9 +1,14 @@
 package org.chronicheal.app.presentation
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
@@ -25,8 +30,10 @@ fun AddActivityScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var name by remember { mutableStateOf("") }
+    var logDate by remember { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by remember { mutableStateOf(LocalTime.now()) }
-    var durationMinutes by remember { mutableIntStateOf(EntryType.ACTIVITY.defaultDurationMinutes) }
+    var durationHours by remember { mutableIntStateOf(0) }
+    var durationMinutes by remember { mutableIntStateOf(30) }
     var intensity by remember { mutableFloatStateOf(3f) }
     var note by remember { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
@@ -46,8 +53,11 @@ fun AddActivityScreen(
             if (entry != null) {
                 existingEntry = entry
                 name = entry.name ?: ""
+                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                durationMinutes = entry.durationMinutes ?: EntryType.ACTIVITY.defaultDurationMinutes
+                val totalMinutes = entry.durationMinutes ?: 30
+                durationHours = totalMinutes / 60
+                durationMinutes = totalMinutes % 60
                 intensity = entry.intensity?.toFloat() ?: 3f
                 note = entry.note
                 setReminder = entry.hasReminder
@@ -70,15 +80,14 @@ fun AddActivityScreen(
             onSaveSuccess()
         },
         onSaveClick = {
-            val date = if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()
-            val timestamp = date.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
+            val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
 
             val entry = HealthEntry(
                 id = id ?: 0,
                 timestamp = timestamp,
                 type = EntryType.ACTIVITY,
                 name = name,
-                durationMinutes = durationMinutes,
+                durationMinutes = (durationHours * 60) + durationMinutes,
                 intensity = intensity.roundToInt(),
                 note = note,
                 hasReminder = setReminder,
@@ -117,12 +126,39 @@ fun AddActivityScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            EntryTimeAndDurationPicker(
+            EntryDateTimePicker(
+                date = logDate,
+                onDateChange = { logDate = it },
                 startTime = startTime,
-                onStartTimeChange = { startTime = it },
-                durationMinutes = durationMinutes,
-                onDurationChange = { durationMinutes = it }
+                onStartTimeChange = { startTime = it }
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(Icons.Default.Timer, contentDescription = null)
+                Text("Duration:", style = MaterialTheme.typography.titleMedium)
+                
+                OutlinedTextField(
+                    value = durationHours.toString(),
+                    onValueChange = { durationHours = it.toIntOrNull() ?: 0 },
+                    label = { Text("Hours") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+                
+                OutlinedTextField(
+                    value = durationMinutes.toString(),
+                    onValueChange = { durationMinutes = it.toIntOrNull() ?: 0 },
+                    label = { Text("Min") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -159,7 +195,7 @@ fun AddActivityScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(

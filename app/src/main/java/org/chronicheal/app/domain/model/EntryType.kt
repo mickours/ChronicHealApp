@@ -3,17 +3,17 @@ package org.chronicheal.app.domain.model
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class EntryType(val defaultDurationMinutes: Int, val emoji: String) {
-    PAIN(15, "💥"),
-    DRUG(0, "💊"),
-    SYMPTOM(30, "🌡️"),
-    DISEASE(1440, "🏥"),
-    MEAL(30, "🍲"),
-    SLEEP(480, "😴"),
-    MEDICAL_APPOINTMENT(60, "👨‍⚕️"),
-    ACTIVITY(30, "🏃"),
-    EXTERNAL_FACTOR(0, "☁️"),
-    JOURNAL(10, "📝");
+enum class EntryType(val emoji: String) {
+    PAIN("💥"),
+    DRUG("💊"),
+    SYMPTOM("🌡️"),
+    DISEASE("🏥"),
+    MEAL("🍲"),
+    SLEEP("😴"),
+    MEDICAL_APPOINTMENT("👨‍⚕️"),
+    ACTIVITY("🏃"),
+    EXTERNAL_FACTOR("☁️"),
+    JOURNAL("📝");
 
     enum class Category {
         OCCURRENCE, // "What occurs to you"

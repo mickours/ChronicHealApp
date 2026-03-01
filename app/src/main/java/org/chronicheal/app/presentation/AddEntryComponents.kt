@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
@@ -16,7 +17,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.chronicheal.app.ui.theme.HeaderBlue
+import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,24 +115,51 @@ fun AddEntryScaffold(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EntryTimeAndDurationPicker(
+fun EntryDateTimePicker(
+    date: LocalDate,
+    onDateChange: (LocalDate) -> Unit,
     startTime: LocalTime,
-    onStartTimeChange: (LocalTime) -> Unit,
-    durationMinutes: Int,
-    onDurationChange: (Int) -> Unit
+    onStartTimeChange: (LocalTime) -> Unit
 ) {
     var showStartTimePicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    
     val startTimeState = rememberTimePickerState(
         initialHour = startTime.hour,
         initialMinute = startTime.minute
+    )
+
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     )
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Date
+            OutlinedCard(
+                onClick = { showDatePicker = true },
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text("Date", style = MaterialTheme.typography.labelSmall)
+                        Text(
+                            text = date.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
+            }
+
             // Start Time
             OutlinedCard(
                 onClick = { showStartTimePicker = true },
@@ -138,30 +169,17 @@ fun EntryTimeAndDurationPicker(
                     modifier = Modifier.padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.AccessTime, contentDescription = null)
+                    Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Column {
                         Text("Start Time", style = MaterialTheme.typography.labelSmall)
                         Text(
                             text = startTime.format(DateTimeFormatter.ofPattern("HH:mm")),
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
             }
-
-            // Duration
-            OutlinedTextField(
-                value = if (durationMinutes == 0) "" else durationMinutes.toString(),
-                onValueChange = { 
-                    it.toIntOrNull()?.let { minutes -> onDurationChange(minutes) }
-                    if (it.isEmpty()) onDurationChange(0)
-                },
-                label = { Text("Duration (min)") },
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                leadingIcon = { Icon(Icons.Default.Timer, contentDescription = null) }
-            )
         }
 
         if (showStartTimePicker) {
@@ -182,6 +200,29 @@ fun EntryTimeAndDurationPicker(
                 }
             ) {
                 TimePicker(state = startTimeState)
+            }
+        }
+
+        if (showDatePicker) {
+            DatePickerDialog(
+                onDismissRequest = { showDatePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        datePickerState.selectedDateMillis?.let {
+                            onDateChange(Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate())
+                        }
+                        showDatePicker = false
+                    }) {
+                        Text("OK")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDatePicker = false }) {
+                        Text("Cancel")
+                    }
+                }
+            ) {
+                DatePicker(state = datePickerState)
             }
         }
     }
