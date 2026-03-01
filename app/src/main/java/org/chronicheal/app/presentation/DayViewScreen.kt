@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
 import java.time.ZoneId
@@ -29,6 +30,10 @@ fun DayViewScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val date = remember(dateString) { LocalDate.parse(dateString) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    
+    var entryToDelete by remember { mutableStateOf<HealthEntry?>(null) }
     
     val dayEntries = remember(uiState.entries, date) {
         uiState.entries.filter { 
@@ -39,6 +44,7 @@ fun DayViewScreen(
     val titleDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG)
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(date.format(titleDateFormatter)) },
@@ -77,11 +83,45 @@ fun DayViewScreen(
                 items(dayEntries) { entry ->
                     EntryItem(
                         entry = entry,
-                        onDeleteClick = { viewModel.deleteEntry(entry) },
+                        onDeleteClick = { entryToDelete = entry },
                         modifier = Modifier.clickable { onEntryClick(entry) }
                     )
                 }
             }
         }
+    }
+
+    if (entryToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { entryToDelete = null },
+            title = { Text("Delete Entry") },
+            text = { Text("Are you sure you want to delete this entry?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val entry = entryToDelete!!
+                        viewModel.deleteEntry(entry)
+                        entryToDelete = null
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = "Entry deleted",
+                                actionLabel = "Undo",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.restoreDeletedEntry()
+                            }
+                        }
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { entryToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

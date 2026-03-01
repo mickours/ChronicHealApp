@@ -21,7 +21,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.HealthEntry
@@ -42,7 +41,7 @@ fun CalendarScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val reminders by remindersViewModel.reminders.collectAsState()
-    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+    val currentMonth = remember { mutableStateOf(YearMonth.now()) }
 
     Scaffold(
         topBar = {
@@ -55,7 +54,7 @@ fun CalendarScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = { currentMonth = YearMonth.now() },
+                        onClick = { currentMonth.value = YearMonth.now() },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Icon(Icons.Default.Today, contentDescription = null)
@@ -76,13 +75,13 @@ fun CalendarScreen(
         ) {
             item {
                 CalendarHeader(
-                    currentMonth = currentMonth,
-                    onMonthChange = { currentMonth = it }
+                    currentMonth = currentMonth.value,
+                    onMonthChange = { currentMonth.value = it }
                 )
             }
             item {
                 CalendarGrid(
-                    currentMonth = currentMonth,
+                    currentMonth = currentMonth.value,
                     entries = uiState.entries,
                     onDateClick = onDateClick
                 )
@@ -195,7 +194,7 @@ fun CalendarGrid(
                 Text(
                     text = day,
                     modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold
                 )

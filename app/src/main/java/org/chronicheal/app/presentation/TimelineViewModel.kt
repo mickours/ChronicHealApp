@@ -26,6 +26,8 @@ class TimelineViewModel @Inject constructor(
     private val reminderScheduler: ReminderScheduler
 ) : ViewModel() {
 
+    private var recentlyDeletedEntry: HealthEntry? = null
+
     val uiState: StateFlow<TimelineUiState> = getEntriesUseCase()
         .map { TimelineUiState(entries = it) }
         .stateIn(
@@ -59,7 +61,17 @@ class TimelineViewModel @Inject constructor(
 
     fun deleteEntry(entry: HealthEntry) {
         viewModelScope.launch {
+            recentlyDeletedEntry = entry
             deleteEntryUseCase(entry)
+        }
+    }
+
+    fun restoreDeletedEntry() {
+        viewModelScope.launch {
+            recentlyDeletedEntry?.let {
+                addEntryUseCase(it)
+                recentlyDeletedEntry = null
+            }
         }
     }
 

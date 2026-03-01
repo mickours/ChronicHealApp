@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
 import java.time.ZoneId
@@ -39,6 +40,10 @@ fun TimelineScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    
+    var entryToDelete by remember { mutableStateOf<HealthEntry?>(null) }
 
     val timelineItems = remember(uiState.entries) {
         buildTimelineItems(uiState.entries)
@@ -55,6 +60,7 @@ fun TimelineScreen(
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("ChronicHeal") },
@@ -80,7 +86,7 @@ fun TimelineScreen(
             }
         }
     ) { innerPadding ->
-        if (uiState.entries.isEmpty() && timelineItems.none { it is TimelineItem.Entry }) {
+        if (uiState.entries.isEmpty() && (timelineItems.isEmpty() || timelineItems.none { it is TimelineItem.Entry })) {
             Text(
                 text = "No entries yet. Tap + to start tracking.",
                 modifier = Modifier
@@ -115,7 +121,7 @@ fun TimelineScreen(
                             item(key = "entry_${item.entry.id}") {
                                 EntryItem(
                                     entry = item.entry,
-                                    onDeleteClick = { viewModel.deleteEntry(item.entry) },
+                                    onDeleteClick = { entryToDelete = item.entry },
                                     modifier = Modifier.clickable { onEntryClick(item.entry) }
                                 )
                             }
@@ -124,6 +130,40 @@ fun TimelineScreen(
                 }
             }
         }
+    }
+
+    if (entryToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { entryToDelete = null },
+            title = { Text("Delete Entry") },
+            text = { Text("Are you sure you want to delete this entry?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val entry = entryToDelete!!
+                        viewModel.deleteEntry(entry)
+                        entryToDelete = null
+                        scope.launch {
+                            val result = snackbarHostState.showSnackbar(
+                                message = "Entry deleted",
+                                actionLabel = "Undo",
+                                duration = SnackbarDuration.Short
+                            )
+                            if (result == SnackbarResult.ActionPerformed) {
+                                viewModel.restoreDeletedEntry()
+                            }
+                        }
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { entryToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -162,7 +202,7 @@ fun buildTimelineItems(entries: List<HealthEntry>): List<TimelineItem> {
         }
         
         val isToday = date == today
-        // Full date format: Monday, March 24, 2025
+        // Use full localized date format for the header
         val fullDate = date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
         items.add(TimelineItem.DayHeader(fullDate, isToday))
         
