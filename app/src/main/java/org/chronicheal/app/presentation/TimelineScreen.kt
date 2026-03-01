@@ -1,22 +1,25 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.HealthEntry
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -35,9 +38,20 @@ fun TimelineScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val listState = rememberLazyListState()
 
     val timelineItems = remember(uiState.entries) {
         buildTimelineItems(uiState.entries)
+    }
+
+    val todayIndex = remember(timelineItems) {
+        timelineItems.indexOfFirst { it is TimelineItem.DayHeader && it.isToday }
+    }
+
+    LaunchedEffect(todayIndex) {
+        if (todayIndex != -1) {
+            listState.scrollToItem(todayIndex)
+        }
     }
 
     Scaffold(
@@ -75,15 +89,16 @@ fun TimelineScreen(
             )
         } else {
             LazyColumn(
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                items(timelineItems) { item ->
+                itemsIndexed(timelineItems) { index, item ->
                     when (item) {
                         is TimelineItem.YearHeader -> YearHeader(item.year)
                         is TimelineItem.MonthHeader -> MonthHeader(item.month)
-                        is TimelineItem.DayHeader -> DayHeader(item.day)
+                        is TimelineItem.DayHeader -> DayHeader(item.day, item.isToday)
                         is TimelineItem.Entry -> EntryItem(
                             entry = item.entry,
                             onDeleteClick = { viewModel.deleteEntry(item.entry) },
@@ -99,7 +114,7 @@ fun TimelineScreen(
 sealed class TimelineItem {
     data class YearHeader(val year: Int) : TimelineItem()
     data class MonthHeader(val month: String) : TimelineItem()
-    data class DayHeader(val day: String) : TimelineItem()
+    data class DayHeader(val day: String, val isToday: Boolean = false) : TimelineItem()
     data class Entry(val entry: HealthEntry) : TimelineItem()
 }
 
@@ -110,6 +125,7 @@ fun buildTimelineItems(entries: List<HealthEntry>): List<TimelineItem> {
     var lastDay = -1
 
     val zoneId = ZoneId.systemDefault()
+    val today = LocalDate.now()
 
     entries.forEach { entry ->
         val dateTime = entry.timestamp.atZone(zoneId)
@@ -129,7 +145,8 @@ fun buildTimelineItems(entries: List<HealthEntry>): List<TimelineItem> {
             lastDay = -1
         }
         if (day != lastDay) {
-            items.add(TimelineItem.DayHeader(dateTime.format(DateTimeFormatter.ofPattern("EEEE d"))))
+            val isToday = dateTime.toLocalDate() == today
+            items.add(TimelineItem.DayHeader(dateTime.format(DateTimeFormatter.ofPattern("EEEE d")), isToday))
             lastDay = day
         }
         items.add(TimelineItem.Entry(entry))
@@ -170,18 +187,36 @@ fun MonthHeader(month: String) {
 }
 
 @Composable
-fun DayHeader(day: String) {
+fun DayHeader(day: String, isToday: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 4.dp, bottom = 4.dp, start = 16.dp, end = 16.dp)
     ) {
-        Text(
-            text = day,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.outline
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = day,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.Medium,
+                color = if (isToday) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+            )
+            if (isToday) {
+                Spacer(Modifier.width(8.dp))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        text = "TODAY",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
     }
 }
 
