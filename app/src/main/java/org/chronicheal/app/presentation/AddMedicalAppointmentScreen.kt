@@ -36,6 +36,8 @@ fun AddMedicalAppointmentScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
+    val doctorSuggestions by viewModel.doctorSuggestions.collectAsState()
+
     val timeState = rememberTimePickerState(
         initialHour = reminderTime.hour,
         initialMinute = reminderTime.minute
@@ -67,8 +69,8 @@ fun AddMedicalAppointmentScreen(
             id = id ?: 0,
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.MEDICAL_APPOINTMENT,
-            name = doctorName,
-            location = purpose,
+            name = doctorName.trim(),
+            location = purpose.trim(),
             note = note,
             hasReminder = setReminder,
             reminderId = existingEntry?.reminderId,
@@ -91,7 +93,7 @@ fun AddMedicalAppointmentScreen(
             if (setReminder) {
                 val reminder = Reminder(
                     id = existingEntry?.reminderId ?: 0,
-                    title = "Appointment with $doctorName",
+                    title = "Appointment with ${entry.name}",
                     time = reminderTime,
                     daysOfWeek = (1..7).toSet(),
                     entryType = EntryType.MEDICAL_APPOINTMENT
@@ -128,11 +130,11 @@ fun AddMedicalAppointmentScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            AutoCompleteTextField(
                 value = doctorName,
                 onValueChange = { doctorName = it },
-                label = { Text("Doctor/Specialist Name") },
-                modifier = Modifier.fillMaxWidth()
+                suggestions = doctorSuggestions,
+                label = "Doctor/Specialist Name"
             )
 
             Spacer(modifier = Modifier.height(16.dp))

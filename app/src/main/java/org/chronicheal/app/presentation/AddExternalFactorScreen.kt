@@ -29,6 +29,8 @@ fun AddExternalFactorScreen(
     var startTime by remember { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
+    val nameSuggestions by viewModel.externalFactorSuggestions.collectAsState()
+
     LaunchedEffect(id) {
         if (id != null) {
             val entry = viewModel.getEntryById(id)
@@ -48,7 +50,7 @@ fun AddExternalFactorScreen(
             id = id ?: 0,
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.EXTERNAL_FACTOR,
-            name = factorName,
+            name = factorName.trim(),
             intensity = intensity.roundToInt(),
             note = note,
             isFinished = existingEntry?.isFinished ?: false,
@@ -92,11 +94,11 @@ fun AddExternalFactorScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            AutoCompleteTextField(
                 value = factorName,
                 onValueChange = { factorName = it },
-                label = { Text("Factor Name (e.g. Weather, Stress, Noise)") },
-                modifier = Modifier.fillMaxWidth()
+                suggestions = nameSuggestions,
+                label = "Factor Name (e.g. Weather, Stress, Noise)"
             )
 
             Spacer(modifier = Modifier.height(16.dp))

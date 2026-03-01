@@ -29,6 +29,8 @@ fun AddDiseaseScreen(
     var startTime by remember { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
+    val nameSuggestions by viewModel.diseaseSuggestions.collectAsState()
+
     LaunchedEffect(id) {
         if (id != null) {
             val entry = viewModel.getEntryById(id)
@@ -48,7 +50,7 @@ fun AddDiseaseScreen(
             id = id ?: 0,
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.DISEASE,
-            name = name,
+            name = name.trim(),
             intensity = intensity.roundToInt(),
             note = note,
             isFinished = existingEntry?.isFinished ?: false,
@@ -92,11 +94,11 @@ fun AddDiseaseScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            AutoCompleteTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Disease or Condition Name") },
-                modifier = Modifier.fillMaxWidth()
+                suggestions = nameSuggestions,
+                label = "Disease or Condition Name"
             )
 
             Spacer(modifier = Modifier.height(16.dp))

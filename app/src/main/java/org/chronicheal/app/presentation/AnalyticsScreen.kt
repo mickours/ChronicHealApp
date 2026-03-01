@@ -2,8 +2,10 @@ package org.chronicheal.app.presentation
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -14,31 +16,30 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.chart.line.lineChart
 import com.patrykandpatrick.vico.compose.chart.column.columnChart
 import com.patrykandpatrick.vico.compose.component.lineComponent
-import com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient
 import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
-import com.patrykandpatrick.vico.core.chart.line.LineChart
+import com.patrykandpatrick.vico.core.chart.column.ColumnChart
 import com.patrykandpatrick.vico.core.component.shape.Shapes
-import com.patrykandpatrick.vico.core.entry.entryModelOf
 import com.patrykandpatrick.vico.core.entry.FloatEntry
+import com.patrykandpatrick.vico.core.entry.entryModelOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AnalyticsScreen(
     onBackClick: () -> Unit,
@@ -51,6 +52,18 @@ fun AnalyticsScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    val palette = remember {
+        listOf(
+            Color(0xFF0072B2), // Blue
+            Color(0xFFD55E00), // Vermillion
+            Color(0xFF009E73), // Bluish Green
+            Color(0xFFCC79A7), // Reddish Purple
+            Color(0xFFF0E442), // Yellow
+            Color(0xFF56B4E9), // Sky Blue
+            Color(0xFFE69F00), // Orange
+        )
+    }
 
     val createPdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
@@ -120,34 +133,58 @@ fun AnalyticsScreen(
 
             Text(text = "Pain Evolution", style = MaterialTheme.typography.titleLarge)
             if (uiState.painData.isNotEmpty()) {
-                val dates = uiState.painData.keys.toList()
-                val painEntries = uiState.painData.entries.mapIndexed { index, entry ->
-                    FloatEntry(index.toFloat(), entry.value.toFloat())
+                val locations = uiState.painData.keys.toList()
+                val dates = uiState.painData.values.first().keys.toList()
+                
+                val painEntries = uiState.painData.values.map { dayMap ->
+                    dayMap.entries.mapIndexed { index, entry ->
+                        FloatEntry(index.toFloat(), entry.value.toFloat())
+                    }
                 }
-                val model = entryModelOf(painEntries)
+                val model = entryModelOf(*painEntries.toTypedArray())
                 
                 val bottomAxisFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
                     dates.getOrNull(value.toInt())?.format(DateTimeFormatter.ofPattern("MM-dd")) ?: ""
                 }
 
                 Chart(
-                    chart = lineChart(
-                        lines = listOf(
-                            LineChart.LineSpec(
-                                lineColor = Color(0xFF0072B2).toArgb(), // Color-blind friendly Blue
-                                lineBackgroundShader = verticalGradient(
-                                    arrayOf(Color(0xFF0072B2).copy(alpha = 0.4f), Color(0xFF0072B2).copy(alpha = 0f))
-                                )
+                    chart = columnChart(
+                        mergeMode = ColumnChart.MergeMode.Stack,
+                        columns = locations.mapIndexed { index, _ ->
+                            lineComponent(
+                                color = palette[index % palette.size],
+                                thickness = 8.dp,
+                                shape = Shapes.roundedCornerShape(allPercent = 20)
                             )
-                        )
+                        }
                     ),
                     model = model,
                     startAxis = rememberStartAxis(),
                     bottomAxis = rememberBottomAxis(valueFormatter = bottomAxisFormatter),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp)
+                        .height(240.dp)
                 )
+
+                // Legend
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    locations.forEachIndexed { index, location ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .clip(CircleShape)
+                                    .background(palette[index % palette.size])
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(text = location, style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
             } else {
                 Text("No pain data for this period.", style = MaterialTheme.typography.bodyMedium)
             }
@@ -204,18 +241,18 @@ fun TimeRangeSelector(
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(onClick = { onMovePeriod(-1) }) {
-                Icon(androidx.compose.material.icons.Icons.Default.ChevronLeft, contentDescription = "Previous")
+                Icon(Icons.Default.ChevronLeft, contentDescription = "Previous")
             }
             
             val formatter = DateTimeFormatter.ofPattern("MMM d, yyyy")
             Text(
                 text = "${startDate.format(formatter)} - ${getEndDate(startDate, timeRange).format(formatter)}",
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                fontWeight = FontWeight.Bold
             )
 
             IconButton(onClick = { onMovePeriod(1) }) {
-                Icon(androidx.compose.material.icons.Icons.Default.ChevronRight, contentDescription = "Next")
+                Icon(Icons.Default.ChevronRight, contentDescription = "Next")
             }
         }
 

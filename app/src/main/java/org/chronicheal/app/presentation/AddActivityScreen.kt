@@ -42,6 +42,8 @@ fun AddActivityScreen(
     var reminderTime by remember { mutableStateOf(LocalTime.now()) }
     var showTimePicker by remember { mutableStateOf(false) }
 
+    val nameSuggestions by viewModel.activitySuggestions.collectAsState()
+
     val timeState = rememberTimePickerState(
         initialHour = reminderTime.hour,
         initialMinute = reminderTime.minute
@@ -76,7 +78,7 @@ fun AddActivityScreen(
             id = id ?: 0,
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.ACTIVITY,
-            name = name,
+            name = name.trim(),
             durationMinutes = (durationHours * 60) + durationMinutes,
             intensity = intensity.roundToInt(),
             note = note,
@@ -100,7 +102,7 @@ fun AddActivityScreen(
             if (setReminder) {
                 val reminder = Reminder(
                     id = existingEntry?.reminderId ?: 0,
-                    title = "Activity: $name",
+                    title = "Activity: ${entry.name}",
                     time = reminderTime,
                     daysOfWeek = (1..7).toSet(),
                     entryType = EntryType.ACTIVITY
@@ -164,11 +166,11 @@ fun AddActivityScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            AutoCompleteTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Activity Name (e.g. Walking, Yoga)") },
-                modifier = Modifier.fillMaxWidth()
+                suggestions = nameSuggestions,
+                label = "Activity Name (e.g. Walking, Yoga)"
             )
 
             Spacer(modifier = Modifier.height(16.dp))

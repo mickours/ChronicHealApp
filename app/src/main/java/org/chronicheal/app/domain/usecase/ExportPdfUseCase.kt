@@ -15,6 +15,7 @@ import java.io.OutputStream
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 
 class ExportPdfUseCase @Inject constructor(
@@ -81,8 +82,8 @@ class ExportPdfUseCase @Inject constructor(
                 canvas.drawText(rangeStr, margin, y, textPaint)
                 y += 40f
 
-                // --- 1. Pain Evolution Graph ---
-                canvas.drawText("Pain Evolution (0-10)", margin, y, headerPaint)
+                // --- 1. Pain Evolution Graph (Grouped by normalized location) ---
+                canvas.drawText("Pain Evolution (Average Intensity 0-10)", margin, y, headerPaint)
                 y += 20f
                 
                 val chartHeight = 100f
@@ -120,13 +121,13 @@ class ExportPdfUseCase @Inject constructor(
                 }
                 y += chartHeight + 40f
 
-                // --- 2. Top Symptoms ---
+                // --- 2. Top Symptoms (Normalized names) ---
                 canvas.drawText("Top Symptoms Frequency", margin, y, headerPaint)
                 y += 20f
                 
                 val symptomFreq = entries
                     .filter { it.type == EntryType.SYMPTOM && it.name != null }
-                    .groupBy { it.name!! }
+                    .groupBy { it.name!!.trim().lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() } }
                     .mapValues { it.value.size }
                     .toList()
                     .sortedByDescending { it.second }

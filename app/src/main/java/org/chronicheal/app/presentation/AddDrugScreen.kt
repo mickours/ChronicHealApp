@@ -34,6 +34,8 @@ fun AddDrugScreen(
     var showTimePicker by remember { mutableStateOf(false) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
+    val nameSuggestions by viewModel.drugSuggestions.collectAsState()
+
     val timeState = rememberTimePickerState(
         initialHour = reminderTime.hour,
         initialMinute = reminderTime.minute
@@ -65,8 +67,8 @@ fun AddDrugScreen(
             id = id ?: 0,
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.DRUG,
-            name = name,
-            unit = dosage,
+            name = name.trim(),
+            unit = dosage.trim(),
             note = note,
             hasReminder = setReminder,
             reminderId = existingEntry?.reminderId,
@@ -89,7 +91,7 @@ fun AddDrugScreen(
             if (setReminder) {
                 val reminder = Reminder(
                     id = existingEntry?.reminderId ?: 0,
-                    title = "Take $name",
+                    title = "Take ${entry.name}",
                     time = reminderTime,
                     daysOfWeek = (1..7).toSet(),
                     entryType = EntryType.DRUG
@@ -126,11 +128,11 @@ fun AddDrugScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            AutoCompleteTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Drug Name") },
-                modifier = Modifier.fillMaxWidth()
+                suggestions = nameSuggestions,
+                label = "Drug Name"
             )
 
             Spacer(modifier = Modifier.height(16.dp))

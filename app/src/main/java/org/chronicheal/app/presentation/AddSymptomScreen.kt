@@ -31,6 +31,9 @@ fun AddSymptomScreen(
     var startTime by remember { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
+    val nameSuggestions by viewModel.symptomSuggestions.collectAsState()
+    val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
+
     LaunchedEffect(id) {
         if (id != null) {
             val entry = viewModel.getEntryById(id)
@@ -51,9 +54,9 @@ fun AddSymptomScreen(
             id = id ?: 0,
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.SYMPTOM,
-            name = name,
+            name = name.trim(),
             intensity = severity.roundToInt(),
-            location = location,
+            location = location.trim(),
             note = note,
             isFinished = existingEntry?.isFinished ?: false,
             durationMinutes = existingEntry?.durationMinutes
@@ -96,11 +99,11 @@ fun AddSymptomScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            AutoCompleteTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Symptom Name (e.g. Fatigue, Nausea)") },
-                modifier = Modifier.fillMaxWidth()
+                suggestions = nameSuggestions,
+                label = "Symptom Name (e.g. Fatigue, Nausea)"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -118,11 +121,11 @@ fun AddSymptomScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            AutoCompleteTextField(
                 value = location,
                 onValueChange = { location = it },
-                label = { Text("Location (Optional)") },
-                modifier = Modifier.fillMaxWidth()
+                suggestions = locationSuggestions,
+                label = "Location (Optional)"
             )
 
             Spacer(modifier = Modifier.height(16.dp))

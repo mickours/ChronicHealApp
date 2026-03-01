@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.chronicheal.app.data.notification.ReminderScheduler
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
 import org.chronicheal.app.domain.repository.ReminderRepository
@@ -38,6 +39,86 @@ class TimelineViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = TimelineUiState()
     )
+
+    val symptomSuggestions: StateFlow<List<String>> = uiState
+        .map { state ->
+            state.entries
+                .filter { it.type == EntryType.SYMPTOM && !it.name.isNullOrBlank() }
+                .mapNotNull { it.name }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val painLocationSuggestions: StateFlow<List<String>> = uiState
+        .map { state ->
+            state.entries
+                .filter { (it.type == EntryType.PAIN || it.type == EntryType.SYMPTOM) && !it.location.isNullOrBlank() }
+                .mapNotNull { it.location }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val drugSuggestions: StateFlow<List<String>> = uiState
+        .map { state ->
+            state.entries
+                .filter { it.type == EntryType.DRUG && !it.name.isNullOrBlank() }
+                .mapNotNull { it.name }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val activitySuggestions: StateFlow<List<String>> = uiState
+        .map { state ->
+            state.entries
+                .filter { it.type == EntryType.ACTIVITY && !it.name.isNullOrBlank() }
+                .mapNotNull { it.name }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val diseaseSuggestions: StateFlow<List<String>> = uiState
+        .map { state ->
+            state.entries
+                .filter { it.type == EntryType.DISEASE && !it.name.isNullOrBlank() }
+                .mapNotNull { it.name }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val doctorSuggestions: StateFlow<List<String>> = uiState
+        .map { state ->
+            state.entries
+                .filter { it.type == EntryType.MEDICAL_APPOINTMENT && !it.name.isNullOrBlank() }
+                .mapNotNull { it.name }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val mealSuggestions: StateFlow<List<String>> = uiState
+        .map { state ->
+            state.entries
+                .filter { it.type == EntryType.MEAL && !it.name.isNullOrBlank() }
+                .mapNotNull { it.name }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val externalFactorSuggestions: StateFlow<List<String>> = uiState
+        .map { state ->
+            state.entries
+                .filter { it.type == EntryType.EXTERNAL_FACTOR && !it.name.isNullOrBlank() }
+                .mapNotNull { it.name }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun addEntry(entry: HealthEntry) {
         viewModelScope.launch {

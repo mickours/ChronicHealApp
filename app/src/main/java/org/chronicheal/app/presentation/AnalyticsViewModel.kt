@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.usecase.ExportPdfUseCase
@@ -13,6 +12,7 @@ import java.io.OutputStream
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -101,33 +101,48 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 
-    private fun getPainData(entries: List<HealthEntry>, range: TimeRange, start: LocalDate): Map<LocalDate, Int> {
-        val data = entries
-            .filter { it.type == EntryType.PAIN && it.intensity != null }
-            .groupBy { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() }
-            .mapValues { (_, dayEntries) ->
-                dayEntries.mapNotNull { it.intensity }.average().toInt()
-            }
+    private fun getPainData(entries: List<HealthEntry>, range: TimeRange, start: LocalDate): Map<String, Map<LocalDate, Int>> {
+        val painEntries = entries.filter { it.type == EntryType.PAIN && it.intensity != null }
         
-        val result = mutableMapOf<LocalDate, Int>()
+        // Group by location name normalized to capitalize first letter
+        val normalizedPainEntries = painEntries.map { entry ->
+            val rawLocation = entry.location?.trim()?.lowercase() ?: ""
+            val normalizedLocation = if (rawLocation.isBlank()) "General" 
+                                     else rawLocation.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+            entry.copy(location = normalizedLocation)
+        }
+
+        val locations = normalizedPainEntries.map { it.location!! }.distinct()
+        
         val daysCount = when (range) {
             TimeRange.WEEK -> 7L
             TimeRange.MONTH -> ChronoUnit.DAYS.between(start, start.plusMonths(1))
             TimeRange.YEAR -> ChronoUnit.DAYS.between(start, start.plusYears(1))
         }
-        
-        for (i in 0 until daysCount) {
-            val date = start.plusDays(i)
-            result[date] = data[date] ?: 0
+
+        return locations.associateWith { location ->
+            val locationData = normalizedPainEntries
+                .filter { it.location == location }
+                .groupBy { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() }
+                .mapValues { (_, dayEntries) ->
+                    dayEntries.mapNotNull { it.intensity }.average().toInt()
+                }
+            
+            val result = mutableMapOf<LocalDate, Int>()
+            for (i in 0 until daysCount) {
+                val date = start.plusDays(i)
+                result[date] = locationData[date] ?: 0
+            }
+            result.toSortedMap()
         }
-        
-        return result.toSortedMap()
     }
 
     private fun getSymptomFrequency(entries: List<HealthEntry>): Map<String, Int> {
         return entries
-            .filter { it.type == EntryType.SYMPTOM && it.name != null }
-            .groupBy { it.name!! }
+            .filter { it.type == EntryType.SYMPTOM && !it.name.isNullOrBlank() }
+            .groupBy { 
+                it.name!!.trim().lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+            }
             .mapValues { it.value.size }
             .toList()
             .sortedByDescending { it.second }
@@ -141,6 +156,6 @@ enum class TimeRange {
 }
 
 data class AnalyticsUiState(
-    val painData: Map<LocalDate, Int> = emptyMap(),
+    val painData: Map<String, Map<LocalDate, Int>> = emptyMap(),
     val symptomFrequency: Map<String, Int> = emptyMap()
 )

@@ -1,8 +1,29 @@
 package org.chronicheal.app.presentation
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -32,6 +53,8 @@ fun AddMealScreen(
     var setReminder by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf(LocalTime.now()) }
     var showTimePicker by remember { mutableStateOf(false) }
+
+    val nameSuggestions by viewModel.mealSuggestions.collectAsState()
 
     val timeState = rememberTimePickerState(
         initialHour = reminderTime.hour,
@@ -63,7 +86,7 @@ fun AddMealScreen(
             id = id ?: 0,
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.MEAL,
-            name = name,
+            name = name.trim(),
             note = note,
             hasReminder = setReminder,
             reminderId = existingEntry?.reminderId,
@@ -86,7 +109,7 @@ fun AddMealScreen(
             if (setReminder) {
                 val reminder = Reminder(
                     id = existingEntry?.reminderId ?: 0,
-                    title = "Meal: $name",
+                    title = "Meal: ${entry.name}",
                     time = reminderTime,
                     daysOfWeek = (1..7).toSet(),
                     entryType = EntryType.MEAL
@@ -123,11 +146,11 @@ fun AddMealScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            AutoCompleteTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Meal Name (e.g. Breakfast, Lunch, Snack)") },
-                modifier = Modifier.fillMaxWidth()
+                suggestions = nameSuggestions,
+                label = "Meal Name (e.g. Breakfast, Lunch, Snack)"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -143,7 +166,7 @@ fun AddMealScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Row(
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Checkbox(

@@ -30,6 +30,8 @@ fun AddPainScreen(
     var startTime by remember { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
+    val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
+
     LaunchedEffect(id) {
         if (id != null) {
             val entry = viewModel.getEntryById(id)
@@ -50,7 +52,7 @@ fun AddPainScreen(
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.PAIN,
             intensity = intensity.roundToInt(),
-            location = location,
+            location = location.trim(),
             note = note,
             isFinished = existingEntry?.isFinished ?: false,
             durationMinutes = existingEntry?.durationMinutes
@@ -106,11 +108,11 @@ fun AddPainScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            AutoCompleteTextField(
                 value = location,
                 onValueChange = { location = it },
-                label = { Text("Location (e.g. Back, Knee)") },
-                modifier = Modifier.fillMaxWidth()
+                suggestions = locationSuggestions,
+                label = "Location (e.g. Back, Knee)"
             )
 
             Spacer(modifier = Modifier.height(16.dp))
