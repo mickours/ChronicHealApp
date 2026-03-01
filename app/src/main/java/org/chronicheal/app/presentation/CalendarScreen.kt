@@ -3,18 +3,19 @@ package org.chronicheal.app.presentation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,36 +32,102 @@ import java.util.*
 fun CalendarScreen(
     onBackClick: () -> Unit,
     onDateClick: (LocalDate) -> Unit,
-    viewModel: TimelineViewModel = hiltViewModel()
+    onManageRemindersClick: () -> Unit,
+    viewModel: TimelineViewModel = hiltViewModel(),
+    remindersViewModel: RemindersViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val reminders by remindersViewModel.reminders.collectAsState()
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Calendar") },
+                title = { Text("Calendar & Reminders") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onManageRemindersClick) {
+                        Icon(Icons.Default.Notifications, contentDescription = "Manage Reminders")
                     }
                 }
             )
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            CalendarHeader(
-                currentMonth = currentMonth,
-                onMonthChange = { currentMonth = it }
-            )
-            CalendarGrid(
-                currentMonth = currentMonth,
-                entries = uiState.entries,
-                onDateClick = onDateClick
+            item {
+                CalendarHeader(
+                    currentMonth = currentMonth,
+                    onMonthChange = { currentMonth = it }
+                )
+            }
+            item {
+                CalendarGrid(
+                    currentMonth = currentMonth,
+                    entries = uiState.entries,
+                    onDateClick = onDateClick
+                )
+            }
+            
+            if (reminders.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Daily Reminders",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+                
+                items(reminders.filter { it.isEnabled }) { reminder ->
+                    ReminderItemSmall(
+                        reminder = reminder,
+                        onToggle = { remindersViewModel.toggleReminder(reminder) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ReminderItemSmall(
+    reminder: org.chronicheal.app.domain.model.Reminder,
+    onToggle: () -> Unit
+) {
+    val timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = reminder.title, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = "${reminder.time.format(timeFormatter)} - ${formatDaysOfWeek(reminder.daysOfWeek)}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Switch(
+                checked = reminder.isEnabled,
+                onCheckedChange = { onToggle() },
+                modifier = Modifier.scale(0.8f)
             )
         }
     }
@@ -122,21 +189,32 @@ fun CalendarGrid(
             }
         }
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(7),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            items(emptyDaysBefore) {
-                Box(modifier = Modifier.aspectRatio(1f))
-            }
-            items(days) { day ->
-                val date = currentMonth.atDay(day)
-                val hasEntries = entriesByDate.containsKey(date)
-                DayCell(
-                    day = day, 
-                    hasEntries = hasEntries,
-                    onClick = { onDateClick(date) }
-                )
+        // We use a non-scrollable grid inside the LazyColumn
+        val rows = (days.size + emptyDaysBefore.size + 6) / 7
+        for (row in 0 until rows) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                for (col in 0 until 7) {
+                    val index = row * 7 + col
+                    Box(modifier = Modifier.weight(1f)) {
+                        if (index < emptyDaysBefore.size) {
+                            Box(modifier = Modifier.aspectRatio(1f))
+                        } else {
+                            val dayIndex = index - emptyDaysBefore.size
+                            if (dayIndex < days.size) {
+                                val day = days[dayIndex]
+                                val date = currentMonth.atDay(day)
+                                val hasEntries = entriesByDate.containsKey(date)
+                                DayCell(
+                                    day = day, 
+                                    hasEntries = hasEntries,
+                                    onClick = { onDateClick(date) }
+                                )
+                            } else {
+                                Box(modifier = Modifier.aspectRatio(1f))
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -167,4 +245,12 @@ fun DayCell(
             }
         }
     }
+}
+
+private fun formatDaysOfWeek(days: Set<Int>): String {
+    if (days.size == 7) return "Every day"
+    if (days.isEmpty()) return "Never"
+    
+    val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    return days.sorted().joinToString(", ") { dayNames[it - 1] }
 }

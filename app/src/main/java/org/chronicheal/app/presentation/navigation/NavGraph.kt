@@ -39,6 +39,9 @@ fun NavGraph(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() },
                 onDateClick = { date ->
                     navController.navigate(Screen.DayView.createRoute(date.toString()))
+                },
+                onManageRemindersClick = {
+                    navController.navigate(Screen.Reminders.route)
                 }
             )
         }
@@ -65,8 +68,7 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(route = Screen.Settings.route) {
             SettingsScreen(
-                onBackClick = { navController.popBackStack() },
-                onRemindersClick = { navController.navigate(Screen.Reminders.route) }
+                onBackClick = { navController.popBackStack() }
             )
         }
         composable(route = Screen.Reminders.route) {

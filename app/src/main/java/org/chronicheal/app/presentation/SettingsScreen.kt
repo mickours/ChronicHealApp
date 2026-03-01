@@ -5,7 +5,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -19,7 +18,6 @@ import java.io.InputStreamReader
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
-    onRemindersClick: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -79,19 +77,6 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(text = "General Settings", style = MaterialTheme.typography.titleMedium)
-            
-            Button(
-                onClick = onRemindersClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Notifications, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("Manage Reminders")
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
             Text(text = "Data Management", style = MaterialTheme.typography.titleMedium)
             
             Button(
