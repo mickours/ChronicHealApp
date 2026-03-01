@@ -19,6 +19,7 @@ import kotlin.math.roundToInt
 @Composable
 fun AddSleepScreen(
     dateString: String? = null,
+    id: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -26,11 +27,24 @@ fun AddSleepScreen(
     var durationHours by remember { mutableStateOf("") }
     var quality by remember { mutableFloatStateOf(3f) }
     var note by remember { mutableStateOf("") }
+    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+
+    LaunchedEffect(id) {
+        if (id != null) {
+            val entry = viewModel.getEntryById(id)
+            if (entry != null) {
+                existingEntry = entry
+                durationHours = entry.value?.toString() ?: ""
+                quality = entry.intensity?.toFloat() ?: 3f
+                note = entry.note
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Log Sleep") },
+                title = { Text(if (id == null) "Log Sleep" else "Edit Sleep") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -79,25 +93,35 @@ fun AddSleepScreen(
 
             Button(
                 onClick = {
-                    val timestamp = if (dateString != null) {
-                        LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                    val timestamp = if (id == null) {
+                        if (dateString != null) {
+                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                        } else {
+                            java.time.Instant.now()
+                        }
                     } else {
-                        java.time.Instant.now()
+                        existingEntry?.timestamp ?: java.time.Instant.now()
                     }
-                    viewModel.addEntry(
-                        HealthEntry(
-                            timestamp = timestamp,
-                            type = EntryType.SLEEP,
-                            value = durationHours.toDoubleOrNull(),
-                            intensity = quality.roundToInt(),
-                            note = note
-                        )
+
+                    val entry = HealthEntry(
+                        id = id ?: 0,
+                        timestamp = timestamp,
+                        type = EntryType.SLEEP,
+                        value = durationHours.toDoubleOrNull(),
+                        intensity = quality.roundToInt(),
+                        note = note
                     )
+
+                    if (id == null) {
+                        viewModel.addEntry(entry)
+                    } else {
+                        viewModel.updateEntry(entry)
+                    }
                     onSaveSuccess()
                 },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save")
+                Text(if (id == null) "Save" else "Update")
             }
         }
     }

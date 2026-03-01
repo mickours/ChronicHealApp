@@ -7,7 +7,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import org.chronicheal.app.domain.model.EntryType
+import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.presentation.*
+import java.time.ZoneId
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -15,6 +17,22 @@ fun NavGraph(navController: NavHostController) {
         navController = navController,
         startDestination = Screen.Timeline.route
     ) {
+        val onEntryClick: (HealthEntry, String?) -> Unit = { entry, date ->
+            val route = when (entry.type) {
+                EntryType.PAIN -> Screen.AddPain.createRoute(id = entry.id, date = date)
+                EntryType.DRUG -> Screen.AddDrug.createRoute(id = entry.id, date = date)
+                EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(id = entry.id, date = date)
+                EntryType.DISEASE -> Screen.AddDisease.createRoute(id = entry.id, date = date)
+                EntryType.MEAL -> Screen.AddMeal.createRoute(id = entry.id, date = date)
+                EntryType.SLEEP -> Screen.AddSleep.createRoute(id = entry.id, date = date)
+                EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.createRoute(id = entry.id, date = date)
+                EntryType.ACTIVITY -> Screen.AddActivity.createRoute(id = entry.id, date = date)
+                EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(id = entry.id, date = date)
+                EntryType.JOURNAL -> Screen.AddJournal.createRoute(id = entry.id, date = date)
+            }
+            navController.navigate(route)
+        }
+
         composable(route = Screen.Timeline.route) {
             TimelineScreen(
                 onAddEntryClick = {
@@ -31,7 +49,8 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onBodyScanClick = {
                     navController.navigate(Screen.BodyScan.route)
-                }
+                },
+                onEntryClick = { entry -> onEntryClick(entry, null) }
             )
         }
         composable(route = Screen.Calendar.route) {
@@ -63,7 +82,8 @@ fun NavGraph(navController: NavHostController) {
                 onBackClick = { navController.popBackStack() },
                 onAddEntryClick = { clickedDate ->
                     navController.navigate(Screen.EntryTypeSelection.createRoute(clickedDate.toString()))
-                }
+                },
+                onEntryClick = { entry -> onEntryClick(entry, date) }
             )
         }
         composable(route = Screen.Settings.route) {
@@ -129,14 +149,17 @@ fun NavGraph(navController: NavHostController) {
             route = Screen.AddPain.route,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val location = backStackEntry.arguments?.getString("location")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddPainScreen(
                 dateString = date,
                 locationString = location,
+                id = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
@@ -145,12 +168,15 @@ fun NavGraph(navController: NavHostController) {
             route = Screen.AddDrug.route,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddDrugScreen(
                 dateString = date,
+                id = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
@@ -159,14 +185,17 @@ fun NavGraph(navController: NavHostController) {
             route = Screen.AddSymptom.route,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val location = backStackEntry.arguments?.getString("location")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddSymptomScreen(
                 dateString = date,
                 locationString = location,
+                id = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
@@ -175,12 +204,15 @@ fun NavGraph(navController: NavHostController) {
             route = Screen.AddActivity.route,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddActivityScreen(
                 dateString = date,
+                id = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
@@ -189,12 +221,15 @@ fun NavGraph(navController: NavHostController) {
             route = Screen.AddMeal.route,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddMealScreen(
                 dateString = date,
+                id = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
@@ -203,12 +238,15 @@ fun NavGraph(navController: NavHostController) {
             route = Screen.AddSleep.route,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddSleepScreen(
                 dateString = date,
+                id = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
@@ -217,12 +255,15 @@ fun NavGraph(navController: NavHostController) {
             route = Screen.AddDisease.route,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddDiseaseScreen(
                 dateString = date,
+                id = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
@@ -231,12 +272,15 @@ fun NavGraph(navController: NavHostController) {
             route = Screen.AddMedicalAppointment.route,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddMedicalAppointmentScreen(
                 dateString = date,
+                id = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
@@ -245,12 +289,15 @@ fun NavGraph(navController: NavHostController) {
             route = Screen.AddExternalFactor.route,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddExternalFactorScreen(
                 dateString = date,
+                id = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )
@@ -259,12 +306,15 @@ fun NavGraph(navController: NavHostController) {
             route = Screen.AddJournal.route,
             arguments = listOf(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddJournalScreen(
                 dateString = date,
+                id = id,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { onSaveSuccess(date) }
             )

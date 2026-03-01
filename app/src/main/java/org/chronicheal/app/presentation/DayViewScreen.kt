@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -22,6 +24,7 @@ fun DayViewScreen(
     dateString: String,
     onBackClick: () -> Unit,
     onAddEntryClick: (LocalDate) -> Unit,
+    onEntryClick: (HealthEntry) -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -74,7 +77,8 @@ fun DayViewScreen(
                 items(dayEntries) { entry ->
                     EntryItem(
                         entry = entry,
-                        onDeleteClick = { viewModel.deleteEntry(entry) }
+                        onDeleteClick = { viewModel.deleteEntry(entry) },
+                        modifier = Modifier.clickable { onEntryClick(entry) }
                     )
                 }
             }

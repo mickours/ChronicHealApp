@@ -18,6 +18,7 @@ import java.time.ZoneId
 @Composable
 fun AddMealScreen(
     dateString: String? = null,
+    id: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -25,11 +26,24 @@ fun AddMealScreen(
     var description by remember { mutableStateOf("") }
     var triggers by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
+    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+
+    LaunchedEffect(id) {
+        if (id != null) {
+            val entry = viewModel.getEntryById(id)
+            if (entry != null) {
+                existingEntry = entry
+                description = entry.name ?: ""
+                triggers = entry.location ?: ""
+                note = entry.note
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Log Meal") },
+                title = { Text(if (id == null) "Log Meal" else "Edit Meal") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -74,26 +88,36 @@ fun AddMealScreen(
 
             Button(
                 onClick = {
-                    val timestamp = if (dateString != null) {
-                        LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                    val timestamp = if (id == null) {
+                        if (dateString != null) {
+                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                        } else {
+                            java.time.Instant.now()
+                        }
                     } else {
-                        java.time.Instant.now()
+                        existingEntry?.timestamp ?: java.time.Instant.now()
                     }
-                    viewModel.addEntry(
-                        HealthEntry(
-                            timestamp = timestamp,
-                            type = EntryType.MEAL,
-                            name = description,
-                            location = triggers,
-                            note = note
-                        )
+
+                    val entry = HealthEntry(
+                        id = id ?: 0,
+                        timestamp = timestamp,
+                        type = EntryType.MEAL,
+                        name = description,
+                        location = triggers,
+                        note = note
                     )
+
+                    if (id == null) {
+                        viewModel.addEntry(entry)
+                    } else {
+                        viewModel.updateEntry(entry)
+                    }
                     onSaveSuccess()
                 },
                 enabled = description.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save")
+                Text(if (id == null) "Save" else "Update")
             }
         }
     }

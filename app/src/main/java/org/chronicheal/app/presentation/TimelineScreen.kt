@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.HealthEntry
@@ -29,6 +31,7 @@ fun TimelineScreen(
     onSettingsClick: () -> Unit,
     onAnalyticsClick: () -> Unit,
     onBodyScanClick: () -> Unit,
+    onEntryClick: (HealthEntry) -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -83,7 +86,8 @@ fun TimelineScreen(
                         is TimelineItem.DayHeader -> DayHeader(item.day)
                         is TimelineItem.Entry -> EntryItem(
                             entry = item.entry,
-                            onDeleteClick = { viewModel.deleteEntry(item.entry) }
+                            onDeleteClick = { viewModel.deleteEntry(item.entry) },
+                            modifier = Modifier.clickable { onEntryClick(item.entry) }
                         )
                     }
                 }
@@ -143,7 +147,7 @@ fun YearHeader(year: Int) {
         Text(
             text = year.toString(),
             style = MaterialTheme.typography.headlineLarge,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
     }
@@ -159,7 +163,7 @@ fun MonthHeader(month: String) {
         Text(
             text = month,
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.secondary
         )
     }
@@ -175,7 +179,7 @@ fun DayHeader(day: String) {
         Text(
             text = day,
             style = MaterialTheme.typography.labelMedium,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+            fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.outline
         )
     }
@@ -184,14 +188,15 @@ fun DayHeader(day: String) {
 @Composable
 fun EntryItem(
     entry: HealthEntry,
-    onDeleteClick: () -> Unit
+    onDeleteClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val formatter = DateTimeFormatter
         .ofLocalizedTime(FormatStyle.SHORT)
         .withZone(ZoneId.systemDefault())
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp)
     ) {

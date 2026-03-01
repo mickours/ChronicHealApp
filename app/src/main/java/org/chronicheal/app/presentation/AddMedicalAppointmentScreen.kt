@@ -21,6 +21,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AddMedicalAppointmentScreen(
     dateString: String? = null,
+    id: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -33,16 +34,30 @@ fun AddMedicalAppointmentScreen(
     var setReminder by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf(LocalTime.now()) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
     val timeState = rememberTimePickerState(
         initialHour = reminderTime.hour,
         initialMinute = reminderTime.minute
     )
 
+    LaunchedEffect(id) {
+        if (id != null) {
+            val entry = viewModel.getEntryById(id)
+            if (entry != null) {
+                existingEntry = entry
+                doctorName = entry.name ?: ""
+                purpose = entry.location ?: ""
+                note = entry.note
+                setReminder = entry.hasReminder
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Medical Appointment") },
+                title = { Text(if (id == null) "Medical Appointment" else "Edit Appointment") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -94,23 +109,25 @@ fun AddMedicalAppointmentScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked = setReminder,
-                    onCheckedChange = { setReminder = it }
-                )
-                Text("Set daily reminder for this appointment", style = MaterialTheme.typography.bodyLarge)
-            }
-
-            if (setReminder) {
-                OutlinedButton(
-                    onClick = { showTimePicker = true },
-                    modifier = Modifier.padding(start = 32.dp)
+            if (id == null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+                    Checkbox(
+                        checked = setReminder,
+                        onCheckedChange = { setReminder = it }
+                    )
+                    Text("Set daily reminder for this appointment", style = MaterialTheme.typography.bodyLarge)
+                }
+
+                if (setReminder) {
+                    OutlinedButton(
+                        onClick = { showTimePicker = true },
+                        modifier = Modifier.padding(start = 32.dp)
+                    ) {
+                        Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+                    }
                 }
             }
 
@@ -118,44 +135,53 @@ fun AddMedicalAppointmentScreen(
 
             Button(
                 onClick = {
-                    val timestamp = if (dateString != null) {
-                        LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                    val timestamp = if (id == null) {
+                        if (dateString != null) {
+                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                        } else {
+                            java.time.Instant.now()
+                        }
                     } else {
-                        java.time.Instant.now()
+                        existingEntry?.timestamp ?: java.time.Instant.now()
                     }
                     val finalNote = buildString {
                         append(note)
-                        if (outcome.isNotBlank()) {
+                        if (outcome.isNotBlank() && !note.contains("Outcome: $outcome")) {
                             if (isNotEmpty()) append("\n\n")
                             append("Outcome: $outcome")
                         }
                     }
                     val entry = HealthEntry(
+                        id = id ?: 0,
                         timestamp = timestamp,
                         type = EntryType.MEDICAL_APPOINTMENT,
                         name = doctorName,
                         location = purpose,
                         note = finalNote,
-                        hasReminder = setReminder
+                        hasReminder = if (id == null) setReminder else existingEntry?.hasReminder ?: false
                     )
 
-                    if (setReminder) {
-                        val reminder = Reminder(
-                            title = "Appointment with $doctorName",
-                            time = reminderTime,
-                            daysOfWeek = (1..7).toSet(),
-                            entryType = EntryType.MEDICAL_APPOINTMENT
-                        )
-                        viewModel.addEntryWithReminder(entry, reminder)
+                    if (id == null) {
+                        if (setReminder) {
+                            val reminder = Reminder(
+                                title = "Appointment with $doctorName",
+                                time = reminderTime,
+                                daysOfWeek = (1..7).toSet(),
+                                entryType = EntryType.MEDICAL_APPOINTMENT
+                            )
+                            viewModel.addEntryWithReminder(entry, reminder)
+                        } else {
+                            viewModel.addEntry(entry)
+                        }
                     } else {
-                        viewModel.addEntry(entry)
+                        viewModel.updateEntry(entry)
                     }
                     onSaveSuccess()
                 },
                 enabled = doctorName.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save")
+                Text(if (id == null) "Save" else "Update")
             }
         }
 

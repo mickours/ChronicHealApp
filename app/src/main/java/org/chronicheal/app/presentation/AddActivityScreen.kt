@@ -19,6 +19,7 @@ import kotlin.math.roundToInt
 @Composable
 fun AddActivityScreen(
     dateString: String? = null,
+    id: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -27,11 +28,25 @@ fun AddActivityScreen(
     var duration by remember { mutableStateOf("") }
     var intensity by remember { mutableFloatStateOf(3f) }
     var note by remember { mutableStateOf("") }
+    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+
+    LaunchedEffect(id) {
+        if (id != null) {
+            val entry = viewModel.getEntryById(id)
+            if (entry != null) {
+                existingEntry = entry
+                name = entry.name ?: ""
+                duration = entry.unit ?: ""
+                intensity = entry.intensity?.toFloat() ?: 3f
+                note = entry.note
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Log Activity") },
+                title = { Text(if (id == null) "Log Activity" else "Edit Activity") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -89,27 +104,37 @@ fun AddActivityScreen(
 
             Button(
                 onClick = {
-                    val timestamp = if (dateString != null) {
-                        LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                    val timestamp = if (id == null) {
+                        if (dateString != null) {
+                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                        } else {
+                            java.time.Instant.now()
+                        }
                     } else {
-                        java.time.Instant.now()
+                        existingEntry?.timestamp ?: java.time.Instant.now()
                     }
-                    viewModel.addEntry(
-                        HealthEntry(
-                            timestamp = timestamp,
-                            type = EntryType.ACTIVITY,
-                            name = name,
-                            unit = duration,
-                            intensity = intensity.roundToInt(),
-                            note = note
-                        )
+
+                    val entry = HealthEntry(
+                        id = id ?: 0,
+                        timestamp = timestamp,
+                        type = EntryType.ACTIVITY,
+                        name = name,
+                        unit = duration,
+                        intensity = intensity.roundToInt(),
+                        note = note
                     )
+
+                    if (id == null) {
+                        viewModel.addEntry(entry)
+                    } else {
+                        viewModel.updateEntry(entry)
+                    }
                     onSaveSuccess()
                 },
                 enabled = name.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save")
+                Text(if (id == null) "Save" else "Update")
             }
         }
     }

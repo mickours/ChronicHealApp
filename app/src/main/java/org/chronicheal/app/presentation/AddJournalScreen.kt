@@ -16,11 +16,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -34,16 +30,28 @@ import java.time.ZoneId
 @Composable
 fun AddJournalScreen(
     dateString: String? = null,
+    id: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     var content by remember { mutableStateOf("") }
+    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+
+    LaunchedEffect(id) {
+        if (id != null) {
+            val entry = viewModel.getEntryById(id)
+            if (entry != null) {
+                existingEntry = entry
+                content = entry.note
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Journal Entry") },
+                title = { Text(if (id == null) "Journal Entry" else "Edit Journal Entry") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -70,24 +78,34 @@ fun AddJournalScreen(
 
             Button(
                 onClick = {
-                    val timestamp = if (dateString != null) {
-                        LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                    val timestamp = if (id == null) {
+                        if (dateString != null) {
+                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                        } else {
+                            java.time.Instant.now()
+                        }
                     } else {
-                        java.time.Instant.now()
+                        existingEntry?.timestamp ?: java.time.Instant.now()
                     }
-                    viewModel.addEntry(
-                        HealthEntry(
-                            timestamp = timestamp,
-                            type = EntryType.JOURNAL,
-                            note = content
-                        )
+
+                    val entry = HealthEntry(
+                        id = id ?: 0,
+                        timestamp = timestamp,
+                        type = EntryType.JOURNAL,
+                        note = content
                     )
+
+                    if (id == null) {
+                        viewModel.addEntry(entry)
+                    } else {
+                        viewModel.updateEntry(entry)
+                    }
                     onSaveSuccess()
                 },
                 enabled = content.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save")
+                Text(if (id == null) "Save" else "Update")
             }
         }
     }

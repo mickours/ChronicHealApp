@@ -10,6 +10,7 @@ Goal: Allow users to view their history and add new entries.
 
 ### Accomplishments:
 - **Unified Entry System**: Implemented all 10 specialized screens (Pain, Drugs, Symptoms, Disease, Meals, Sleep, Medical Appointment, Activity, External Factors, Journal).
+- **Entry Edition**: Added support for editing existing entries. Users can tap any entry in the Timeline or Day View to modify its details.
 - **Calendar View**: Added a monthly overview with data markers for active days.
 - **Day View**: Contextual list of events for a specific day with adding support.
 - **Navigation**: Smart contextual navigation (Save -> Return to Day View).

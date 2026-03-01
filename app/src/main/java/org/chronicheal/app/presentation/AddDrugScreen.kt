@@ -21,6 +21,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AddDrugScreen(
     dateString: String? = null,
+    id: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -32,16 +33,30 @@ fun AddDrugScreen(
     var setReminder by remember { mutableStateOf(false) }
     var reminderTime by remember { mutableStateOf(LocalTime.now()) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
     val timeState = rememberTimePickerState(
         initialHour = reminderTime.hour,
         initialMinute = reminderTime.minute
     )
 
+    LaunchedEffect(id) {
+        if (id != null) {
+            val entry = viewModel.getEntryById(id)
+            if (entry != null) {
+                existingEntry = entry
+                name = entry.name ?: ""
+                dosage = entry.unit ?: ""
+                note = entry.note
+                setReminder = entry.hasReminder
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Log Medication") },
+                title = { Text(if (id == null) "Log Medication" else "Edit Medication") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -84,23 +99,25 @@ fun AddDrugScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked = setReminder,
-                    onCheckedChange = { setReminder = it }
-                )
-                Text("Set daily reminder for this drug", style = MaterialTheme.typography.bodyLarge)
-            }
-
-            if (setReminder) {
-                OutlinedButton(
-                    onClick = { showTimePicker = true },
-                    modifier = Modifier.padding(start = 32.dp)
+            if (id == null) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+                    Checkbox(
+                        checked = setReminder,
+                        onCheckedChange = { setReminder = it }
+                    )
+                    Text("Set daily reminder for this drug", style = MaterialTheme.typography.bodyLarge)
+                }
+
+                if (setReminder) {
+                    OutlinedButton(
+                        onClick = { showTimePicker = true },
+                        modifier = Modifier.padding(start = 32.dp)
+                    ) {
+                        Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+                    }
                 }
             }
 
@@ -108,37 +125,47 @@ fun AddDrugScreen(
 
             Button(
                 onClick = {
-                    val timestamp = if (dateString != null) {
-                        LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                    val timestamp = if (id == null) {
+                        if (dateString != null) {
+                            LocalDate.parse(dateString).atTime(LocalTime.now()).atZone(ZoneId.systemDefault()).toInstant()
+                        } else {
+                            java.time.Instant.now()
+                        }
                     } else {
-                        java.time.Instant.now()
+                        existingEntry?.timestamp ?: java.time.Instant.now()
                     }
+
                     val entry = HealthEntry(
+                        id = id ?: 0,
                         timestamp = timestamp,
                         type = EntryType.DRUG,
                         name = name,
                         unit = dosage,
                         note = note,
-                        hasReminder = setReminder
+                        hasReminder = if (id == null) setReminder else existingEntry?.hasReminder ?: false
                     )
 
-                    if (setReminder) {
-                        val reminder = Reminder(
-                            title = "Take $name",
-                            time = reminderTime,
-                            daysOfWeek = (1..7).toSet(),
-                            entryType = EntryType.DRUG
-                        )
-                        viewModel.addEntryWithReminder(entry, reminder)
+                    if (id == null) {
+                        if (setReminder) {
+                            val reminder = Reminder(
+                                title = "Take $name",
+                                time = reminderTime,
+                                daysOfWeek = (1..7).toSet(),
+                                entryType = EntryType.DRUG
+                            )
+                            viewModel.addEntryWithReminder(entry, reminder)
+                        } else {
+                            viewModel.addEntry(entry)
+                        }
                     } else {
-                        viewModel.addEntry(entry)
+                        viewModel.updateEntry(entry)
                     }
                     onSaveSuccess()
                 },
                 enabled = name.isNotBlank(),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Save")
+                Text(if (id == null) "Save" else "Update")
             }
         }
 

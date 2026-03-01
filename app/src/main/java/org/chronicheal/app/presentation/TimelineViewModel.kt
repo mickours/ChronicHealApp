@@ -12,10 +12,7 @@ import org.chronicheal.app.data.notification.ReminderScheduler
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
 import org.chronicheal.app.domain.repository.ReminderRepository
-import org.chronicheal.app.domain.usecase.AddEntryUseCase
-import org.chronicheal.app.domain.usecase.DeleteEntryUseCase
-import org.chronicheal.app.domain.usecase.GetEntriesUseCase
-import org.chronicheal.app.domain.usecase.UpdateEntryUseCase
+import org.chronicheal.app.domain.usecase.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -24,6 +21,7 @@ class TimelineViewModel @Inject constructor(
     private val addEntryUseCase: AddEntryUseCase,
     private val deleteEntryUseCase: DeleteEntryUseCase,
     private val updateEntryUseCase: UpdateEntryUseCase,
+    private val getEntryByIdUseCase: GetEntryByIdUseCase,
     private val reminderRepository: ReminderRepository,
     private val reminderScheduler: ReminderScheduler
 ) : ViewModel() {
@@ -63,6 +61,10 @@ class TimelineViewModel @Inject constructor(
         viewModelScope.launch {
             deleteEntryUseCase(entry)
         }
+    }
+
+    suspend fun getEntryById(id: Long): HealthEntry? {
+        return getEntryByIdUseCase(id)
     }
 }
 
