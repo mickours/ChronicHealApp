@@ -53,7 +53,6 @@ fun AddDiseaseScreen(
             name = name.trim(),
             intensity = intensity.roundToInt(),
             note = note,
-            isFinished = existingEntry?.isFinished ?: false,
             durationMinutes = existingEntry?.durationMinutes
         )
     }

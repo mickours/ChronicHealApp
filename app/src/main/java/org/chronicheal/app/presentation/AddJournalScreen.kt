@@ -65,7 +65,6 @@ fun AddJournalScreen(
             note = content,
             hasReminder = setReminder,
             reminderId = existingEntry?.reminderId,
-            isFinished = existingEntry?.isFinished ?: false,
             durationMinutes = existingEntry?.durationMinutes
         )
     }

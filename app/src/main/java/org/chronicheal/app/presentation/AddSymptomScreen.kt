@@ -58,7 +58,6 @@ fun AddSymptomScreen(
             intensity = severity.roundToInt(),
             location = location.trim(),
             note = note,
-            isFinished = existingEntry?.isFinished ?: false,
             durationMinutes = existingEntry?.durationMinutes
         )
     }

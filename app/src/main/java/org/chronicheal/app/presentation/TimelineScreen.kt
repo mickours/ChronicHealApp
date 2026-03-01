@@ -238,7 +238,6 @@ fun TimelineScreen(
                                             }
                                         }
                                     },
-                                    onMarkFinished = { viewModel.markEntryAsFinished(item.entry) },
                                     onClick = { onEntryClick(item.entry) }
                                 )
                             }
@@ -255,45 +254,31 @@ fun TimelineScreen(
 fun SwipeableEntryItem(
     entry: HealthEntry,
     onDelete: () -> Unit,
-    onMarkFinished: () -> Unit,
     onClick: () -> Unit
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
-            when (value) {
-                SwipeToDismissBoxValue.EndToStart -> {
-                    onDelete()
-                    true
-                }
-                SwipeToDismissBoxValue.StartToEnd -> {
-                    onMarkFinished()
-                    false // Don't dismiss, just trigger action
-                }
-                else -> false
+            if (value == SwipeToDismissBoxValue.EndToStart) {
+                onDelete()
+                true
+            } else {
+                false
             }
         }
     )
 
     SwipeToDismissBox(
         state = dismissState,
+        enableDismissFromStartToEnd = false,
         backgroundContent = {
             val color by animateColorAsState(
-                when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.StartToEnd -> Color(0xFFA5D6A7) // Soft Green for Finished
-                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
-                    else -> Color.Transparent
+                if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
+                    MaterialTheme.colorScheme.errorContainer
+                } else {
+                    Color.Transparent
                 }, label = "swipe_color"
             )
-            val icon = when (dismissState.targetValue) {
-                SwipeToDismissBoxValue.StartToEnd -> Icons.Default.Check
-                SwipeToDismissBoxValue.EndToStart -> Icons.Default.Delete
-                else -> null
-            }
-            val alignment = when (dismissState.targetValue) {
-                SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart
-                SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd
-                else -> Alignment.Center
-            }
+            val icon = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) Icons.Default.Delete else null
 
             Box(
                 Modifier
@@ -302,7 +287,7 @@ fun SwipeableEntryItem(
                     .clip(RoundedCornerShape(24.dp))
                     .background(color)
                     .padding(horizontal = 20.dp),
-                contentAlignment = alignment
+                contentAlignment = Alignment.CenterEnd
             ) {
                 if (icon != null) {
                     Icon(icon, contentDescription = null)
@@ -470,7 +455,7 @@ fun EntryItem(
             .padding(horizontal = 8.dp, vertical = 4.dp),
         shape = RoundedCornerShape(24.dp), // Semi-stadium shape to reflect swipability
         colors = CardDefaults.cardColors(
-            containerColor = if (entry.isFinished) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -481,7 +466,7 @@ fun EntryItem(
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(8.dp)
-                    .background(if (entry.isFinished) Color.LightGray else stripeColor)
+                    .background(stripeColor)
             )
             
             Column(
@@ -500,7 +485,7 @@ fun EntryItem(
                                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = if (entry.isFinished) Color.Gray else MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             if (entry.hasReminder) {
                                 Spacer(Modifier.width(8.dp))
@@ -508,15 +493,6 @@ fun EntryItem(
                                     imageVector = Icons.Default.NotificationsActive,
                                     contentDescription = "Reminder set",
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                            if (entry.isFinished) {
-                                Spacer(Modifier.width(8.dp))
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = "Finished",
-                                    tint = Color.Gray,
                                     modifier = Modifier.size(16.dp)
                                 )
                             }
@@ -572,7 +548,7 @@ fun EntryItem(
                 VerticalIntensityGauge(
                     intensity = intensity,
                     maxVal = maxVal,
-                    color = if (entry.isFinished) Color.LightGray else stripeColor,
+                    color = stripeColor,
                     label = if (entry.type == EntryType.SLEEP) "QUAL" else "INT"
                 )
             }

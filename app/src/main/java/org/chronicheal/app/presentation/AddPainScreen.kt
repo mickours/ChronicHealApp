@@ -54,7 +54,6 @@ fun AddPainScreen(
             intensity = intensity.roundToInt(),
             location = location.trim(),
             note = note,
-            isFinished = existingEntry?.isFinished ?: false,
             durationMinutes = existingEntry?.durationMinutes
         )
     }

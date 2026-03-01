@@ -90,7 +90,6 @@ fun AddMealScreen(
             note = note,
             hasReminder = setReminder,
             reminderId = existingEntry?.reminderId,
-            isFinished = existingEntry?.isFinished ?: false,
             durationMinutes = existingEntry?.durationMinutes
         )
     }

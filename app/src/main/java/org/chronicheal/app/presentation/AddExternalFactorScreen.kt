@@ -53,7 +53,6 @@ fun AddExternalFactorScreen(
             name = factorName.trim(),
             intensity = intensity.roundToInt(),
             note = note,
-            isFinished = existingEntry?.isFinished ?: false,
             durationMinutes = existingEntry?.durationMinutes
         )
     }

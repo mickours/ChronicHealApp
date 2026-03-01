@@ -203,13 +203,6 @@ class TimelineViewModel @Inject constructor(
         }
     }
 
-    fun markEntryAsFinished(entry: HealthEntry) {
-        viewModelScope.launch {
-            updateEntryUseCase(entry.copy(isFinished = true))
-            showMessage("${entry.type.name} marked as finished")
-        }
-    }
-
     fun restoreDeletedEntry() {
         viewModelScope.launch {
             recentlyDeletedEntry?.let {

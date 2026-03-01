@@ -145,7 +145,6 @@ fun DayViewScreen(
                                 }
                             }
                         },
-                        onMarkFinished = { viewModel.markEntryAsFinished(entry) },
                         onClick = { onEntryClick(entry) }
                     )
                 }
