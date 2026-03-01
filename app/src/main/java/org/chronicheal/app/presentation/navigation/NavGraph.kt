@@ -89,10 +89,7 @@ fun NavGraph(navController: NavHostController) {
         }
         composable(route = Screen.BodyScan.route) {
             BodyScanScreen(
-                onBackClick = { navController.popBackStack() },
-                onRegionClick = { region ->
-                    navController.navigate(Screen.AddPain.createRoute(location = region))
-                }
+                onBackClick = { navController.popBackStack() }
             )
         }
         composable(

@@ -13,7 +13,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddPainScreen(
     dateString: String? = null,
@@ -23,26 +22,48 @@ fun AddPainScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
+    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    
+    LaunchedEffect(id) {
+        if (id != null) {
+            existingEntry = viewModel.getEntryById(id)
+        }
+    }
+
+    PainEntryFormWrapper(
+        dateString = dateString,
+        locationString = locationString,
+        id = id,
+        existingEntry = existingEntry,
+        onBackClick = onBackClick,
+        onSaveSuccess = onSaveSuccess,
+        viewModel = viewModel
+    )
+}
+
+@Composable
+fun PainEntryFormWrapper(
+    dateString: String? = null,
+    locationString: String? = null,
+    id: Long? = null,
+    existingEntry: HealthEntry? = null,
+    onBackClick: () -> Unit,
+    onSaveSuccess: () -> Unit,
+    viewModel: TimelineViewModel
+) {
     var intensity by remember { mutableFloatStateOf(5f) }
     var location by remember { mutableStateOf(locationString ?: "") }
     var note by remember { mutableStateOf("") }
     var logDate by remember { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by remember { mutableStateOf(LocalTime.now()) }
-    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
-    val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
-
-    LaunchedEffect(id) {
-        if (id != null) {
-            val entry = viewModel.getEntryById(id)
-            if (entry != null) {
-                existingEntry = entry
-                intensity = entry.intensity?.toFloat() ?: 5f
-                location = entry.location ?: ""
-                note = entry.note
-                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-            }
+    LaunchedEffect(existingEntry) {
+        existingEntry?.let { entry ->
+            intensity = entry.intensity?.toFloat() ?: 5f
+            location = entry.location ?: ""
+            note = entry.note
+            logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+            startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
         }
     }
 
@@ -79,50 +100,82 @@ fun AddPainScreen(
         saveButtonEnabled = true,
         viewModel = viewModel
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-        ) {
-            EntryDateTimePicker(
-                date = logDate,
-                onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
+        PainEntryForm(
+            modifier = Modifier.padding(innerPadding),
+            intensity = intensity,
+            onIntensityChange = { intensity = it },
+            location = location,
+            onLocationChange = { location = it },
+            note = note,
+            onNoteChange = { note = it },
+            logDate = logDate,
+            onDateChange = { logDate = it },
+            startTime = startTime,
+            onStartTimeChange = { startTime = it },
+            viewModel = viewModel
+        )
+    }
+}
 
-            Spacer(modifier = Modifier.height(16.dp))
+@Composable
+fun PainEntryForm(
+    modifier: Modifier = Modifier,
+    intensity: Float,
+    onIntensityChange: (Float) -> Unit,
+    location: String,
+    onLocationChange: (String) -> Unit,
+    note: String,
+    onNoteChange: (String) -> Unit,
+    logDate: LocalDate,
+    onDateChange: (LocalDate) -> Unit,
+    startTime: LocalTime,
+    onStartTimeChange: (LocalTime) -> Unit,
+    viewModel: TimelineViewModel
+) {
+    val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
 
-            Text(
-                text = "Intensity: ${intensity.roundToInt()}/10",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Slider(
-                value = intensity,
-                onValueChange = { intensity = it },
-                valueRange = 1f..10f,
-                steps = 8
-            )
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        EntryDateTimePicker(
+            date = logDate,
+            onDateChange = onDateChange,
+            startTime = startTime,
+            onStartTimeChange = onStartTimeChange
+        )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-            AutoCompleteTextField(
-                value = location,
-                onValueChange = { location = it },
-                suggestions = locationSuggestions,
-                label = "Location (e.g. Back, Knee)"
-            )
+        Text(
+            text = "Intensity: ${intensity.roundToInt()}/10",
+            style = MaterialTheme.typography.titleMedium
+        )
+        Slider(
+            value = intensity,
+            onValueChange = onIntensityChange,
+            valueRange = 1f..10f,
+            steps = 8
+        )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text("Notes") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3
-            )
-        }
+        AutoCompleteTextField(
+            value = location,
+            onValueChange = onLocationChange,
+            suggestions = locationSuggestions,
+            label = "Location (e.g. Back, Knee)"
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = note,
+            onValueChange = onNoteChange,
+            label = { Text("Notes") },
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 3
+        )
     }
 }
