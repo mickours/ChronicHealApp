@@ -10,8 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.usecase.ExportPdfUseCase
@@ -41,15 +41,24 @@ class AnalyticsViewModel @Inject constructor(
     private val _message = MutableSharedFlow<String>()
     val message = _message.asSharedFlow()
 
+    private val _correlationType1 = MutableStateFlow(EntryType.PAIN)
+    val correlationType1 = _correlationType1.asStateFlow()
+
+    private val _correlationType2 = MutableStateFlow(EntryType.SLEEP)
+    val correlationType2 = _correlationType2.asStateFlow()
+
     val uiState: StateFlow<AnalyticsUiState> = combine(
         getEntriesUseCase(),
         _timeRange,
-        _startDate
-    ) { entries, range, start ->
+        _startDate,
+        _correlationType1,
+        _correlationType2
+    ) { entries, range, start, type1, type2 ->
         val filteredEntries = filterEntries(entries, range, start)
         AnalyticsUiState(
             painData = getPainData(filteredEntries, range, start),
-            symptomSeveritySum = getSymptomSeveritySum(filteredEntries)
+            symptomSeveritySum = getSymptomSeveritySum(filteredEntries),
+            correlationData = getCorrelationData(filteredEntries, range, start, type1, type2)
         )
     }.stateIn(
         scope = viewModelScope,
@@ -60,6 +69,11 @@ class AnalyticsViewModel @Inject constructor(
     fun setTimeRange(range: TimeRange) {
         _timeRange.value = range
         resetStartDate()
+    }
+
+    fun setCorrelationTypes(type1: EntryType, type2: EntryType) {
+        _correlationType1.value = type1
+        _correlationType2.value = type2
     }
 
     private fun resetStartDate() {
@@ -112,7 +126,6 @@ class AnalyticsViewModel @Inject constructor(
     private fun getPainData(entries: List<HealthEntry>, range: TimeRange, start: LocalDate): Map<String, Map<LocalDate, Int>> {
         val painEntries = entries.filter { it.type == EntryType.PAIN && it.intensity != null }
         
-        // Group by location name normalized to capitalize first letter
         val normalizedPainEntries = painEntries.map { entry ->
             val rawLocation = entry.location?.trim()?.lowercase() ?: ""
             val normalizedLocation = if (rawLocation.isBlank()) "General" 
@@ -122,11 +135,7 @@ class AnalyticsViewModel @Inject constructor(
 
         val locations = normalizedPainEntries.map { it.location!! }.distinct()
         
-        val daysCount = when (range) {
-            TimeRange.WEEK -> 7L
-            TimeRange.MONTH -> ChronoUnit.DAYS.between(start, start.plusMonths(1))
-            TimeRange.YEAR -> ChronoUnit.DAYS.between(start, start.plusYears(1))
-        }
+        val daysCount = getDaysCount(range, start)
 
         return locations.associateWith { location ->
             val locationData = normalizedPainEntries
@@ -159,6 +168,57 @@ class AnalyticsViewModel @Inject constructor(
             .take(5)
             .toMap()
     }
+
+    private fun getCorrelationData(
+        entries: List<HealthEntry>,
+        range: TimeRange,
+        start: LocalDate,
+        type1: EntryType,
+        type2: EntryType
+    ): CorrelationData {
+        val daysCount = getDaysCount(range, start)
+        val dates = (0 until daysCount).map { start.plusDays(it) }
+
+        fun getValues(type: EntryType): List<Float> {
+            val typeEntries = entries.filter { it.type == type }
+            val dataByDate = typeEntries.groupBy { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() }
+            
+            return dates.map { date ->
+                val dayEntries = dataByDate[date] ?: emptyList()
+                if (dayEntries.isEmpty()) 0f
+                else {
+                    when (type) {
+                        EntryType.SLEEP -> {
+                            // Average quality or duration? Let's use intensity (quality) if available, otherwise duration
+                            dayEntries.mapNotNull { it.intensity?.toFloat() ?: it.durationMinutes?.toFloat()?.div(60f) }.average().toFloat()
+                        }
+                        EntryType.PAIN, EntryType.SYMPTOM, EntryType.DISEASE, EntryType.EXTERNAL_FACTOR -> {
+                            dayEntries.mapNotNull { it.intensity?.toFloat() }.average().toFloat()
+                        }
+                        EntryType.DRUG, EntryType.MEAL, EntryType.ACTIVITY, EntryType.MEDICAL_APPOINTMENT, EntryType.JOURNAL -> {
+                            // Frequency or duration
+                            if (type == EntryType.ACTIVITY) dayEntries.sumOf { it.durationMinutes ?: 0 }.toFloat() / 60f
+                            else dayEntries.size.toFloat()
+                        }
+                    }
+                }
+            }
+        }
+
+        return CorrelationData(
+            dates = dates,
+            series1 = getValues(type1),
+            series2 = getValues(type2)
+        )
+    }
+
+    private fun getDaysCount(range: TimeRange, start: LocalDate): Long {
+        return when (range) {
+            TimeRange.WEEK -> 7L
+            TimeRange.MONTH -> ChronoUnit.DAYS.between(start, start.plusMonths(1))
+            TimeRange.YEAR -> ChronoUnit.DAYS.between(start, start.plusYears(1))
+        }
+    }
 }
 
 enum class TimeRange {
@@ -167,5 +227,12 @@ enum class TimeRange {
 
 data class AnalyticsUiState(
     val painData: Map<String, Map<LocalDate, Int>> = emptyMap(),
-    val symptomSeveritySum: Map<String, Int> = emptyMap()
+    val symptomSeveritySum: Map<String, Int> = emptyMap(),
+    val correlationData: CorrelationData = CorrelationData()
+)
+
+data class CorrelationData(
+    val dates: List<LocalDate> = emptyList(),
+    val series1: List<Float> = emptyList(),
+    val series2: List<Float> = emptyList()
 )

@@ -18,19 +18,25 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -41,8 +47,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
+import com.patrykandpatrick.vico.compose.axis.vertical.rememberEndAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
 import com.patrykandpatrick.vico.compose.chart.column.columnChart
@@ -65,11 +74,11 @@ import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 import com.patrykandpatrick.vico.core.chart.line.LineChart
 import com.patrykandpatrick.vico.core.component.shape.Shapes
-import com.patrykandpatrick.vico.core.component.text.textComponent
 import com.patrykandpatrick.vico.core.entry.FloatEntry
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
 import java.time.format.TextStyle
@@ -86,6 +95,8 @@ fun AnalyticsScreen(
     val timeRange by viewModel.timeRange.collectAsState()
     val startDate by viewModel.startDate.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val type1 by viewModel.correlationType1.collectAsState()
+    val type2 by viewModel.correlationType2.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -168,6 +179,25 @@ fun AnalyticsScreen(
 
             HorizontalDivider()
 
+            Text(text = "Correlation Analysis", style = MaterialTheme.typography.titleLarge)
+            
+            CorrelationSelectors(
+                type1 = type1,
+                type2 = type2,
+                onTypesChange = viewModel::setCorrelationTypes
+            )
+
+            CorrelationChart(
+                correlationData = uiState.correlationData,
+                timeRange = timeRange,
+                type1 = type1,
+                type2 = type2,
+                color1 = palette[0],
+                color2 = palette[1]
+            )
+
+            HorizontalDivider()
+
             Text(text = "Pain Evolution", style = MaterialTheme.typography.titleLarge)
             if (uiState.painData.isNotEmpty()) {
                 val locations = uiState.painData.keys.toList()
@@ -188,8 +218,6 @@ fun AnalyticsScreen(
                     result
                 }
 
-                // Plot the stacked lines. We reverse so the largest cumulative sum (top area) 
-                // is drawn first. This allows subsequent smaller areas to overlay it and create the stacked effect.
                 val model = remember(stackedSeries) {
                     entryModelOf(*stackedSeries.reversed().toTypedArray())
                 }
@@ -224,25 +252,17 @@ fun AnalyticsScreen(
                     model = model,
                     startAxis = rememberStartAxis(
                         itemPlacer = AxisItemPlacer.Vertical.default(
-                            maxItemCount = (ceil(maxTotalPain).toInt() + 1).coerceAtMost(30)
+                            maxItemCount = (ceil(maxTotalPain.toDouble()).toInt() + 1).coerceAtMost(30)
                         )
                     ),
                     bottomAxis = rememberBottomAxis(
-                        label = textComponent {
-                            this.color = Color.Black.toArgb()
-                            this.lineCount = 1
-                        },
+                        label = textComponent(color = Color.Black, lineCount = 1),
                         valueFormatter = bottomAxisFormatter,
                         labelRotationDegrees = 45f,
                         itemPlacer = remember(timeRange) {
                             AxisItemPlacer.Horizontal.default(
-                                spacing = when(timeRange) {
-                                    TimeRange.YEAR -> 1 // Show monthly ticks approx
-                                    TimeRange.MONTH -> 1
-                                    TimeRange.WEEK -> 1
-                                },
+                                spacing = 1,
                                 offset = 0,
-
                             )
                         }
                     ),
@@ -307,13 +327,11 @@ fun AnalyticsScreen(
                     model = model,
                     startAxis = rememberStartAxis(
                         itemPlacer = AxisItemPlacer.Vertical.default(
-                            maxItemCount = (ceil(maxFreq).toInt() + 1).coerceAtMost(30)
+                            maxItemCount = (ceil(maxFreq.toDouble()).toInt() + 1).coerceAtMost(30)
                         )
                     ),
                     bottomAxis = rememberBottomAxis(
-                        label = textComponent {
-                            this.color = Color.Black.toArgb()
-                        },
+                        label = textComponent(color = Color.Black),
                         valueFormatter = bottomAxisFormatter,
                         labelRotationDegrees = 45f,
                         itemPlacer = AxisItemPlacer.Horizontal.default(spacing = 5)
@@ -324,6 +342,157 @@ fun AnalyticsScreen(
                 )
             } else {
                 Text("No symptoms recorded for this period.", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+fun CorrelationChart(
+    correlationData: CorrelationData,
+    timeRange: TimeRange,
+    type1: EntryType,
+    type2: EntryType,
+    color1: Color,
+    color2: Color
+) {
+    if (correlationData.dates.isEmpty()) return
+
+    val series1 = correlationData.series1.mapIndexed { index, value -> FloatEntry(index.toFloat(), value) }
+    val series2 = correlationData.series2.mapIndexed { index, value -> FloatEntry(index.toFloat(), value) }
+    
+    val model = entryModelOf(series1, series2)
+
+    val bottomAxisFormatter = remember(correlationData.dates, timeRange) {
+        AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
+            val date = correlationData.dates.getOrNull(value.toInt()) ?: return@AxisValueFormatter ""
+            when (timeRange) {
+                TimeRange.WEEK -> date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                TimeRange.MONTH -> date.dayOfMonth.toString()
+                TimeRange.YEAR -> date.monthValue.toString()
+            }
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Chart(
+            chart = lineChart(
+                lines = listOf(
+                    LineChart.LineSpec(lineColor = color1.toArgb()),
+                    LineChart.LineSpec(lineColor = color2.toArgb())
+                )
+            ),
+            model = model,
+            startAxis = rememberStartAxis(
+                label = textComponent(color = color1),
+                title = "${type1.emoji} Scale",
+                itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 6)
+            ),
+            endAxis = rememberEndAxis(
+                label = textComponent(color = color2),
+                title = "${type2.emoji} Scale",
+                itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 6)
+            ),
+            bottomAxis = rememberBottomAxis(
+                valueFormatter = bottomAxisFormatter,
+                labelRotationDegrees = 45f
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(240.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LegendItem(color = color1, label = "${type1.emoji} ${type1.name}")
+            Spacer(Modifier.width(16.dp))
+            LegendItem(color = color2, label = "${type2.emoji} ${type2.name}")
+        }
+    }
+}
+
+@Composable
+fun LegendItem(color: Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(text = label, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CorrelationSelectors(
+    type1: EntryType,
+    type2: EntryType,
+    onTypesChange: (EntryType, EntryType) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        TypeDropdown(
+            selectedType = type1,
+            onTypeSelected = { onTypesChange(it, type2) },
+            modifier = Modifier.weight(1f),
+            label = "Metric 1"
+        )
+        Icon(Icons.Default.CompareArrows, contentDescription = null)
+        TypeDropdown(
+            selectedType = type2,
+            onTypeSelected = { onTypesChange(type1, it) },
+            modifier = Modifier.weight(1f),
+            label = "Metric 2"
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TypeDropdown(
+    selectedType: EntryType,
+    onTypeSelected: (EntryType) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = "${selectedType.emoji} ${selectedType.name.lowercase().replaceFirstChar { it.uppercase() }}",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.menuAnchor(),
+            shape = RoundedCornerShape(12.dp),
+            textStyle = MaterialTheme.typography.bodySmall
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            EntryType.entries.forEach { type ->
+                DropdownMenuItem(
+                    text = { Text("${type.emoji} ${type.name.lowercase().replaceFirstChar { it.uppercase() }}") },
+                    onClick = {
+                        onTypeSelected(type)
+                        expanded = false
+                    }
+                )
             }
         }
     }

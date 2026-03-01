@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -449,6 +450,8 @@ fun EntryItem(
         }
     }
 
+    val mainParameter = entry.name ?: entry.location ?: ""
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -479,7 +482,10 @@ fun EntryItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
                             Text(
                                 text = "${entry.type.emoji} ${entry.type.name.replace("_", " ").lowercase()
                                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}",
@@ -487,8 +493,20 @@ fun EntryItem(
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
+                            
+                            if (mainParameter.isNotEmpty()) {
+                                Text(
+                                    text = "• $mainParameter",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false)
+                                )
+                            }
+
                             if (entry.hasReminder) {
-                                Spacer(Modifier.width(8.dp))
                                 Icon(
                                     imageVector = Icons.Default.NotificationsActive,
                                     contentDescription = "Reminder set",
@@ -513,12 +531,12 @@ fun EntryItem(
                     )
                 }
 
-                entry.name?.let {
-                    Text(text = "Name: $it", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                // If both name and location exist, we already showed one in the header. 
+                // Show the other one here if it wasn't the one highlighted.
+                if (entry.name != null && entry.location != null) {
+                    Text(text = "Location: ${entry.location}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                 }
-                entry.location?.let {
-                    Text(text = "Location: $it", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
-                }
+                
                 entry.value?.let {
                     Text(text = "Value: $it ${entry.unit ?: ""}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                 }
