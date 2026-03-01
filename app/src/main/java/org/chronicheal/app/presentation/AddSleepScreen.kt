@@ -1,22 +1,18 @@
 package org.chronicheal.app.presentation
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
-import java.time.LocalDate
-import java.time.LocalTime
-import java.time.ZoneId
+import java.time.*
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
@@ -31,7 +27,10 @@ fun AddSleepScreen(
 ) {
     var logDate by remember { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by remember { mutableStateOf(LocalTime.of(22, 0)) }
-    var durationHours by remember { mutableIntStateOf(8) }
+    
+    var endDate by remember { mutableStateOf(logDate.plusDays(1)) }
+    var endTime by remember { mutableStateOf(LocalTime.of(6, 0)) }
+
     var quality by remember { mutableFloatStateOf(3f) }
     var note by remember { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
@@ -54,7 +53,12 @@ fun AddSleepScreen(
                 note = entry.note
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                durationHours = (entry.durationMinutes ?: 480) / 60
+                
+                val durationMins = entry.durationMinutes?.toLong() ?: 480L
+                val end = entry.timestamp.plus(Duration.ofMinutes(durationMins)).atZone(ZoneId.systemDefault())
+                endDate = end.toLocalDate()
+                endTime = end.toLocalTime()
+                
                 setReminder = entry.hasReminder
                 
                 if (entry.hasReminder && entry.reminderId != null) {
@@ -64,6 +68,20 @@ fun AddSleepScreen(
                 }
             }
         }
+    }
+
+    val durationMinutes by remember(logDate, startTime, endDate, endTime) {
+        derivedStateOf {
+            val start = logDate.atTime(startTime).atZone(ZoneId.systemDefault())
+            val end = endDate.atTime(endTime).atZone(ZoneId.systemDefault())
+            Duration.between(start, end).toMinutes().toInt().coerceAtLeast(0)
+        }
+    }
+
+    val durationText = remember(durationMinutes) {
+        val h = durationMinutes / 60
+        val m = durationMinutes % 60
+        if (h > 0) "${h}h ${m}m" else "${m}m"
     }
 
     val createEntry = {
@@ -76,7 +94,7 @@ fun AddSleepScreen(
             hasReminder = setReminder,
             reminderId = existingEntry?.reminderId,
             isFinished = existingEntry?.isFinished ?: false,
-            durationMinutes = durationHours * 60
+            durationMinutes = durationMinutes
         )
     }
 
@@ -122,6 +140,7 @@ fun AddSleepScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
+            Text("Bedtime:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
@@ -131,22 +150,28 @@ fun AddSleepScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
+            Text("Wake up time:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+            EntryDateTimePicker(
+                date = endDate,
+                onDateChange = { endDate = it },
+                startTime = endTime,
+                onStartTimeChange = { endTime = it }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = durationText,
+                onValueChange = { },
+                label = { Text("Computed Duration") },
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(Icons.Default.Timer, contentDescription = null)
-                Text("Duration:", style = MaterialTheme.typography.titleMedium)
-                
-                OutlinedTextField(
-                    value = durationHours.toString(),
-                    onValueChange = { durationHours = it.toIntOrNull() ?: 0 },
-                    label = { Text("Hours") },
-                    modifier = Modifier.weight(1f),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+                readOnly = true,
+                leadingIcon = { Icon(Icons.Default.Timer, contentDescription = null) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 )
-            }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 

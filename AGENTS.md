@@ -8,3 +8,4 @@ Stop when a feature is complete and propose a git commit message with details an
 - ALWAYS RUN THE GRADLE SYNC AND GRADLE BUILD TO TEST YOUR CHANGES
 - ITERATE UNTIL YOU HAVE FIX ALL BUILD ERRORS
 - EXPLAIN THE TECHNICAL CHOICE YOU MAKE IN THE [./docs/implementation.md]() FILE.
+- DO NOT USE `import package.*` NOTATION

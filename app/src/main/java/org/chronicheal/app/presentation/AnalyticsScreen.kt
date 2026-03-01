@@ -223,7 +223,7 @@ fun TimeRangeSelector(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            TimeRange.values().forEach { range ->
+            TimeRange.entries.forEach { range ->
                 FilterChip(
                     selected = timeRange == range,
                     onClick = { onRangeChange(range) },
