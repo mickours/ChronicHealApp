@@ -201,7 +201,7 @@ fun SwipeableEntryItem(
         backgroundContent = {
             val color by animateColorAsState(
                 when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.StartToEnd -> Color.Green.copy(alpha = 0.5f)
+                    SwipeToDismissBoxValue.StartToEnd -> Color(0xFFA5D6A7) // Soft Green for Finished
                     SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
                     else -> Color.Transparent
                 }, label = "swipe_color"
@@ -369,8 +369,8 @@ fun DayHeader(day: String, isToday: Boolean) {
 @Composable
 fun getCategoryColor(type: EntryType): Color {
     return when (type.category) {
-        EntryType.Category.OCCURRENCE -> Color(0xFFE57373) // Light Red/Coral
-        EntryType.Category.MANAGEMENT -> Color(0xFF81C784) // Light Green
+        EntryType.Category.OCCURRENCE -> Color(0xFFD4A7A7) // Soft Red/Dusty Rose to match #a7c7d4 tone
+        EntryType.Category.MANAGEMENT -> Color(0xFFA7D4C7) // Soft Teal/Green to match #a7c7d4 tone
     }
 }
 
@@ -397,7 +397,7 @@ fun EntryItem(
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(6.dp)
-                    .background(if (entry.isFinished) Color.Gray else categoryColor)
+                    .background(if (entry.isFinished) Color.LightGray else categoryColor)
             )
             
             Column(modifier = Modifier.padding(16.dp)) {
@@ -411,7 +411,7 @@ fun EntryItem(
                                 text = entry.type.name.replace("_", " ").lowercase()
                                     .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
                                 style = MaterialTheme.typography.titleMedium,
-                                color = if (entry.isFinished) Color.Gray else categoryColor.copy(alpha = 0.8f)
+                                color = if (entry.isFinished) Color.Gray else categoryColor
                             )
                             if (entry.hasReminder) {
                                 Spacer(Modifier.width(8.dp))
