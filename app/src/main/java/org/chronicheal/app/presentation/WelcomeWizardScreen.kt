@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,9 +23,14 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -67,7 +73,7 @@ fun WelcomeWizardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { 3 })
+    val pagerState = rememberPagerState(pageCount = { 4 })
 
     LaunchedEffect(uiState.isCompleted) {
         if (uiState.isCompleted) {
@@ -85,13 +91,17 @@ fun WelcomeWizardScreen(
         ) { page ->
             when (page) {
                 0 -> WelcomePage()
-                1 -> NotificationPermissionPage(
+                1 -> PrivacyPage(
+                    isBiometricEnabled = uiState.isBiometricLockEnabled,
+                    onBiometricToggled = viewModel::setBiometricLockEnabled
+                )
+                2 -> NotificationPermissionPage(
                     isBodyScanEnabled = uiState.isBodyScanReminderEnabled,
                     onBodyScanToggled = viewModel::setBodyScanReminder,
                     bodyScanTime = uiState.bodyScanReminderTime,
                     onBodyScanTimeChange = viewModel::setBodyScanReminderTime
                 )
-                2 -> FavoriteEntryTypesPage(
+                3 -> FavoriteEntryTypesPage(
                     selectedTypes = uiState.favoriteTypes,
                     onToggleType = viewModel::toggleFavorite
                 )
@@ -116,13 +126,13 @@ fun WelcomeWizardScreen(
             }
 
             Button(onClick = {
-                if (pagerState.currentPage < 2) {
+                if (pagerState.currentPage < 3) {
                     scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                 } else {
                     viewModel.completeWizard()
                 }
             }) {
-                Text(if (pagerState.currentPage == 2) "Get Started" else "Next")
+                Text(if (pagerState.currentPage == 3) "Get Started" else "Next")
             }
         }
     }
@@ -162,6 +172,95 @@ fun WelcomePage() {
             textAlign = TextAlign.Start,
             lineHeight = 24.sp
         )
+    }
+}
+
+@Composable
+fun PrivacyPage(
+    isBiometricEnabled: Boolean,
+    onBiometricToggled: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Security,
+            contentDescription = null,
+            modifier = Modifier.size(80.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = "Your Data, Your Control",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = "ChronicHeal is built with privacy at its core. Your health information never leaves your phone unless you choose to export it.",
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.height(8.dp))
+                            Text(text = "Biometric Lock", style = MaterialTheme.typography.titleMedium)
+                        }
+                        Text(
+                            text = "Require fingerprint or face to open the app",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    Switch(
+                        checked = isBiometricEnabled,
+                        onCheckedChange = onBiometricToggled
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                .padding(16.dp)
+        ) {
+            Column {
+                Text(
+                    text = "Backup & Portability",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "You can create encrypted backups or export your data to JSON/PDF at any time from the Settings screen.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
     }
 }
 

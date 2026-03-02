@@ -3,7 +3,6 @@ package org.chronicheal.app.presentation
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,7 +30,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
-import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.ui.theme.*
@@ -103,21 +100,7 @@ fun TimelineScreen(
         topBar = {
             Column {
                 TopAppBar(
-                    title = { 
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Surface(
-                                modifier = Modifier.size(36.dp),
-                                shape = CircleShape,
-                                color = HeaderBlue // Matches ic_launcher_background
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                                    contentDescription = "App icon",
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
-                        }
-                    },
+                    title = { Text("ChronicHeal") },
                     actions = {
                         IconButton(onClick = { 
                             isSearchVisible = !isSearchVisible 
@@ -327,7 +310,7 @@ fun QuickAddChip(
         Spacer(modifier = Modifier.height(4.dp))
         @Suppress("DEPRECATION")
         Text(
-            text = type.name.lowercase().capitalize(),
+            text = type.name.lowercase().replaceFirstChar { it.uppercase() },
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis

@@ -1,6 +1,5 @@
 package org.chronicheal.app.presentation
 
-import android.graphics.PointF
 import android.graphics.RectF
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -10,17 +9,19 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
@@ -59,7 +60,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -149,7 +149,7 @@ fun BodyScanScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding).fillMaxSize().background(HeaderBlue)) {
             BodySilhouette(
-                modifier = Modifier.fillMaxSize().padding(top = 16.dp),
+                modifier = Modifier.fillMaxSize(),
                 onRegionHold = { region, currentIntensity ->
                     val existing = uiState.entries.find { 
                         it.type == EntryType.PAIN && 
@@ -263,13 +263,6 @@ fun BodySilhouette(
     var svgPaths by remember { mutableStateOf<List<SvgPath>>(emptyList()) }
     var bounds by remember { mutableStateOf(RectF()) }
 
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
-    val transformState = rememberTransformableState { zoomChange, offsetChange, _ ->
-        scale = (scale * zoomChange).coerceIn(1f, 5f)
-        offset += offsetChange
-    }
-
     var currentHoldRegion by remember { mutableStateOf<String?>(null) }
     var currentHoldIntensity by remember { mutableFloatStateOf(1f) }
     val scope = rememberCoroutineScope()
@@ -290,32 +283,21 @@ fun BodySilhouette(
 
     if (svgPaths.isEmpty()) return
 
-    Box(modifier = modifier) {
+    val scrollState = rememberScrollState()
+
+    Box(modifier = modifier.verticalScroll(scrollState)) {
         Canvas(
             modifier = Modifier
-                .fillMaxSize()
-                .transformable(state = transformState)
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
+                .fillMaxWidth()
+                .aspectRatio(if (bounds.width() > 0) bounds.width() / bounds.height() else 1f)
                 .pointerInput(svgPaths, bounds) {
                     detectTapGestures(
                         onPress = { tapOffset ->
-                            val adjustedX = (tapOffset.x - offset.x) / scale
-                            val adjustedY = (tapOffset.y - offset.y) / scale
-                            
                             val scaleX = size.width / bounds.width()
-                            val scaleY = size.height / bounds.height()
-                            val baseScale = minOf(scaleX, scaleY)
+                            val baseScale = scaleX // Fill width
                             
-                            val offsetX = (size.width - bounds.width() * baseScale) / 2f
-                            val offsetY = (size.height - bounds.height() * baseScale) / 2f
-
-                            val invertedX = (adjustedX - offsetX) / baseScale + bounds.left
-                            val invertedY = (adjustedY - offsetY) / baseScale + bounds.top
+                            val invertedX = tapOffset.x / baseScale + bounds.left
+                            val invertedY = tapOffset.y / baseScale + bounds.top
 
                             val tappedPath = svgPaths.findLast { svgPath ->
                                 val region = android.graphics.Region()
@@ -356,17 +338,10 @@ fun BodySilhouette(
                     )
                 }
         ) {
-            val scaleX = size.width / bounds.width()
-            val scaleY = size.height / bounds.height()
-            val baseScale = minOf(scaleX, scaleY)
-            
-            val offsetX = (size.width - bounds.width() * baseScale) / 2f
-            val offsetY = (size.height - bounds.height() * baseScale) / 2f
-
+            val baseScale = size.width / bounds.width() // Fill width
             val baseStrokeWidth = 1.dp.toPx()
             
             drawContext.canvas.nativeCanvas.save()
-            drawContext.canvas.nativeCanvas.translate(offsetX, offsetY)
             drawContext.canvas.nativeCanvas.scale(baseScale, baseScale)
             drawContext.canvas.nativeCanvas.translate(-bounds.left, -bounds.top)
 
@@ -420,41 +395,38 @@ fun BodySilhouette(
             }
             drawContext.canvas.nativeCanvas.restore()
         }
-
-        // Overlay intensity gauge when holding
-        AnimatedVisibility(
-            visible = currentHoldRegion != null,
-            enter = fadeIn() + expandVertically(),
-            exit = fadeOut() + shrinkVertically(),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(16.dp)
-                .height(200.dp)
-                .width(50.dp)
-        ) {
-            VerticalIntensityGauge(
-                intensity = currentHoldIntensity.toInt(),
-                maxVal = 10,
-                color = Color.Red,
-                label = "INT",
-                modifier = Modifier.background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
-            )
-        }
+    }
+    
+    // Intensity gauge fixed at top right
+    AnimatedVisibility(
+        visible = currentHoldRegion != null,
+        enter = fadeIn() + expandVertically(),
+        exit = fadeOut() + shrinkVertically(),
+        modifier = Modifier
+            .padding(16.dp)
+            .height(200.dp)
+            .width(50.dp)
+    ) {
+        // VerticalIntensityGauge is defined in AddEntryComponents.kt
+        VerticalIntensityGauge(
+            intensity = currentHoldIntensity.toInt(),
+            maxVal = 10,
+            color = Color.Red,
+            label = "INT",
+            modifier = Modifier.background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+        )
     }
 }
 
 private fun parseSvgColor(colorStr: String?): Color? {
     if (colorStr == null || colorStr == "none") return null
     return try {
-        // Handle hex colors specifically as parseColor expects them correctly
         if (colorStr.startsWith("#")) {
-            // Fix for 3-digit hex if present (though not used in our current SVG)
             val normalized = if (colorStr.length == 4) {
                 "#" + colorStr[1] + colorStr[1] + colorStr[2] + colorStr[2] + colorStr[3] + colorStr[3]
             } else colorStr
             Color(android.graphics.Color.parseColor(normalized))
         } else {
-            // Try standard color names
             Color(android.graphics.Color.parseColor(colorStr))
         }
     } catch (_: Exception) {

@@ -121,6 +121,11 @@ Goal: Improve the first-run experience and daily logging efficiency.
     - **SVG Parser**: Upgraded `SvgBodyParser` to reliably handle `fill`, `stroke`, and `stroke-width` attributes, including group-level inheritance.
 - **Navigation Enhancements**:
     - Implemented smooth horizontal slide transitions for all navigation between the timeline and other screens.
+- **Release Build Optimization**:
+    - **ProGuard/R8 Rules**: Fixed a startup crash in release builds by hardening ProGuard rules.
+    - **Hilt/Dagger Support**: Added explicit rules to keep Hilt-generated factories and members injectors.
+    - **Serialization & Coroutines**: Added preservation rules for Kotlin Serialization internals and Coroutines to prevent runtime `NoSuchMethodError`.
+    - **Architecture preservation**: Ensured all `ViewModel` constructors are kept to allow Hilt to instantiate them in obfuscated builds.
 
 ## Phase 9: Advanced Analytics (In Progress)
 - **Correlation Insights**: Visualize correlations between different health metrics (e.g., Pain Intensity vs. Sleep Quality).

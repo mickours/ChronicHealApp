@@ -53,11 +53,17 @@ class MainActivity : AppCompatActivity() {
                     val isWelcomeWizardCompleted by mainViewModel.isWelcomeWizardCompleted.collectAsState()
                     var isAuthenticated by remember { mutableStateOf(false) }
 
-                    if (isBiometricLockEnabled && !isAuthenticated) {
-                        Box(modifier = Modifier.fillMaxSize())
-                        showBiometricPrompt {
-                            isAuthenticated = true
+                    LaunchedEffect(isBiometricLockEnabled, isAuthenticated) {
+                        if (isBiometricLockEnabled && !isAuthenticated) {
+                            showBiometricPrompt {
+                                isAuthenticated = true
+                            }
                         }
+                    }
+
+                    if (isBiometricLockEnabled && !isAuthenticated) {
+                        // Empty screen while authenticating
+                        Box(modifier = Modifier.fillMaxSize())
                     } else if (isWelcomeWizardCompleted != null) {
                         val navController = rememberNavController()
                         

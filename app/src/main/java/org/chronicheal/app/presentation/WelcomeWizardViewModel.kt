@@ -12,6 +12,7 @@ import org.chronicheal.app.data.notification.ReminderScheduler
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.Reminder
 import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.repository.SecurityRepository
 import org.chronicheal.app.domain.repository.SettingsRepository
 import java.time.LocalTime
 import javax.inject.Inject
@@ -20,6 +21,7 @@ data class WelcomeWizardUiState(
     val favoriteTypes: Set<EntryType> = emptySet(),
     val isBodyScanReminderEnabled: Boolean = false,
     val bodyScanReminderTime: LocalTime = LocalTime.of(20, 0), // Default 8 PM
+    val isBiometricLockEnabled: Boolean = false,
     val isCompleted: Boolean = false
 )
 
@@ -27,7 +29,8 @@ data class WelcomeWizardUiState(
 class WelcomeWizardViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val reminderRepository: ReminderRepository,
-    private val reminderScheduler: ReminderScheduler
+    private val reminderScheduler: ReminderScheduler,
+    private val securityRepository: SecurityRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(WelcomeWizardUiState())
@@ -52,6 +55,10 @@ class WelcomeWizardViewModel @Inject constructor(
         _uiState.update { it.copy(bodyScanReminderTime = time) }
     }
 
+    fun setBiometricLockEnabled(enabled: Boolean) {
+        _uiState.update { it.copy(isBiometricLockEnabled = enabled) }
+    }
+
     fun completeWizard() {
         viewModelScope.launch {
             if (_uiState.value.isBodyScanReminderEnabled) {
@@ -66,6 +73,7 @@ class WelcomeWizardViewModel @Inject constructor(
                 reminderScheduler.schedule(reminder.copy(id = id))
             }
             
+            securityRepository.setBiometricLockEnabled(_uiState.value.isBiometricLockEnabled)
             settingsRepository.setFavoriteEntryTypes(_uiState.value.favoriteTypes)
             settingsRepository.setWelcomeWizardCompleted(true)
             _uiState.update { it.copy(isCompleted = true) }
