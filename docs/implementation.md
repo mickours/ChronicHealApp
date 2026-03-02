@@ -83,6 +83,11 @@ Goal: Interactive tools and notifications.
         - **Severity-based Symptom Analysis**: Symptom charts now reflect the **sum of severity** rather than just frequency, giving a more accurate picture of symptom burden.
         - **Readability Optimizations**: Implemented rotated X-axis labels and fixed Y-axis increments to handle dense data views across different time ranges (Week, Month, Year).
     - **High-Visibility Calendar Markers**: Increased the size and contrast of health indicators in the calendar view. Dots now feature stronger colors and a subtle border to ensure they remain distinct and legible against all background shades.
+    - **Branding Integration**: 
+        - Replaced the text-based app title in the `TimelineScreen` with the official app logo for a more professional and visual header.
+        - Updated the `WelcomeWizard` introduction page to feature the app logo instead of the placeholder illustration, strengthening the visual identity from the first launch.
+    - **Onboarding UX**: 
+        - Enabled swipe-to-navigate in the `WelcomeWizard` (using `HorizontalPager` with `userScrollEnabled = true`), offering a more intuitive gesture-based experience alongside the existing navigation buttons.
 - **Biometric Lock Implementation**:
     - **Technical Choice**: Switched `MainActivity` from `ComponentActivity` to `AppCompatActivity` to support the `BiometricPrompt` API.
     - **Enforcement**: Implemented mandatory biometric authentication on app startup when enabled in settings.

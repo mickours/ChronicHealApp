@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -78,6 +79,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -86,6 +88,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.ui.theme.HeaderBlue
@@ -156,7 +159,13 @@ fun TimelineScreen(
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text("ChronicHeal") },
+                    title = {
+                        Image(
+                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                            contentDescription = "ChronicHeal Logo",
+                            modifier = Modifier.size(40.dp)
+                        )
+                    },
                     actions = {
                         IconButton(onClick = { 
                             isSearchVisible = !isSearchVisible 
@@ -256,18 +265,21 @@ fun TimelineScreen(
                     Column(
                         modifier = Modifier
                             .padding(8.dp)
-                            .navigationBarsPadding()
+                            .navigationBarsPadding(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = "QUICK ADD",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
-                            color = MaterialTheme.colorScheme.primary
+                            modifier = Modifier.padding(bottom = 4.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center
                         )
                         LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             items(uiState.favorites.toList()) { type ->
                                 QuickAddChip(

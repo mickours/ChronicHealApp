@@ -87,7 +87,7 @@ fun WelcomeWizardScreen(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
-            userScrollEnabled = false
+            userScrollEnabled = true
         ) { page ->
             when (page) {
                 0 -> WelcomePage()
@@ -148,8 +148,8 @@ fun WelcomePage() {
         verticalArrangement = Arrangement.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.ic_welcome_hi),
-            contentDescription = "Welcome illustration",
+            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+            contentDescription = "ChronicHeal Logo",
             modifier = Modifier.size(180.dp)
         )
         Spacer(modifier = Modifier.height(24.dp))
