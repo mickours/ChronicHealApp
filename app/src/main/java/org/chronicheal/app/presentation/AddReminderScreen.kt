@@ -1,5 +1,10 @@
 package org.chronicheal.app.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -21,6 +26,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -31,10 +38,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.Reminder
 import java.time.LocalTime
@@ -49,6 +60,10 @@ fun AddReminderScreen(
     onSaveSuccess: () -> Unit,
     viewModel: RemindersViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
     var title by remember { mutableStateOf(if (initialType == EntryType.PAIN) "Body Scan" else "") }
     var selectedTime by remember { mutableStateOf(LocalTime.now()) }
     var selectedDays by remember { mutableStateOf(setOf(1, 2, 3, 4, 5, 6, 7)) }
@@ -73,7 +88,37 @@ fun AddReminderScreen(
         initialMinute = selectedTime.minute
     )
 
+    val saveReminderAction = {
+        val reminder = Reminder(
+            id = id ?: 0,
+            title = title.ifBlank { "Health Reminder" },
+            time = selectedTime,
+            daysOfWeek = selectedDays,
+            entryType = selectedType,
+            isEnabled = existingReminder?.isEnabled ?: true
+        )
+        if (id == null) {
+            viewModel.addReminder(reminder)
+        } else {
+            viewModel.updateReminder(reminder)
+        }
+        onSaveSuccess()
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            saveReminderAction()
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar("Notification permission is required for reminders.")
+            }
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(if (id == null) "Add Reminder" else "Edit Reminder") },
@@ -85,20 +130,14 @@ fun AddReminderScreen(
                 actions = {
                     Button(
                         onClick = {
-                            val reminder = Reminder(
-                                id = id ?: 0,
-                                title = title.ifBlank { "Health Reminder" },
-                                time = selectedTime,
-                                daysOfWeek = selectedDays,
-                                entryType = selectedType,
-                                isEnabled = existingReminder?.isEnabled ?: true
-                            )
-                            if (id == null) {
-                                viewModel.addReminder(reminder)
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                when (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)) {
+                                    PackageManager.PERMISSION_GRANTED -> saveReminderAction()
+                                    else -> permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                }
                             } else {
-                                viewModel.updateReminder(reminder)
+                                saveReminderAction()
                             }
-                            onSaveSuccess()
                         },
                         modifier = Modifier.padding(end = 8.dp)
                     ) {

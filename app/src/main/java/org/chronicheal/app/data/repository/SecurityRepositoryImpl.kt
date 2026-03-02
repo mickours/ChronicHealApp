@@ -13,7 +13,7 @@ import org.chronicheal.app.domain.repository.SecurityRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "security_prefs")
+private val Context.securityDataStore: DataStore<Preferences> by preferencesDataStore(name = "security_prefs")
 
 @Singleton
 class SecurityRepositoryImpl @Inject constructor(
@@ -24,13 +24,13 @@ class SecurityRepositoryImpl @Inject constructor(
         val BIOMETRIC_LOCK_ENABLED = booleanPreferencesKey("biometric_lock_enabled")
     }
 
-    override val isBiometricLockEnabled: Flow<Boolean> = context.dataStore.data
+    override val isBiometricLockEnabled: Flow<Boolean> = context.securityDataStore.data
         .map { preferences ->
             preferences[PreferencesKeys.BIOMETRIC_LOCK_ENABLED] ?: false
         }
 
     override suspend fun setBiometricLockEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
+        context.securityDataStore.edit { preferences ->
             preferences[PreferencesKeys.BIOMETRIC_LOCK_ENABLED] = enabled
         }
     }

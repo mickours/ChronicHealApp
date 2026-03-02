@@ -15,7 +15,7 @@ import org.chronicheal.app.domain.repository.SettingsRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings_prefs")
+private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings_prefs")
 
 @Singleton
 class SettingsRepositoryImpl @Inject constructor(
@@ -27,18 +27,18 @@ class SettingsRepositoryImpl @Inject constructor(
         val FAVORITE_ENTRY_TYPES = stringSetPreferencesKey("favorite_entry_types")
     }
 
-    override val isWelcomeWizardCompleted: Flow<Boolean> = context.dataStore.data
+    override val isWelcomeWizardCompleted: Flow<Boolean> = context.settingsDataStore.data
         .map { preferences ->
             preferences[PreferencesKeys.WELCOME_WIZARD_COMPLETED] ?: false
         }
 
     override suspend fun setWelcomeWizardCompleted(completed: Boolean) {
-        context.dataStore.edit { preferences ->
+        context.settingsDataStore.edit { preferences ->
             preferences[PreferencesKeys.WELCOME_WIZARD_COMPLETED] = completed
         }
     }
 
-    override val favoriteEntryTypes: Flow<Set<EntryType>> = context.dataStore.data
+    override val favoriteEntryTypes: Flow<Set<EntryType>> = context.settingsDataStore.data
         .map { preferences ->
             preferences[PreferencesKeys.FAVORITE_ENTRY_TYPES]?.mapNotNull {
                 try {
@@ -50,7 +50,7 @@ class SettingsRepositoryImpl @Inject constructor(
         }
 
     override suspend fun setFavoriteEntryTypes(types: Set<EntryType>) {
-        context.dataStore.edit { preferences ->
+        context.settingsDataStore.edit { preferences ->
             preferences[PreferencesKeys.FAVORITE_ENTRY_TYPES] = types.map { it.name }.toSet()
         }
     }

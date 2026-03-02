@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.chronicheal.app.domain.repository.SettingsRepository
 import org.chronicheal.app.domain.usecase.ExportDataUseCase
 import org.chronicheal.app.domain.usecase.ImportDataUseCase
 import javax.inject.Inject
@@ -13,7 +14,8 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val exportDataUseCase: ExportDataUseCase,
-    private val importDataUseCase: ImportDataUseCase
+    private val importDataUseCase: ImportDataUseCase,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -45,6 +47,13 @@ class SettingsViewModel @Inject constructor(
             } finally {
                 _uiState.value = _uiState.value.copy(isLoading = false)
             }
+        }
+    }
+
+    fun resetWelcomeWizard() {
+        viewModelScope.launch {
+            settingsRepository.setWelcomeWizardCompleted(false)
+            _uiState.value = _uiState.value.copy(message = "Wizard reset. It will appear on next restart.")
         }
     }
     

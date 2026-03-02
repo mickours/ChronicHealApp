@@ -1,11 +1,19 @@
 package org.chronicheal.app.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
@@ -23,6 +31,10 @@ fun AddDrugScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
     var name by remember { mutableStateOf("") }
     var dosage by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
@@ -40,6 +52,18 @@ fun AddDrugScreen(
         initialHour = reminderTime.hour,
         initialMinute = reminderTime.minute
     )
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            setReminder = true
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar("Notification permission is required for reminders.")
+            }
+        }
+    }
 
     LaunchedEffect(id) {
         if (id != null) {
@@ -161,7 +185,20 @@ fun AddDrugScreen(
             ) {
                 Checkbox(
                     checked = setReminder,
-                    onCheckedChange = { setReminder = it }
+                    onCheckedChange = { checked ->
+                        if (checked) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                when (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)) {
+                                    PackageManager.PERMISSION_GRANTED -> setReminder = true
+                                    else -> permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                }
+                            } else {
+                                setReminder = true
+                            }
+                        } else {
+                            setReminder = false
+                        }
+                    }
                 )
                 Text(
                     text = if (existingEntry?.hasReminder == true) "Update daily reminder" else "Set daily reminder for this drug",
@@ -178,6 +215,8 @@ fun AddDrugScreen(
                 }
             }
         }
+        
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(innerPadding))
 
         if (showTimePicker) {
             TimePickerDialog(
