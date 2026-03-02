@@ -1,30 +1,47 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <path android:pathData="M31,63.928c0,0 6.4,-11 12.1,-13.1c7.2,-2.6 26,-1.4 26,-1.4l38.1,38.1L107,108.928l-32,-1L31,63.928z">
-        <aapt:attr name="android:fillColor">
-            <gradient
-                android:endX="85.84757"
-                android:endY="92.4963"
-                android:startX="42.9492"
-                android:startY="49.59793"
-                android:type="linear">
-                <item
-                    android:color="#44000000"
-                    android:offset="0.0" />
-                <item
-                    android:color="#00000000"
-                    android:offset="1.0" />
-            </gradient>
-        </aapt:attr>
-    </path>
-    <path
-        android:fillColor="#FFFFFF"
-        android:fillType="nonZero"
-        android:pathData="M65.3,45.828l3.8,-6.6c0.2,-0.4 0.1,-0.9 -0.3,-1.1c-0.4,-0.2 -0.9,-0.1 -1.1,0.3l-3.9,6.7c-6.3,-2.8 -13.4,-2.8 -19.7,0l-3.9,-6.7c-0.2,-0.4 -0.7,-0.5 -1.1,-0.3C38.8,38.328 38.7,38.828 38.9,39.228l3.8,6.6C36.2,49.428 31.7,56.028 31,63.928h46C76.3,56.028 71.8,49.428 65.3,45.828zM43.4,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2c-0.3,-0.7 -0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C45.3,56.528 44.5,57.328 43.4,57.328L43.4,57.328zM64.6,57.328c-0.8,0 -1.5,-0.5 -1.8,-1.2s-0.1,-1.5 0.4,-2.1c0.5,-0.5 1.4,-0.7 2.1,-0.4c0.7,0.3 1.2,1 1.2,1.8C66.5,56.528 65.6,57.328 64.6,57.328L64.6,57.328z"
-        android:strokeWidth="1"
-        android:strokeColor="#00000000" />
+    
+    <!-- Centered and scaled version of the "head" from body-shape.svg -->
+    <group
+        android:translateX="54"
+        android:translateY="54"
+        android:scaleX="1.2"
+        android:scaleY="1.2">
+        <group
+            android:translateX="-86.5"
+            android:translateY="-17">
+            
+            <!-- Head shape -->
+            <path
+                android:fillColor="#FFFFFF"
+                android:strokeColor="@color/primary_dark"
+                android:strokeWidth="1"
+                android:pathData="m 86.539833,-6.062834 c -8.74299,0 -15.830748,10.31151 -15.830748,23.031557 0,12.720047 7.087758,23.031557 15.830748,23.031557 8.74299,0 15.830748,-10.31151 15.830748,-23.031557 0,-12.720047 -7.087758,-23.031557 -15.830748,-23.031557 z" />
+            
+            <!-- Forehead line -->
+            <path
+                android:strokeColor="@color/primary_dark"
+                android:strokeWidth="1.5"
+                android:pathData="m 70.410271,16.99755 c 11.278064,2.685242 21.911677,2.792676 31.900819,0.322231" />
+            
+            <!-- Center vertical line -->
+            <path
+                android:strokeColor="@color/primary_dark"
+                android:strokeWidth="1"
+                android:pathData="M 86.682908,-6.3641591 V 39.875914" />
+
+            <!-- Eyes -->
+            <group android:translateX="-0.5">
+                <path
+                    android:fillColor="@color/primary_dark"
+                    android:pathData="m 75.101357,17.735131 c 0.455012,-1.504624 0.409604,-3.562842 3.617965,-3.617965 3.295628,0.210564 4.048716,2.328033 4.740783,4.491267 z" />
+                <path
+                    android:fillColor="@color/primary_dark"
+                    android:pathData="m 99.031434,17.591773 c -0.455012,-1.504624 -0.409604,-3.562842 -3.617965,-3.617965 -3.295628,0.210564 -4.048716,2.328033 -4.740783,4.491267 z" />
+            </group>
+        </group>
+    </group>
 </vector>

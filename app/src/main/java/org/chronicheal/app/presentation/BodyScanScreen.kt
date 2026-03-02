@@ -72,6 +72,7 @@ import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.presentation.util.SvgBodyParser
 import org.chronicheal.app.presentation.util.SvgPath
 import org.chronicheal.app.ui.theme.HeaderBlue
+import org.chronicheal.app.ui.theme.PrimaryDark
 import org.chronicheal.app.ui.theme.PrimaryOrange
 import java.time.LocalDate
 import java.time.LocalTime
@@ -147,9 +148,9 @@ fun BodyScanScreen(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
-        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+        Box(modifier = Modifier.padding(innerPadding).fillMaxSize().background(HeaderBlue)) {
             BodySilhouette(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().padding(top = 16.dp),
                 onRegionHold = { region, currentIntensity ->
                     val existing = uiState.entries.find { 
                         it.type == EntryType.PAIN && 
@@ -365,13 +366,7 @@ fun BodySilhouette(
             val offsetY = (size.height - bounds.height() * baseScale) / 2f
 
             val strokeWidth = 1.dp.toPx()
-            val defaultFillBrush = Brush.verticalGradient(
-                colors = listOf(
-                    PrimaryOrange.copy(alpha = 0.9f),
-                    PrimaryOrange.copy(alpha = 0.4f)
-                )
-            )
-
+            
             drawContext.canvas.nativeCanvas.save()
             drawContext.canvas.nativeCanvas.translate(offsetX, offsetY)
             drawContext.canvas.nativeCanvas.scale(baseScale, baseScale)
@@ -396,8 +391,17 @@ fun BodySilhouette(
                         )
                     )
                 } else {
-                    defaultFillBrush
+                    val svgFill = parseSvgColor(svgPath.fill) ?: Color.White
+                    Brush.verticalGradient(
+                        listOf(
+                            svgFill,
+                            svgFill.copy(alpha = 0.9f)
+                        )
+                    )
                 }
+
+                val strokeColor = parseSvgColor(svgPath.stroke) ?: PrimaryDark
+                val pathStrokeWidth = svgPath.strokeWidth ?: 1f
 
                 drawPath(
                     path = composePath,
@@ -405,8 +409,8 @@ fun BodySilhouette(
                 )
                 drawPath(
                     path = composePath,
-                    color = Color.Black,
-                    style = Stroke(width = strokeWidth / baseScale)
+                    color = strokeColor,
+                    style = Stroke(width = (pathStrokeWidth * strokeWidth) / baseScale)
                 )
                 
                 if (intensity > 0) {
@@ -441,6 +445,15 @@ fun BodySilhouette(
                 modifier = Modifier.background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
             )
         }
+    }
+}
+
+private fun parseSvgColor(colorStr: String?): Color? {
+    if (colorStr == null) return null
+    return try {
+        Color(android.graphics.Color.parseColor(colorStr))
+    } catch (_: Exception) {
+        null
     }
 }
 

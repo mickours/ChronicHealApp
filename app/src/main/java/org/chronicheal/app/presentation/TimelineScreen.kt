@@ -303,6 +303,7 @@ fun QuickAddChip(
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
+        @Suppress("DEPRECATION")
         Text(
             text = type.name.lowercase().capitalize(),
             style = MaterialTheme.typography.labelSmall,
@@ -347,7 +348,7 @@ fun SwipeableEntryItem(
                 Modifier
                     .fillMaxSize()
                     .padding(horizontal = 8.dp, vertical = 4.dp)
-                    .clip(RoundedCornerShape(24.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(color)
                     .padding(horizontal = 20.dp),
                 contentAlignment = Alignment.CenterEnd
@@ -518,14 +519,14 @@ fun EntryItem(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(24.dp), // Semi-stadium shape to reflect swipability
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+        Row(modifier = Modifier.height(IntrinsicSize.Min).defaultMinSize(minHeight = 80.dp)) {
             // Category color stripe
             Box(
                 modifier = Modifier
@@ -546,34 +547,41 @@ fun EntryItem(
                     Column(modifier = Modifier.weight(1f)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = "${entry.type.emoji} ${entry.type.name.replace("_", " ").lowercase()
-                                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "${entry.type.emoji} ${entry.type.name.replace("_", " ").lowercase()
+                                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                
+                                if (entry.hasReminder) {
+                                    Icon(
+                                        imageVector = Icons.Default.NotificationsActive,
+                                        contentDescription = "Reminder set",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
                             
                             if (mainParameter.isNotEmpty()) {
                                 Text(
-                                    text = "• $mainParameter",
+                                    text = mainParameter,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.primary,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f, fill = false)
-                                )
-                            }
-
-                            if (entry.hasReminder) {
-                                Icon(
-                                    imageVector = Icons.Default.NotificationsActive,
-                                    contentDescription = "Reminder set",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.weight(1f, fill = false).padding(start = 8.dp)
                                 )
                             }
                         }
@@ -593,7 +601,7 @@ fun EntryItem(
                     )
                 }
 
-                // If both name and location exist, we already showed one in the header. 
+                // If both name and location exist, we already showed one. 
                 // Show the other one here if it wasn't the one highlighted.
                 if (entry.name != null && entry.location != null) {
                     Text(text = "Location: ${entry.location}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))

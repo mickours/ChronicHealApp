@@ -8,7 +8,13 @@ import androidx.core.graphics.PathParser
 import org.xmlpull.v1.XmlPullParser
 import java.util.Stack
 
-data class SvgPath(val id: String, val path: Path)
+data class SvgPath(
+    val id: String, 
+    val path: Path,
+    val fill: String? = null,
+    val stroke: String? = null,
+    val strokeWidth: Float? = null
+)
 
 class SvgBodyParser(private val context: Context) {
     fun parse(fileName: String): List<SvgPath> {
@@ -24,6 +30,15 @@ class SvgBodyParser(private val context: Context) {
 
             val idStack = Stack<String?>()
             idStack.push(null)
+            
+            val fillStack = Stack<String?>()
+            fillStack.push(null)
+            
+            val strokeStack = Stack<String?>()
+            strokeStack.push(null)
+            
+            val strokeWidthStack = Stack<Float?>()
+            strokeWidthStack.push(null)
 
             var eventType = parser.eventType
             while (eventType != XmlPullParser.END_DOCUMENT) {
@@ -32,6 +47,9 @@ class SvgBodyParser(private val context: Context) {
                         val tagName = parser.name
                         val id = parser.getAttributeValue(null, "id")
                         val transform = parser.getAttributeValue(null, "transform")
+                        val fill = parser.getAttributeValue(null, "fill")
+                        val stroke = parser.getAttributeValue(null, "stroke")
+                        val strokeWidth = parser.getAttributeValue(null, "stroke-width")?.toFloatOrNull()
 
                         if (tagName == "g" || tagName == "svg") {
                             val parentMatrix = matrixStack.peek()
@@ -41,6 +59,9 @@ class SvgBodyParser(private val context: Context) {
                             }
                             matrixStack.push(currentMatrix)
                             idStack.push(id ?: idStack.peek())
+                            fillStack.push(fill ?: fillStack.peek())
+                            strokeStack.push(stroke ?: strokeStack.peek())
+                            strokeWidthStack.push(strokeWidth ?: strokeWidthStack.peek())
                         } else if (tagName == "path" || tagName == "ellipse") {
                             val parentMatrix = matrixStack.peek()
                             val currentMatrix = Matrix(parentMatrix)
@@ -49,6 +70,9 @@ class SvgBodyParser(private val context: Context) {
                             }
                             
                             val partId = id ?: idStack.peek() ?: "unknown"
+                            val partFill = fill ?: fillStack.peek()
+                            val partStroke = stroke ?: strokeStack.peek()
+                            val partStrokeWidth = strokeWidth ?: strokeWidthStack.peek()
                             
                             if (tagName == "path") {
                                 val d = parser.getAttributeValue(null, "d")
@@ -56,7 +80,7 @@ class SvgBodyParser(private val context: Context) {
                                     try {
                                         val path = PathParser.createPathFromPathData(d)
                                         path.transform(currentMatrix)
-                                        result.add(SvgPath(partId, path))
+                                        result.add(SvgPath(partId, path, partFill, partStroke, partStrokeWidth))
                                     } catch (_: Exception) {
                                         // Ignore malformed paths
                                     }
@@ -69,7 +93,7 @@ class SvgBodyParser(private val context: Context) {
                                 val path = Path()
                                 path.addOval(cx - rx, cy - ry, cx + rx, cy + ry, Path.Direction.CW)
                                 path.transform(currentMatrix)
-                                result.add(SvgPath(partId, path))
+                                result.add(SvgPath(partId, path, partFill, partStroke, partStrokeWidth))
                             }
                         }
                     }
@@ -79,6 +103,9 @@ class SvgBodyParser(private val context: Context) {
                             if (matrixStack.size > 1) {
                                 matrixStack.pop()
                                 idStack.pop()
+                                fillStack.pop()
+                                strokeStack.pop()
+                                strokeWidthStack.pop()
                             }
                         }
                     }

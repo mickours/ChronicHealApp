@@ -6,7 +6,10 @@
    version="1.1"
    id="body-shape"
    xmlns="http://www.w3.org/2000/svg">
-   <g id="body" transform="translate(-15.95332,7.00862)">
+   <!-- Background -->
+   <rect width="100%" height="100%" fill="#A7C7D4" />
+   
+   <g id="body" transform="translate(-15.95332,7.00862)" fill="#FFFFFF" stroke="#FFB77C" stroke-width="1">
        <g id="leg-R">
            <path
                d="m 97.013437,345.65416 8.038813,25.1254 13.15317,-11.39648 -9.96549,-13.46256 c -4.61016,4.8425 -8.08339,3.20434 -11.226493,-0.26636 z"
@@ -164,6 +167,7 @@
       <g
          id="eyes"
          transform="translate(-0.52656237)"
+         fill="#FFB77C"
          >
         <path
            d="m 75.101357,17.735131 c 0.455012,-1.504624 0.409604,-3.562842 3.617965,-3.617965 3.295628,0.210564 4.048716,2.328033 4.740783,4.491267 z"
