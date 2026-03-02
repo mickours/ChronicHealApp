@@ -52,6 +52,9 @@ Goal: Interactive tools and notifications.
     - Enhanced `AddReminderScreen` to support both creation and **edition** of existing reminders.
     - Automated category pre-filling (e.g., pre-selecting "Pain" when coming from Body Scan).
     - **Quick Actions**: Notifications now feature "Start Body Scan" and "Skip Today" actions for seamless user flow.
+- **Improved UX and Gestures**:
+    - **Scroll-Aware Interaction**: Refactored the `pointerInput` handling in the `BodyScanScreen` to use a slop-aware gesture detector. This distinguishes between intentional taps/holds on the silhouette and vertical scrolling gestures.
+    - **Technical Choice**: Replaced `detectTapGestures` with a custom `awaitPointerEventScope` loop that monitors pointer movement. If the movement exceeds the system's `touchSlop` threshold, any ongoing intensity logging is canceled, allowing the `verticalScroll` modifier to take over and ensuring a smooth scrolling experience.
 
 ### 2. Reminders (Completed)
 - **Exact Scheduling**: Used `AlarmManager` for high-precision health reminders.
@@ -88,10 +91,14 @@ Goal: Interactive tools and notifications.
         - Updated the `WelcomeWizard` introduction page to feature the app logo instead of the placeholder illustration, strengthening the visual identity from the first launch.
     - **Onboarding UX**: 
         - Enabled swipe-to-navigate in the `WelcomeWizard` (using `HorizontalPager` with `userScrollEnabled = true`), offering a more intuitive gesture-based experience alongside the existing navigation buttons.
+    - **Analytics Layout Optimization**:
+        - Reordered analytics sections: **Pain Evolution** (top), **Symptom Impact** (middle), and **Correlation Analysis** (bottom).
+        - Reduced Pain Evolution chart height to `200.dp`.
+        - Replaced Symptom Impact bar chart with a compact **Pie Chart** (`160.dp`) for better space efficiency and proportional visualization.
 - **Biometric Lock Implementation**:
     - **Technical Choice**: Switched `MainActivity` from `ComponentActivity` to `AppCompatActivity` to support the `BiometricPrompt` API.
     - **Enforcement**: Implemented mandatory biometric authentication on app startup when enabled in settings.
-    - **Session Persistence**: Used a local `isAuthenticated` state in `MainActivity` to avoid re-triggering the prompt during configuration changes or internal navigation while keeping the app secure on fresh starts.
+    - **Session persistence**: Used a local `isAuthenticated` state in `MainActivity` to avoid re-triggering the prompt during configuration changes or internal navigation while keeping the app secure on fresh starts.
     - **Availability Safeguards**: Added `BiometricManager` checks in `SecurityViewModel` to disable and reset the lock setting if biometric hardware is missing or credentials are not enrolled. The UI now reflects this state by disabling the toggle and providing contextual feedback.
 - **Search and Filters (Completed)**: Added a dynamic search bar and type-based filtering chips to the main timeline for efficient history navigation.
 

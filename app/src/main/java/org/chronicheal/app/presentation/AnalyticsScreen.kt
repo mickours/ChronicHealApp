@@ -2,6 +2,7 @@ package org.chronicheal.app.presentation
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,16 +66,12 @@ import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberEndAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.chart.column.columnChart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
-import com.patrykandpatrick.vico.compose.component.lineComponent
-import com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient
 import com.patrykandpatrick.vico.compose.component.textComponent
 import com.patrykandpatrick.vico.core.axis.AxisItemPlacer
 import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 import com.patrykandpatrick.vico.core.chart.line.LineChart
-import com.patrykandpatrick.vico.core.component.shape.Shapes
 import com.patrykandpatrick.vico.core.entry.FloatEntry
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import kotlinx.coroutines.flow.collectLatest
@@ -181,25 +178,7 @@ fun AnalyticsScreen(
 
             HorizontalDivider()
 
-            Text(text = "Correlation Analysis", style = MaterialTheme.typography.titleLarge)
-            
-            CorrelationSelectors(
-                type1 = type1,
-                type2 = type2,
-                onTypesChange = viewModel::setCorrelationTypes
-            )
-
-            CorrelationChart(
-                correlationData = uiState.correlationData,
-                timeRange = timeRange,
-                type1 = type1,
-                type2 = type2,
-                color1 = palette[0],
-                color2 = palette[1]
-            )
-
-            HorizontalDivider()
-
+            // 1. Pain Evolution
             Text(text = "Pain Evolution", style = MaterialTheme.typography.titleLarge)
             if (uiState.painData.isNotEmpty()) {
                 val locations = uiState.painData.keys.toList()
@@ -245,7 +224,7 @@ fun AnalyticsScreen(
                             val color = palette[index % palette.size]
                             LineChart.LineSpec(
                                 lineColor = color.toArgb(),
-                                lineBackgroundShader = verticalGradient(
+                                lineBackgroundShader = com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient(
                                     arrayOf(color.copy(alpha = 0.8f), color.copy(alpha = 0.8f))
                                 )
                             )
@@ -270,7 +249,7 @@ fun AnalyticsScreen(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(320.dp)
+                        .height(200.dp)
                 )
 
                 // Legend
@@ -288,6 +267,7 @@ fun AnalyticsScreen(
                                     .background(palette[index % palette.size])
                             )
                             Spacer(Modifier.width(4.dp))
+                            @Suppress("DEPRECATION")
                             Text(text = location, style = MaterialTheme.typography.labelSmall)
                         }
                     }
@@ -298,52 +278,94 @@ fun AnalyticsScreen(
 
             HorizontalDivider()
 
+            // 2. Symptoms Impact (Reduced size and moved up)
             Text(text = "Symptoms Impact (Severity Sum)", style = MaterialTheme.typography.titleLarge)
             if (uiState.symptomSeveritySum.isNotEmpty()) {
-                val symptomNames = uiState.symptomSeveritySum.keys.toList()
-                val symptomEntries = uiState.symptomSeveritySum.entries.mapIndexed { index, entry ->
-                    listOf(FloatEntry(index.toFloat(), entry.value.toFloat()))
-                }
-                val model = entryModelOf(*symptomEntries.toTypedArray())
-
-                val bottomAxisFormatter = remember(symptomNames) {
-                    AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-                        symptomNames.getOrNull(value.toInt()) ?: ""
-                    }
-                }
-
-                val maxFreq = remember(uiState.symptomSeveritySum) {
-                    (uiState.symptomSeveritySum.values.maxOfOrNull { it } ?: 5).toFloat().coerceAtLeast(1f)
-                }
-
-                Chart(
-                    chart = columnChart(
-                        columns = symptomNames.mapIndexed { index, _ ->
-                            lineComponent(
-                                color = palette[index % palette.size],
-                                thickness = 16.dp,
-                                shape = Shapes.roundedCornerShape(allPercent = 40)
-                            )
-                        }
-                    ),
-                    model = model,
-                    startAxis = rememberStartAxis(
-                        itemPlacer = AxisItemPlacer.Vertical.default(
-                            maxItemCount = (ceil(maxFreq.toDouble()).toInt() + 1).coerceAtMost(30)
-                        )
-                    ),
-                    bottomAxis = rememberBottomAxis(
-                        label = textComponent(color = Color.Black),
-                        valueFormatter = bottomAxisFormatter,
-                        labelRotationDegrees = 45f,
-                        itemPlacer = AxisItemPlacer.Horizontal.default(spacing = 5)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(240.dp)
+                SymptomImpactPieChart(
+                    symptomSeveritySum = uiState.symptomSeveritySum,
+                    palette = palette
                 )
             } else {
                 Text("No symptoms recorded for this period.", style = MaterialTheme.typography.bodyMedium)
+            }
+
+            HorizontalDivider()
+
+            // 3. Correlation Analysis (Moved to end)
+            Text(text = "Correlation Analysis", style = MaterialTheme.typography.titleLarge)
+            
+            CorrelationSelectors(
+                type1 = type1,
+                type2 = type2,
+                onTypesChange = viewModel::setCorrelationTypes
+            )
+
+            CorrelationChart(
+                correlationData = uiState.correlationData,
+                timeRange = timeRange,
+                type1 = type1,
+                type2 = type2,
+                color1 = palette[0],
+                color2 = palette[1]
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun SymptomImpactPieChart(
+    symptomSeveritySum: Map<String, Int>,
+    palette: List<Color>
+) {
+    val totalSeverity = symptomSeveritySum.values.sum().toFloat()
+    val symptomList = symptomSeveritySum.entries.toList()
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(
+            modifier = Modifier.size(160.dp), // Reduced size from 200.dp
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                var startAngle = -90f
+                symptomList.forEachIndexed { index, entry ->
+                    val sweepAngle = (entry.value / totalSeverity) * 360f
+                    drawArc(
+                        color = palette[index % palette.size],
+                        startAngle = startAngle,
+                        sweepAngle = sweepAngle,
+                        useCenter = true
+                    )
+                    startAngle += sweepAngle
+                }
+            }
+        }
+
+        // Legend for Pie Chart
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            symptomList.forEachIndexed { index, entry ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(palette[index % palette.size])
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    @Suppress("DEPRECATION")
+                    Text(
+                        text = "${entry.key} (${entry.value})",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
             }
         }
     }
@@ -426,6 +448,7 @@ fun LegendItem(color: Color, label: String) {
                 .background(color)
         )
         Spacer(Modifier.width(4.dp))
+        @Suppress("DEPRECATION")
         Text(text = label, style = MaterialTheme.typography.labelSmall)
     }
 }
