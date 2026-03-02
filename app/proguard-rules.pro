@@ -1,21 +1,31 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Room
+-keep @androidx.room.Entity class *
+-keep class * extends androidx.room.RoomDatabase
+-keep class * implements androidx.room.Entity
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Hilt
+-keep class * extends android.app.Application
+-keep class * extends android.app.Activity
+-keep class * extends android.app.Service
+-keep class * extends android.content.BroadcastReceiver
+-keep class * extends android.content.ContentProvider
+-keep class * extends androidx.fragment.app.Fragment
+-keep class * extends androidx.lifecycle.ViewModel
+-keep class * extends androidx.viewbinding.ViewBinding
+-keep @dagger.hilt.android.lifecycle.HiltViewModel class *
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Kotlin Serialization
+-keepattributes *Annotation*, EnclosingMethod, Signature, InnerClasses
+-keepclassmembers class ** {
+    @kotlinx.serialization.SerialName <fields>;
+}
+-keepclassmembers class * {
+    @kotlinx.serialization.Serializable *;
+}
+-keep class kotlinx.serialization.json.Json { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# DataStore
+-keep class androidx.datastore.** { *; }
+
+# Keep domain models
+-keep class org.chronicheal.app.domain.model.** { *; }
