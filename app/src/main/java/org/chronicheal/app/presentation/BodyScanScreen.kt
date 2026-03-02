@@ -8,7 +8,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,10 +61,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
@@ -74,6 +80,7 @@ import org.chronicheal.app.ui.theme.PrimaryDark
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -264,6 +271,7 @@ fun BodySilhouette(
     var currentHoldRegion by remember { mutableStateOf<String?>(null) }
     var currentHoldIntensity by remember { mutableFloatStateOf(1f) }
     val scope = rememberCoroutineScope()
+    val viewConfiguration = LocalViewConfiguration.current
 
     LaunchedEffect(Unit) {
         val parser = SvgBodyParser(context)
@@ -289,51 +297,81 @@ fun BodySilhouette(
                 .fillMaxWidth()
                 .aspectRatio(if (bounds.width() > 0) bounds.width() / bounds.height() else 1f)
                 .pointerInput(svgPaths, bounds) {
-                    detectTapGestures(
-                        onPress = { tapOffset ->
-                            val scaleX = size.width / bounds.width()
-                            val baseScale = scaleX // Fill width
-                            
-                            val invertedX = tapOffset.x / baseScale + bounds.left
-                            val invertedY = tapOffset.y / baseScale + bounds.top
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        var isScrolling = false
+                        var intensityJob: Job? = null
+                        
+                        val scaleX = size.width / bounds.width()
+                        val baseScale = scaleX
+                        val invertedX = down.position.x / baseScale + bounds.left
+                        val invertedY = down.position.y / baseScale + bounds.top
 
-                            val tappedPath = svgPaths.findLast { svgPath ->
-                                val region = android.graphics.Region()
-                                val clip = android.graphics.Region(
-                                    (invertedX - 1).toInt(), 
-                                    (invertedY - 1).toInt(), 
-                                    (invertedX + 1).toInt(), 
-                                    (invertedY + 1).toInt()
-                                )
-                                region.setPath(svgPath.path, clip)
-                                !region.isEmpty
-                            }
+                        val tappedPath = svgPaths.findLast { svgPath ->
+                            val region = android.graphics.Region()
+                            val clip = android.graphics.Region(
+                                (invertedX - 1).toInt(), 
+                                (invertedY - 1).toInt(), 
+                                (invertedX + 1).toInt(), 
+                                (invertedY + 1).toInt()
+                            )
+                            region.setPath(svgPath.path, clip)
+                            !region.isEmpty
+                        }
+
+                        if (tappedPath != null) {
+                            val regionName = formatId(tappedPath.id)
                             
-                            tappedPath?.let { svgPath ->
-                                val region = formatId(svgPath.id)
-                                currentHoldRegion = region
-                                val existing = painEntries.find { it.location?.equals(region, ignoreCase = true) == true }
-                                currentHoldIntensity = existing?.intensity?.toFloat() ?: 1f
-                                
-                                onRegionHold(region, currentHoldIntensity)
-                                
-                                val job = scope.launch {
-                                    while (currentHoldRegion != null) {
+                            // Start hold logic
+                            intensityJob = scope.launch {
+                                // Short delay to allow for scroll detection
+                                delay(150)
+                                if (!isScrolling) {
+                                    currentHoldRegion = regionName
+                                    val existing = painEntries.find { it.location?.equals(regionName, ignoreCase = true) == true }
+                                    currentHoldIntensity = existing?.intensity?.toFloat() ?: 1f
+                                    onRegionHold(regionName, currentHoldIntensity)
+                                    
+                                    while (true) {
                                         delay(200)
                                         if (currentHoldIntensity < 10f) {
                                             currentHoldIntensity += 1f
-                                            onRegionHold(region, currentHoldIntensity)
+                                            onRegionHold(regionName, currentHoldIntensity)
                                         }
                                     }
                                 }
-                                
-                                tryAwaitRelease()
-                                job.cancel()
+                            }
+
+                            // Tracking movement
+                            var pointerChange: PointerInputChange?
+                            do {
+                                pointerChange = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+                                if (pointerChange != null) {
+                                    if (pointerChange.positionChange() != Offset.Zero) {
+                                        val diff = pointerChange.position - down.position
+                                        if (abs(diff.x) > viewConfiguration.touchSlop || abs(diff.y) > viewConfiguration.touchSlop) {
+                                            isScrolling = true
+                                            intensityJob?.cancel()
+                                            currentHoldRegion = null
+                                        }
+                                    }
+                                }
+                            } while (pointerChange != null && pointerChange.pressed)
+
+                            intensityJob?.cancel()
+                            if (!isScrolling && currentHoldRegion != null) {
+                                currentHoldRegion = null
+                                onRelease()
+                            } else if (!isScrolling && tappedPath != null) {
+                                // If it was a quick tap (not long enough for the job to start hold)
+                                currentHoldRegion = regionName
+                                val existing = painEntries.find { it.location?.equals(regionName, ignoreCase = true) == true }
+                                onRegionHold(regionName, existing?.intensity?.toFloat() ?: 1f)
                                 currentHoldRegion = null
                                 onRelease()
                             }
                         }
-                    )
+                    }
                 }
         ) {
             val baseScale = size.width / bounds.width() // Fill width
