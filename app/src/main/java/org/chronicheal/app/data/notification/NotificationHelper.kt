@@ -26,6 +26,8 @@ class NotificationHelper @Inject constructor(
         
         const val EXTRA_ENTRY_TYPE = "extra_entry_type"
         const val ACTION_SKIP = "org.chronicheal.app.ACTION_SKIP"
+        const val ACTION_SNOOZE_10 = "org.chronicheal.app.ACTION_SNOOZE_10"
+        const val ACTION_SNOOZE_60 = "org.chronicheal.app.ACTION_SNOOZE_60"
     }
 
     init {
@@ -66,6 +68,28 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
+        val snooze10Intent = Intent(context, ReminderReceiver::class.java).apply {
+            action = ACTION_SNOOZE_10
+            putExtra("reminder_id", reminderId)
+        }
+        val snooze10PendingIntent = PendingIntent.getBroadcast(
+            context,
+            reminderId.toInt() + 2000,
+            snooze10Intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val snooze60Intent = Intent(context, ReminderReceiver::class.java).apply {
+            action = ACTION_SNOOZE_60
+            putExtra("reminder_id", reminderId)
+        }
+        val snooze60PendingIntent = PendingIntent.getBroadcast(
+            context,
+            reminderId.toInt() + 3000,
+            snooze60Intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val skipIntent = Intent(context, ReminderReceiver::class.java).apply {
             action = ACTION_SKIP
             putExtra("reminder_id", reminderId)
@@ -78,7 +102,6 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        // Using a more standard system icon for compatibility
         val builder = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle(title)
@@ -89,6 +112,8 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(openPendingIntent)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .addAction(android.R.drawable.ic_menu_recent_history, "10 min", snooze10PendingIntent)
+            .addAction(android.R.drawable.ic_menu_recent_history, "1 hour", snooze60PendingIntent)
 
         if (entryType == EntryType.PAIN) {
             builder.addAction(

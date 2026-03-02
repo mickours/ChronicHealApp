@@ -45,6 +45,27 @@ class ReminderScheduler @Inject constructor(
         )
     }
 
+    fun snooze(reminderId: Long, minutes: Int) {
+        val intent = Intent(context, ReminderReceiver::class.java).apply {
+            putExtra("reminder_id", reminderId)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            reminderId.toInt(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val triggerAt = LocalDateTime.now().plusMinutes(minutes.toLong())
+        
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerAt.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+            pendingIntent
+        )
+    }
+
     fun cancel(reminder: Reminder) {
         val intent = Intent(context, ReminderReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(

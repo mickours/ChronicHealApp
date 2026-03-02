@@ -11,7 +11,7 @@ Goal: Allow users to view their history and add new entries.
 ### Accomplishments:
 - **Unified Entry System**: Implemented all 10 specialized screens (Pain, Drugs, Symptoms, Disease, Meals, Sleep, Medical Appointment, Activity, External Factors, Journal).
 - **Entry Edition**: Added support for editing existing entries. Users can tap any entry in the Timeline or Day View to modify its details.
-- **Intensity Tracking**: All "Occurrence" categories (Pain, Symptom, Disease, External Factors) now include an intensity/impact level (1-10).
+- **Intensity Tracking**: All "Occurrence" categories (Pain, Intensity, Symptom, Disease, External Factors) now include an intensity/impact level (1-10).
 - **Calendar View**: Added a monthly overview with data markers for active days.
 - **Calendar UX**: Highlighted today's date and added a "Go to Today" button for easier navigation.
 - **Day View**: Contextual list of events for a specific day with adding support.
@@ -60,6 +60,10 @@ Goal: Interactive tools and notifications.
 - **Persistence**: Reminders survive device reboots via `BootReceiver`.
 - **Centralized Hub**: Reminders are now listed and manageable directly from the Calendar view.
 - **Permissions**: Integrated mandatory runtime permission requests for notifications on Android 13+.
+- **Notification Quick Actions**:
+    - Added "10 min" and "1 hour" snooze actions to health reminders.
+    - Implemented a `snooze` method in `ReminderScheduler` using `AlarmManager` for one-time delayed triggering.
+    - Updated `ReminderReceiver` to handle snooze actions by canceling the current notification and scheduling a new one-off alarm.
 
 ## Phase 5: Polish and Privacy (Completed)
 - **Enhanced Entry Model**: Added `durationMinutes` and `isFinished` properties to `HealthEntry`.

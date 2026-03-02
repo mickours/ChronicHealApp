@@ -27,9 +27,21 @@ class ReminderReceiver : BroadcastReceiver() {
         val reminderId = intent.getLongExtra("reminder_id", -1L)
         if (reminderId == -1L) return
 
-        if (intent.action == NotificationHelper.ACTION_SKIP) {
-            notificationHelper.cancelNotification(reminderId.toInt())
-            return
+        when (intent.action) {
+            NotificationHelper.ACTION_SKIP -> {
+                notificationHelper.cancelNotification(reminderId.toInt())
+                return
+            }
+            NotificationHelper.ACTION_SNOOZE_10 -> {
+                notificationHelper.cancelNotification(reminderId.toInt())
+                reminderScheduler.snooze(reminderId, 10)
+                return
+            }
+            NotificationHelper.ACTION_SNOOZE_60 -> {
+                notificationHelper.cancelNotification(reminderId.toInt())
+                reminderScheduler.snooze(reminderId, 60)
+                return
+            }
         }
 
         val pendingResult = goAsync()
