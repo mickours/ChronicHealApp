@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.chronicheal.app.data.notification.NotificationHelper
 import org.chronicheal.app.presentation.MainViewModel
 import org.chronicheal.app.presentation.SecurityViewModel
@@ -33,9 +34,13 @@ class MainActivity : AppCompatActivity() {
     private val securityViewModel: SecurityViewModel by viewModels()
     private val mainViewModel: MainViewModel by viewModels()
 
+    private val pendingEntryType = MutableStateFlow<String?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        handleIntent(intent)
+
         setContent {
             ChronicHealTheme {
                 Surface(
@@ -61,15 +66,15 @@ class MainActivity : AppCompatActivity() {
                         }
 
                         // Handle navigation from notification actions
-                        val entryType = intent.getStringExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
-                        LaunchedEffect(entryType) {
-                            if (entryType == "PAIN") {
+                        val entryTypeAction by pendingEntryType.collectAsState()
+                        LaunchedEffect(entryTypeAction) {
+                            if (entryTypeAction == "PAIN") {
                                 navController.navigate(Screen.BodyScan.route) {
                                     popUpTo(Screen.Timeline.route) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
-                                intent.removeExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
+                                pendingEntryType.value = null
                             }
                         }
                         
@@ -83,6 +88,13 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        intent?.getStringExtra(NotificationHelper.EXTRA_ENTRY_TYPE)?.let { type ->
+            pendingEntryType.value = type
+            intent.removeExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
         }
     }
 
@@ -121,5 +133,6 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        handleIntent(intent)
     }
 }

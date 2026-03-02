@@ -17,6 +17,7 @@ import org.chronicheal.app.presentation.AddJournalScreen
 import org.chronicheal.app.presentation.AddMealScreen
 import org.chronicheal.app.presentation.AddMedicalAppointmentScreen
 import org.chronicheal.app.presentation.AddPainScreen
+import org.chronicheal.app.presentation.AddPeriodScreen
 import org.chronicheal.app.presentation.AddReminderScreen
 import org.chronicheal.app.presentation.AddSleepScreen
 import org.chronicheal.app.presentation.AddSymptomScreen
@@ -53,6 +54,7 @@ fun NavGraph(
                 EntryType.ACTIVITY -> Screen.AddActivity.createRoute(id = entry.id, date = date)
                 EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(id = entry.id, date = date)
                 EntryType.JOURNAL -> Screen.AddJournal.createRoute(id = entry.id, date = date)
+                EntryType.PERIOD -> Screen.AddPeriod.createRoute(id = entry.id, date = date)
             }
             navController.navigate(route)
         }
@@ -69,6 +71,7 @@ fun NavGraph(
                 EntryType.ACTIVITY -> Screen.AddActivity.createRoute()
                 EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute()
                 EntryType.JOURNAL -> Screen.AddJournal.createRoute()
+                EntryType.PERIOD -> Screen.AddPeriod.createRoute()
             }
             navController.navigate(route)
         }
@@ -211,6 +214,7 @@ fun NavGraph(
                         EntryType.ACTIVITY -> Screen.AddActivity.createRoute(date, location)
                         EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(date, location)
                         EntryType.JOURNAL -> Screen.AddJournal.createRoute(date, location)
+                        EntryType.PERIOD -> Screen.AddPeriod.createRoute(date, location)
                     }
                     navController.navigate(route)
                 },
@@ -400,6 +404,23 @@ fun NavGraph(
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddJournalScreen(
+                dateString = date,
+                id = id,
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
+            )
+        }
+        composable(
+            route = Screen.AddPeriod.route,
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
+            )
+        ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
+            AddPeriodScreen(
                 dateString = date,
                 id = id,
                 onBackClick = { onCancel(id) },

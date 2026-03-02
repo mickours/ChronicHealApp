@@ -192,7 +192,7 @@ class AnalyticsViewModel @Inject constructor(
                             // Average quality or duration? Let's use intensity (quality) if available, otherwise duration
                             dayEntries.mapNotNull { it.intensity?.toFloat() ?: it.durationMinutes?.toFloat()?.div(60f) }.average().toFloat()
                         }
-                        EntryType.PAIN, EntryType.SYMPTOM, EntryType.DISEASE, EntryType.EXTERNAL_FACTOR -> {
+                        EntryType.PAIN, EntryType.SYMPTOM, EntryType.DISEASE, EntryType.EXTERNAL_FACTOR, EntryType.PERIOD -> {
                             dayEntries.mapNotNull { it.intensity?.toFloat() }.average().toFloat()
                         }
                         EntryType.DRUG, EntryType.MEAL, EntryType.ACTIVITY, EntryType.MEDICAL_APPOINTMENT, EntryType.JOURNAL -> {

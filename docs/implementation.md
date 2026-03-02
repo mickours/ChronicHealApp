@@ -9,9 +9,9 @@ Established the core data structure and a basic user interface.
 Goal: Allow users to view their history and add new entries.
 
 ### Accomplishments:
-- **Unified Entry System**: Implemented all 10 specialized screens (Pain, Drugs, Symptoms, Disease, Meals, Sleep, Medical Appointment, Activity, External Factors, Journal).
+- **Unified Entry System**: Implemented all 11 specialized screens (Pain, Drugs, Symptoms, Disease, Meals, Sleep, Medical Appointment, Activity, External Factors, Journal, Period).
 - **Entry Edition**: Added support for editing existing entries. Users can tap any entry in the Timeline or Day View to modify its details.
-- **Intensity Tracking**: All "Occurrence" categories (Pain, Intensity, Symptom, Disease, External Factors) now include an intensity/impact level (1-10).
+- **Intensity Tracking**: All "Occurrence" categories (Pain, Intensity, Symptom, Disease, External Factors, Period) now include an intensity/impact level (1-10 or 1-5 for Periods).
 - **Calendar View**: Added a monthly overview with data markers for active days.
 - **Calendar UX**: Highlighted today's date and added a "Go to Today" button for easier navigation.
 - **Day View**: Contextual list of events for a specific day with adding support.
@@ -106,6 +106,11 @@ Goal: Improve the first-run experience and daily logging efficiency.
     - Introduced `SettingsRepository` using `DataStore` to store onboarding status and favorite preferences.
     - Updated `MainActivity` to conditionally route users to the `WelcomeWizard` or `Timeline` based on their first-run status.
 
-## Phase 7: Advanced Analytics (In Progress)
+## Phase 7: Specialized Entry Types (Completed)
+- **Period Tracking**: Added a specialized entry type for women's periods (`EntryType.PERIOD`).
+    - **UI**: Implemented `AddPeriodScreen` with a dedicated flow intensity slider (1-5).
+    - **Integration**: Added to navigation graph and entry selection screen.
+
+## Phase 8: Advanced Analytics (In Progress)
 - **Correlation Insights**: Visualize correlations between different health metrics (e.g., Pain Intensity vs. Sleep Quality).
 - **Custom Dashboard**: Allow users to pin specific charts or summaries to the home screen.
