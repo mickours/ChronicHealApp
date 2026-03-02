@@ -59,6 +59,7 @@ fun AddEntryScaffold(
     BackHandler(onBack = handleBack)
 
     Scaffold(
+        modifier = Modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = { Text(title) },
@@ -83,9 +84,13 @@ fun AddEntryScaffold(
             )
         }
     ) { innerPadding ->
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
             Box(modifier = Modifier.weight(1f)) {
-                content(innerPadding)
+                content(PaddingValues(0.dp))
             }
             
             Button(
@@ -94,6 +99,7 @@ fun AddEntryScaffold(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
+                    .navigationBarsPadding() // ENSURE button is above navigation bar
             ) {
                 Text(saveButtonText)
             }

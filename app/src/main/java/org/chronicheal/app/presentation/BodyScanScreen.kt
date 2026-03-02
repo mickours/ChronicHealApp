@@ -73,7 +73,6 @@ import org.chronicheal.app.presentation.util.SvgBodyParser
 import org.chronicheal.app.presentation.util.SvgPath
 import org.chronicheal.app.ui.theme.HeaderBlue
 import org.chronicheal.app.ui.theme.PrimaryDark
-import org.chronicheal.app.ui.theme.PrimaryOrange
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -305,7 +304,6 @@ fun BodySilhouette(
                 .pointerInput(svgPaths, bounds) {
                     detectTapGestures(
                         onPress = { tapOffset ->
-                            // Adjust tap offset for zoom/pan
                             val adjustedX = (tapOffset.x - offset.x) / scale
                             val adjustedY = (tapOffset.y - offset.y) / scale
                             
@@ -365,7 +363,7 @@ fun BodySilhouette(
             val offsetX = (size.width - bounds.width() * baseScale) / 2f
             val offsetY = (size.height - bounds.height() * baseScale) / 2f
 
-            val strokeWidth = 1.dp.toPx()
+            val baseStrokeWidth = 1.dp.toPx()
             
             drawContext.canvas.nativeCanvas.save()
             drawContext.canvas.nativeCanvas.translate(offsetX, offsetY)
@@ -382,35 +380,32 @@ fun BodySilhouette(
                     painEntries.find { it.location?.equals(formattedId, ignoreCase = true) == true }?.intensity ?: 0
                 }
 
-                val fillBrush = if (intensity > 0) {
+                val strokeColor = parseSvgColor(svgPath.stroke) ?: PrimaryDark
+                val pathStrokeWidth = svgPath.strokeWidth ?: 1f
+
+                if (intensity > 0) {
                     val alphaBase = 0.3f + (intensity / 10f) * 0.7f
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.Red.copy(alpha = alphaBase),
-                            Color.Red.copy(alpha = alphaBase * 0.6f)
+                    drawPath(
+                        path = composePath,
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                Color.Red.copy(alpha = alphaBase),
+                                Color.Red.copy(alpha = alphaBase * 0.6f)
+                            )
                         )
                     )
                 } else {
                     val svgFill = parseSvgColor(svgPath.fill) ?: Color.White
-                    Brush.verticalGradient(
-                        listOf(
-                            svgFill,
-                            svgFill.copy(alpha = 0.9f)
-                        )
+                    drawPath(
+                        path = composePath,
+                        color = svgFill
                     )
                 }
 
-                val strokeColor = parseSvgColor(svgPath.stroke) ?: PrimaryDark
-                val pathStrokeWidth = svgPath.strokeWidth ?: 1f
-
-                drawPath(
-                    path = composePath,
-                    brush = fillBrush
-                )
                 drawPath(
                     path = composePath,
                     color = strokeColor,
-                    style = Stroke(width = (pathStrokeWidth * strokeWidth) / baseScale)
+                    style = Stroke(width = (pathStrokeWidth * baseStrokeWidth) / baseScale)
                 )
                 
                 if (intensity > 0) {
@@ -449,9 +444,19 @@ fun BodySilhouette(
 }
 
 private fun parseSvgColor(colorStr: String?): Color? {
-    if (colorStr == null) return null
+    if (colorStr == null || colorStr == "none") return null
     return try {
-        Color(android.graphics.Color.parseColor(colorStr))
+        // Handle hex colors specifically as parseColor expects them correctly
+        if (colorStr.startsWith("#")) {
+            // Fix for 3-digit hex if present (though not used in our current SVG)
+            val normalized = if (colorStr.length == 4) {
+                "#" + colorStr[1] + colorStr[1] + colorStr[2] + colorStr[2] + colorStr[3] + colorStr[3]
+            } else colorStr
+            Color(android.graphics.Color.parseColor(normalized))
+        } else {
+            // Try standard color names
+            Color(android.graphics.Color.parseColor(colorStr))
+        }
     } catch (_: Exception) {
         null
     }

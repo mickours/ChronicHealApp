@@ -1,0 +1,108 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Overall centering and scale to focus on the upper body -->
+    <group
+        android:translateX="35"
+        android:translateY="40"
+        android:scaleX="0.9"
+        android:scaleY="0.9">
+
+        <!-- body-shape.svg coordinate reference group -->
+        <group
+            android:translateX="-15.95332"
+            android:translateY="7.00862">
+
+            <!-- Upper Body: Chest / Breast -->
+            <path
+                android:fillColor="#FFFFFF"
+                android:strokeColor="#FFB77C"
+                android:strokeWidth="1.2"
+                android:pathData="m 50.391,55.384 c 26.812,-8.959 44.944,-9.256 74.003,-0.104 -9.694,1.623 -8.623,13.189 -2.176,15.07 0.331,0.097 -2.021,7.397 -0.683,16.735 0.604,4.212 -1.757,16.916 -3.716,22.257 L 57.239,108.726 c -2.024,-7.205 -5.827,-14.741 -4.593,-22.277 0.856,-5.225 -1.135,-15.974 -0.58,-16.261 5.826,-3.015 6.608,-12.658 -1.676,-14.804 z" />
+
+            <!-- Neck -->
+            <path
+                android:fillColor="#FFFFFF"
+                android:strokeColor="#FFB77C"
+                android:strokeWidth="1.2"
+                android:pathData="m 96.198,36.164 4.472,13.741 C 90.922,48.348 84.27,48.074 73.814,49.719 l 4.029,-13.387 c 5.917,3.439 11.591,5.707 18.355,-0.167 z" />
+
+            <!-- Static Left Arm -->
+            <group>
+                <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                    android:pathData="M 48.964,62.838 m -7.509,0 a 7.509,7.684 0 1,1 15.018,0 a 7.509,7.684 0 1,1 -15.018,0" /> <!-- Shoulder -->
+                <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                    android:pathData="M 38.321,122.547 m -7.509,0 a 7.509,7.684 0 1,1 15.018,0 a 7.509,7.684 0 1,1 -15.018,0" /> <!-- Elbow -->
+                <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                    android:pathData="M 34.411,178.476 m -5.222,0 a 5.222,5.344 0 1,1 10.444,0 a 5.222,5.344 0 1,1 -10.444,0" /> <!-- Wrist -->
+                <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                    android:pathData="m 42.352,59.107 c -16.505,14.449 -9.38,40.202 -11.107,60.219 3.368,-5.684 10.766,-5.702 14.115,0.51 4.189,-16.649 9.61,-33.083 6.309,-49.732 -6.259,1.949 -12.402,-4.345 -9.317,-11 z" />
+                <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                    android:pathData="m 30.827,124.431 c -5.799,18.307 -1.365,35.891 -1.635,53.024 1.554,-5.666 8.777,-5.773 10.591,0 2.712,-17.062 7.124,-35.293 5.663,-51.485 -4.376,6.041 -10.816,5.797 -14.619,-1.539 z" />
+                <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                    android:pathData="m 28.997,179.42 -8.41,9.838 17.824,4.005 0.629,-12.326 c -2.671,4.37 -8.071,3.373 -10.043,-1.517 z" /> <!-- Palm -->
+                <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                    android:pathData="m 20.523,189.492 2.954,13.629 8.814,1.827 6.044,-11.432 z" /> <!-- Fingers -->
+            </group>
+
+            <!-- Waving Right Arm -->
+            <group>
+                <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                    android:pathData="M 124.853,62.838 m -7.509,0 a 7.509,7.684 0 1,1 15.018,0 a 7.509,7.684 0 1,1 -15.018,0" /> <!-- Shoulder -->
+                
+                <group
+                    android:pivotX="124.853"
+                    android:pivotY="62.838"
+                    android:rotation="-115">
+                    
+                    <group
+                        android:scaleX="-1"
+                        android:translateX="173.766"
+                        android:translateY="-0.097">
+                        
+                        <!-- Upper Arm -->
+                        <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                            android:pathData="m 42.352,59.107 c -16.505,14.449 -9.38,40.202 -11.107,60.219 3.368,-5.684 10.766,-5.702 14.115,0.51 4.189,-16.649 9.61,-33.083 6.309,-49.732 -6.259,1.949 -12.402,-4.345 -9.317,-11 z" />
+                        <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                            android:pathData="M 38.321,122.547 m -7.509,0 a 7.509,7.684 0 1,1 15.018,0 a 7.509,7.684 0 1,1 -15.018,0" /> <!-- Elbow -->
+
+                        <!-- Bending Forearm + Hand upwards -->
+                        <group
+                            android:pivotX="38.321"
+                            android:pivotY="122.547"
+                            android:rotation="-95">
+                            
+                            <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                                android:pathData="m 30.827,124.431 c -5.799,18.307 -1.365,35.891 -1.635,53.024 1.554,-5.666 8.777,-5.773 10.591,0 2.712,-17.062 7.124,-35.293 5.663,-51.485 -4.376,6.041 -10.816,5.797 -14.619,-1.539 z" />
+                            <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                                android:pathData="M 34.411,178.476 m -5.222,0 a 5.222,5.344 0 1,1 10.444,0 a 5.222,5.344 0 1,1 -10.444,0" /> <!-- Wrist -->
+                            <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                                android:pathData="m 28.997,179.42 -8.41,9.838 17.824,4.005 0.629,-12.326 c -2.671,4.37 -8.071,3.373 -10.043,-1.517 z" /> <!-- Palm -->
+                            <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                                android:pathData="m 20.523,189.492 2.954,13.629 8.814,1.827 6.044,-11.432 z" /> <!-- Fingers -->
+                        </group>
+                    </group>
+                </group>
+            </group>
+
+            <!-- Head -->
+            <group android:translateX="0.485">
+                <path android:fillColor="#FFFFFF" android:strokeColor="#FFB77C" android:strokeWidth="1.2"
+                    android:pathData="M 86.54,16.969 m -15.831,0 a 15.831,23.032 0 1,1 31.662,0 a 15.831,23.032 0 1,1 -31.662,0" />
+                <path android:strokeColor="#FFB77C" android:strokeWidth="1.5"
+                    android:pathData="m 70.41,16.998 c 11.278,2.685 21.912,2.793 31.901,0.322" />
+                <path android:strokeColor="#FFB77C" android:strokeWidth="1"
+                    android:pathData="M 86.683,-6.364 V 39.876" />
+                <group android:translateX="-0.527">
+                    <path android:fillColor="#FFB77C"
+                        android:pathData="m 75.101,17.735 c 0.455,-1.505 0.41,-3.563 3.618,-3.618 3.296,0.211 4.049,2.328 4.741,4.491 z" />
+                    <path android:fillColor="#FFB77C"
+                        android:pathData="m 99.031,17.592 c -0.455,-1.505 -0.41,-3.563 -3.618,-3.618 -3.296,0.211 -4.049,2.328 -4.741,4.491 z" />
+                </group>
+            </group>
+        </group>
+    </group>
+</vector>

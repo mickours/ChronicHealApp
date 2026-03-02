@@ -3,6 +3,7 @@ package org.chronicheal.app.presentation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -87,6 +88,7 @@ fun DayViewScreen(
     val titleDateFormatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG) }
 
     Scaffold(
+        modifier = Modifier.systemBarsPadding(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
