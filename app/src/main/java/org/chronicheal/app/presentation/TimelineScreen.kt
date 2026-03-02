@@ -6,6 +6,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -48,6 +49,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -227,7 +229,15 @@ fun TimelineScreen(
                                 focusedContainerColor = Color.White,
                                 unfocusedContainerColor = Color.White,
                                 focusedBorderColor = Color.Transparent,
-                                unfocusedBorderColor = Color.Transparent
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                focusedPlaceholderColor = Color.Gray,
+                                unfocusedPlaceholderColor = Color.Gray,
+                                focusedLeadingIconColor = Color.Black,
+                                unfocusedLeadingIconColor = Color.Black,
+                                focusedTrailingIconColor = Color.Black,
+                                unfocusedTrailingIconColor = Color.Black
                             )
                         )
                         Spacer(Modifier.height(8.dp))
@@ -236,13 +246,27 @@ fun TimelineScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             items(EntryType.entries) { type ->
+                                val isSelected = type in uiState.selectedTypes
                                 FilterChip(
-                                    selected = type in uiState.selectedTypes,
+                                    selected = isSelected,
                                     onClick = { viewModel.toggleTypeFilter(type) },
                                     label = { Text("${type.emoji} ${type.name.lowercase().replaceFirstChar { it.uppercase() }}") },
-                                    leadingIcon = if (type in uiState.selectedTypes) {
+                                    leadingIcon = if (isSelected) {
                                         { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                                    } else null
+                                    } else null,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        containerColor = Color.White.copy(alpha = 0.7f),
+                                        labelColor = Color.Black,
+                                        selectedContainerColor = Color.White,
+                                        selectedLabelColor = Color.Black,
+                                        selectedLeadingIconColor = Color.Black
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        enabled = true,
+                                        selected = isSelected,
+                                        borderColor = Color.Transparent,
+                                        selectedBorderColor = MaterialTheme.colorScheme.primary
+                                    )
                                 )
                             }
                         }
@@ -597,7 +621,8 @@ fun EntryItem(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(modifier = Modifier.height(IntrinsicSize.Min).defaultMinSize(minHeight = 80.dp)) {
             // Category color stripe
