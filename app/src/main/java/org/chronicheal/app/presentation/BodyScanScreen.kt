@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -81,6 +80,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.math.abs
+import androidx.core.graphics.toColorInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -358,11 +358,11 @@ fun BodySilhouette(
                                 }
                             } while (pointerChange != null && pointerChange.pressed)
 
-                            intensityJob?.cancel()
+                            intensityJob.cancel()
                             if (!isScrolling && currentHoldRegion != null) {
                                 currentHoldRegion = null
                                 onRelease()
-                            } else if (!isScrolling && tappedPath != null) {
+                            } else if (!isScrolling) {
                                 // If it was a quick tap (not long enough for the job to start hold)
                                 currentHoldRegion = regionName
                                 val existing = painEntries.find { it.location?.equals(regionName, ignoreCase = true) == true }
@@ -461,9 +461,9 @@ private fun parseSvgColor(colorStr: String?): Color? {
             val normalized = if (colorStr.length == 4) {
                 "#" + colorStr[1] + colorStr[1] + colorStr[2] + colorStr[2] + colorStr[3] + colorStr[3]
             } else colorStr
-            Color(android.graphics.Color.parseColor(normalized))
+            Color(normalized.toColorInt())
         } else {
-            Color(android.graphics.Color.parseColor(colorStr))
+            Color(colorStr.toColorInt())
         }
     } catch (_: Exception) {
         null

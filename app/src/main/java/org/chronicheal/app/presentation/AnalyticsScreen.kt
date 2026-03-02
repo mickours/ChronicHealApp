@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CompareArrows
@@ -471,7 +472,7 @@ fun CorrelationSelectors(
             modifier = Modifier.weight(1f),
             label = "Metric 1"
         )
-        Icon(Icons.Default.CompareArrows, contentDescription = null)
+        Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null)
         TypeDropdown(
             selectedType = type2,
             onTypeSelected = { onTypesChange(type1, it) },
@@ -493,7 +494,7 @@ fun TypeDropdown(
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = it },
+        onExpandedChange = { },
         modifier = modifier
     ) {
         OutlinedTextField(
