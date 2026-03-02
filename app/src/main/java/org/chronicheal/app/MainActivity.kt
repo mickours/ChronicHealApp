@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import org.chronicheal.app.data.notification.NotificationHelper
+import org.chronicheal.app.presentation.MainViewModel
 import org.chronicheal.app.presentation.SecurityViewModel
 import org.chronicheal.app.presentation.navigation.NavGraph
 import org.chronicheal.app.presentation.navigation.Screen
@@ -34,6 +35,7 @@ import org.chronicheal.app.ui.theme.ChronicHealTheme
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private val securityViewModel: SecurityViewModel by viewModels()
+    private val mainViewModel: MainViewModel by viewModels()
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -55,35 +57,40 @@ class MainActivity : AppCompatActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val isBiometricLockEnabled by securityViewModel.isBiometricLockEnabled.collectAsState()
+                    val isWelcomeWizardCompleted by mainViewModel.isWelcomeWizardCompleted.collectAsState()
                     var isAuthenticated by remember { mutableStateOf(false) }
 
                     if (isBiometricLockEnabled && !isAuthenticated) {
-                        // Display an empty box or splash-like surface while waiting for auth
                         Box(modifier = Modifier.fillMaxSize())
-                        
-                        // Trigger biometric prompt
                         showBiometricPrompt {
                             isAuthenticated = true
                         }
-                    } else {
+                    } else if (isWelcomeWizardCompleted != null) {
                         val navController = rememberNavController()
                         
+                        val startDestination = if (isWelcomeWizardCompleted == true) {
+                            Screen.Timeline.route
+                        } else {
+                            Screen.WelcomeWizard.route
+                        }
+
                         // Handle navigation from notification actions
                         val entryType = intent.getStringExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
                         LaunchedEffect(entryType) {
                             if (entryType == "PAIN") {
                                 navController.navigate(Screen.BodyScan.route) {
-                                    // Ensure we don't build up a large stack
                                     popUpTo(Screen.Timeline.route) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
-                                // Clear intent to avoid re-triggering on config change
                                 intent.removeExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
                             }
                         }
                         
-                        NavGraph(navController = navController)
+                        NavGraph(
+                            navController = navController,
+                            startDestination = startDestination
+                        )
                     }
                 }
             }
@@ -112,7 +119,6 @@ class MainActivity : AppCompatActivity() {
                         errorCode != BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
                         Toast.makeText(applicationContext, "Authentication error: $errString", Toast.LENGTH_SHORT).show()
                     }
-                    // If user cancels or errors, they stay on the blank screen or we could finish the activity
                 }
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {

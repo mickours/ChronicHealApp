@@ -15,6 +15,7 @@ import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
 import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.repository.SettingsRepository
 import org.chronicheal.app.domain.usecase.AddEntryUseCase
 import org.chronicheal.app.domain.usecase.DeleteEntryUseCase
 import org.chronicheal.app.domain.usecase.GetEntriesUseCase
@@ -32,7 +33,8 @@ class TimelineViewModel @Inject constructor(
     private val getEntryByIdUseCase: GetEntryByIdUseCase,
     private val getReminderByIdUseCase: GetReminderByIdUseCase,
     private val reminderRepository: ReminderRepository,
-    private val reminderScheduler: ReminderScheduler
+    private val reminderScheduler: ReminderScheduler,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private var recentlyDeletedEntry: HealthEntry? = null
@@ -45,8 +47,9 @@ class TimelineViewModel @Inject constructor(
         getEntriesUseCase(),
         _searchQuery,
         _selectedTypes,
-        _message
-    ) { entries, query, selectedTypes, message ->
+        _message,
+        settingsRepository.favoriteEntryTypes
+    ) { entries, query, selectedTypes, message, favorites ->
         val filteredEntries = entries.filter { entry ->
             val matchesQuery = query.isBlank() || 
                 entry.name?.contains(query, ignoreCase = true) == true ||
@@ -61,7 +64,8 @@ class TimelineViewModel @Inject constructor(
             entries = filteredEntries, 
             searchQuery = query,
             selectedTypes = selectedTypes,
-            message = message
+            message = message,
+            favorites = favorites
         )
     }.stateIn(
         scope = viewModelScope,
@@ -234,5 +238,6 @@ data class TimelineUiState(
     val searchQuery: String = "",
     val selectedTypes: Set<EntryType> = emptySet(),
     val isLoading: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    val favorites: Set<EntryType> = emptySet()
 )

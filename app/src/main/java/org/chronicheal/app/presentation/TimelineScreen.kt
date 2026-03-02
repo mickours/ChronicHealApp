@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
@@ -22,8 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
@@ -46,6 +49,7 @@ fun TimelineScreen(
     onSettingsClick: () -> Unit,
     onAnalyticsClick: () -> Unit,
     onBodyScanClick: () -> Unit,
+    onEntryTypeClick: (EntryType) -> Unit,
     onEntryClick: (HealthEntry) -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
@@ -184,6 +188,36 @@ fun TimelineScreen(
             FloatingActionButton(onClick = onAddEntryClick) {
                 Icon(Icons.Default.Add, contentDescription = "Add Entry")
             }
+        },
+        bottomBar = {
+            if (uiState.favorites.isNotEmpty()) {
+                Surface(
+                    tonalElevation = 8.dp,
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text(
+                            text = "QUICK ADD",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(horizontal = 8.dp)
+                        ) {
+                            items(uiState.favorites.toList()) { type ->
+                                QuickAddChip(
+                                    type = type,
+                                    onClick = { onEntryTypeClick(type) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     ) { innerPadding ->
         if (uiState.entries.isEmpty()) {
@@ -191,7 +225,7 @@ fun TimelineScreen(
                 Text(
                     text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedTypes.isNotEmpty()) 
                         "No matches found." else "No entries yet. Tap + to start tracking.",
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.padding(32.dp)
                 )
             }
@@ -244,6 +278,37 @@ fun TimelineScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun QuickAddChip(
+    type: EntryType,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { onClick() }
+            .padding(4.dp)
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.size(48.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(text = type.emoji, fontSize = 24.sp)
+            }
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = type.name.lowercase().capitalize(),
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 

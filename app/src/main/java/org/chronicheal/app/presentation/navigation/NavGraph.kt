@@ -30,12 +30,16 @@ import org.chronicheal.app.presentation.RemindersScreen
 import org.chronicheal.app.presentation.SettingsScreen
 import org.chronicheal.app.presentation.TimelineScreen
 import org.chronicheal.app.presentation.TimelineViewModel
+import org.chronicheal.app.presentation.WelcomeWizardScreen
 
 @Composable
-fun NavGraph(navController: NavHostController) {
+fun NavGraph(
+    navController: NavHostController,
+    startDestination: String = Screen.Timeline.route
+) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Timeline.route
+        startDestination = startDestination
     ) {
         val onEntryClick: (HealthEntry, String?) -> Unit = { entry, date ->
             val route = when (entry.type) {
@@ -51,6 +55,32 @@ fun NavGraph(navController: NavHostController) {
                 EntryType.JOURNAL -> Screen.AddJournal.createRoute(id = entry.id, date = date)
             }
             navController.navigate(route)
+        }
+
+        val onEntryTypeClick: (EntryType) -> Unit = { type ->
+            val route = when (type) {
+                EntryType.PAIN -> Screen.AddPain.createRoute()
+                EntryType.DRUG -> Screen.AddDrug.createRoute()
+                EntryType.SYMPTOM -> Screen.AddSymptom.createRoute()
+                EntryType.DISEASE -> Screen.AddDisease.createRoute()
+                EntryType.MEAL -> Screen.AddMeal.createRoute()
+                EntryType.SLEEP -> Screen.AddSleep.createRoute()
+                EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.createRoute()
+                EntryType.ACTIVITY -> Screen.AddActivity.createRoute()
+                EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute()
+                EntryType.JOURNAL -> Screen.AddJournal.createRoute()
+            }
+            navController.navigate(route)
+        }
+
+        composable(route = Screen.WelcomeWizard.route) {
+            WelcomeWizardScreen(
+                onWizardCompleted = {
+                    navController.navigate(Screen.Timeline.route) {
+                        popUpTo(Screen.WelcomeWizard.route) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(route = Screen.Timeline.route) { backStackEntry ->
@@ -72,6 +102,7 @@ fun NavGraph(navController: NavHostController) {
                 onBodyScanClick = {
                     navController.navigate(Screen.BodyScan.route)
                 },
+                onEntryTypeClick = onEntryTypeClick,
                 onEntryClick = { entry -> onEntryClick(entry, null) },
                 viewModel = viewModel
             )

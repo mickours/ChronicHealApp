@@ -86,6 +86,22 @@ Goal: Interactive tools and notifications.
     - **Availability Safeguards**: Added `BiometricManager` checks in `SecurityViewModel` to disable and reset the lock setting if biometric hardware is missing or credentials are not enrolled. The UI now reflects this state by disabling the toggle and providing contextual feedback.
 - **Search and Filters (Completed)**: Added a dynamic search bar and type-based filtering chips to the main timeline for efficient history navigation.
 
-## Phase 6: Advanced Analytics (In Progress)
+## Phase 6: Onboarding and Personalization (Completed)
+Goal: Improve the first-run experience and daily logging efficiency.
+
+### Accomplishments:
+- **Startup Welcome Wizard**:
+    - Implemented a multi-step onboarding flow using `HorizontalPager`.
+    - **Page 1: Introduction**: Explains the app's privacy-first mission and core features.
+    - **Page 2: Notifications**: Requests `POST_NOTIFICATIONS` permission (for Android 13+) to ensure reminders work out of the box.
+    - **Page 3: Personalization**: Allows users to select their "Favorite Entry Types" from the start.
+- **Quick Add Shortcuts**:
+    - Integrated a "QUICK ADD" bar at the bottom of the `TimelineScreen`.
+    - Dynamically displays the user's favorite entry types as circular chips for one-tap access to specialized logging screens.
+- **Persistence**:
+    - Introduced `SettingsRepository` using `DataStore` to store onboarding status and favorite preferences.
+    - Updated `MainActivity` to conditionally route users to the `WelcomeWizard` or `Timeline` based on their first-run status.
+
+## Phase 7: Advanced Analytics (In Progress)
 - **Correlation Insights**: Visualize correlations between different health metrics (e.g., Pain Intensity vs. Sleep Quality).
 - **Custom Dashboard**: Allow users to pin specific charts or summaries to the home screen.

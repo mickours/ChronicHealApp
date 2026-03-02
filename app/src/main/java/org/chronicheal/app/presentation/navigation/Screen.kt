@@ -1,6 +1,7 @@
 package org.chronicheal.app.presentation.navigation
 
 sealed class Screen(val route: String) {
+    object WelcomeWizard : Screen("welcome_wizard")
     object Timeline : Screen("timeline")
     object Calendar : Screen("calendar")
     object Settings : Screen("settings")
