@@ -3,6 +3,7 @@ package org.chronicheal.app.presentation
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,12 +12,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +33,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.ui.theme.HeaderBlue
 import org.chronicheal.app.ui.theme.PrimaryOrange
@@ -45,8 +52,10 @@ import java.util.Locale
 @Composable
 fun EntryTypeSelectionScreen(
     onTypeSelected: (EntryType) -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    viewModel: TimelineViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
     val entries = EntryType.entries
     val occurrenceTypes = entries.filter { it.category == EntryType.Category.OCCURRENCE }
     val managementTypes = entries.filter { it.category == EntryType.Category.MANAGEMENT }
@@ -78,12 +87,14 @@ fun EntryTypeSelectionScreen(
                 .padding(innerPadding)
         ) {
             item(span = { GridItemSpan(2) }) {
-                CategoryHeader(title = "What occurs to you", color = PrimaryOrange)
+                CategoryHeader(title = "What is happening to you", color = PrimaryOrange)
             }
             items(occurrenceTypes) { type ->
                 EntryTypeCard(
                     type = type,
+                    isFavorite = uiState.favorites.contains(type),
                     onClick = { onTypeSelected(type) },
+                    onToggleFavorite = { viewModel.toggleFavorite(type) },
                     borderColor = PrimaryOrange
                 )
             }
@@ -98,7 +109,9 @@ fun EntryTypeSelectionScreen(
             items(managementTypes) { type ->
                 EntryTypeCard(
                     type = type,
+                    isFavorite = uiState.favorites.contains(type),
                     onClick = { onTypeSelected(type) },
+                    onToggleFavorite = { viewModel.toggleFavorite(type) },
                     borderColor = HeaderBlue
                 )
             }
@@ -124,13 +137,15 @@ fun CategoryHeader(title: String, color: Color) {
 @Composable
 fun EntryTypeCard(
     type: EntryType,
+    isFavorite: Boolean,
     onClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
     borderColor: Color
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(140.dp) // Fixed height to ensure vertical centering works visually
+            .height(140.dp)
             .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         colors = CardDefaults.cardColors(
@@ -138,24 +153,37 @@ fun EntryTypeCard(
         ),
         border = BorderStroke(1.dp, borderColor.copy(alpha = 0.5f))
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize().padding(16.dp)
-        ) {
-            Text(
-                text = type.emoji,
-                fontSize = 40.sp,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = type.name.replace("_", " ").lowercase(Locale.getDefault())
-                    .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
-            )
+        Box(modifier = Modifier.fillMaxSize()) {
+            IconButton(
+                onClick = onToggleFavorite,
+                modifier = Modifier.align(Alignment.TopEnd)
+            ) {
+                Icon(
+                    imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                    contentDescription = if (isFavorite) "Remove from Favorites" else "Add to Favorites",
+                    tint = if (isFavorite) Color.Red else Color.Gray,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxSize().padding(16.dp)
+            ) {
+                Text(
+                    text = type.emoji,
+                    fontSize = 40.sp,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = type.name.replace("_", " ").lowercase(Locale.getDefault())
+                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() },
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }

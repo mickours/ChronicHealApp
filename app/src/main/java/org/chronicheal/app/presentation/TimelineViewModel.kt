@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -163,6 +164,18 @@ class TimelineViewModel @Inject constructor(
             _selectedTypes.value = current - type
         } else {
             _selectedTypes.value = current + type
+        }
+    }
+
+    fun toggleFavorite(type: EntryType) {
+        viewModelScope.launch {
+            val currentFavorites = settingsRepository.favoriteEntryTypes.first()
+            val newFavorites = if (type in currentFavorites) {
+                currentFavorites - type
+            } else {
+                currentFavorites + type
+            }
+            settingsRepository.setFavoriteEntryTypes(newFavorites)
         }
     }
 
