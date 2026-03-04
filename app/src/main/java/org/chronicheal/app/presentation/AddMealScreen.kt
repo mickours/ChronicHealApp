@@ -22,6 +22,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,25 +45,20 @@ fun AddMealScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
-    var name by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-    var logDate by remember { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
-    var startTime by remember { mutableStateOf(LocalTime.now()) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var note by rememberSaveable { mutableStateOf("") }
+    var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
+    var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
-    var setReminder by remember { mutableStateOf(false) }
-    var reminderTime by remember { mutableStateOf(LocalTime.now()) }
-    var showTimePicker by remember { mutableStateOf(false) }
+    var setReminder by rememberSaveable { mutableStateOf(false) }
+    var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
+    var showTimePicker by rememberSaveable { mutableStateOf(false) }
 
     val nameSuggestions by viewModel.mealSuggestions.collectAsState()
 
-    val timeState = rememberTimePickerState(
-        initialHour = reminderTime.hour,
-        initialMinute = reminderTime.minute
-    )
-
     LaunchedEffect(id) {
-        if (id != null) {
+        if (id != null && existingEntry == null) {
             val entry = viewModel.getEntryById(id)
             if (entry != null) {
                 existingEntry = entry
@@ -189,6 +185,10 @@ fun AddMealScreen(
         }
 
         if (showTimePicker) {
+            val timeState = rememberTimePickerState(
+                initialHour = reminderTime.hour,
+                initialMinute = reminderTime.minute
+            )
             TimePickerDialog(
                 onDismissRequest = { showTimePicker = false },
                 confirmButton = {

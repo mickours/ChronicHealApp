@@ -3,6 +3,7 @@ package org.chronicheal.app.presentation
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -22,17 +23,17 @@ fun AddExternalFactorScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
-    var factorName by remember { mutableStateOf("") }
-    var intensity by remember { mutableFloatStateOf(5f) }
-    var note by remember { mutableStateOf("") }
-    var logDate by remember { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
-    var startTime by remember { mutableStateOf(LocalTime.now()) }
+    var factorName by rememberSaveable { mutableStateOf("") }
+    var intensity by rememberSaveable { mutableFloatStateOf(5f) }
+    var note by rememberSaveable { mutableStateOf("") }
+    var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
+    var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
     val nameSuggestions by viewModel.externalFactorSuggestions.collectAsState()
 
     LaunchedEffect(id) {
-        if (id != null) {
+        if (id != null && existingEntry == null) {
             val entry = viewModel.getEntryById(id)
             if (entry != null) {
                 existingEntry = entry

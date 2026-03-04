@@ -139,6 +139,13 @@ Goal: Improve the first-run experience and daily logging efficiency.
     - **Serialization & Coroutines**: Added preservation rules for Kotlin Serialization internals and Coroutines to prevent runtime `NoSuchMethodError`.
     - **Architecture preservation**: Ensured all `ViewModel` constructors are kept to allow Hilt to instantiate them in obfuscated builds.
 
-## Phase 9: Advanced Analytics (In Progress)
+## Phase 10: State Persistence and Configuration Robustness (Completed)
+- **Configuration Change Resilience**:
+    - Updated `AddEntryComponents.kt` and all health entry screens to use `rememberSaveable` for UI state. This ensures that user input (text, selections, dialog visibility) is preserved when the screen is rotated or resized.
+    - Refactored `LaunchedEffect` logic in entry screens to prevent re-initializing UI state from the database after a configuration change has already occurred.
+- **Component Refactoring**:
+    - Moved `PainEntryForm` to `AddEntryComponents.kt` to centralize shared logic used by both the standalone `AddPainScreen` and the interactive `BodyScanScreen`.
+
+## Phase 11: Advanced Analytics (Planned)
 - **Correlation Insights**: Visualize correlations between different health metrics (e.g., Pain Intensity vs. Sleep Quality).
 - **Custom Dashboard**: Allow users to pin specific charts or summaries to the home screen.

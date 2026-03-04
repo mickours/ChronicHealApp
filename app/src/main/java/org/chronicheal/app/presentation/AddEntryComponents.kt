@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,6 +27,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +43,7 @@ fun AddEntryScaffold(
     viewModel: TimelineViewModel,
     content: @Composable (PaddingValues) -> Unit
 ) {
-    var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
 
     val hasChanges by remember(existingEntry) {
         derivedStateOf {
@@ -138,8 +140,8 @@ fun EntryDateTimePicker(
     startTime: LocalTime,
     onStartTimeChange: (LocalTime) -> Unit
 ) {
-    var showStartTimePicker by remember { mutableStateOf(false) }
-    var showDatePicker by remember { mutableStateOf(false) }
+    var showStartTimePicker by rememberSaveable { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
     
     val startTimeState = rememberTimePickerState(
         initialHour = startTime.hour,
@@ -270,7 +272,7 @@ fun AutoCompleteTextField(
     label: String,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
     val filteredSuggestions = remember(value, suggestions) {
         if (value.isBlank()) emptyList()
         else suggestions.filter { it.contains(value, ignoreCase = true) && it != value }
@@ -367,6 +369,69 @@ fun VerticalIntensityGauge(
             fontWeight = FontWeight.Black,
             color = color,
             modifier = Modifier.padding(vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+fun PainEntryForm(
+    modifier: Modifier = Modifier,
+    intensity: Float,
+    onIntensityChange: (Float) -> Unit,
+    location: String,
+    onLocationChange: (String) -> Unit,
+    note: String,
+    onNoteChange: (String) -> Unit,
+    logDate: LocalDate,
+    onDateChange: (LocalDate) -> Unit,
+    startTime: LocalTime,
+    onStartTimeChange: (LocalTime) -> Unit,
+    viewModel: TimelineViewModel
+) {
+    val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        EntryDateTimePicker(
+            date = logDate,
+            onDateChange = onDateChange,
+            startTime = startTime,
+            onStartTimeChange = onStartTimeChange
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Intensity: ${intensity.roundToInt()}/10",
+            style = MaterialTheme.typography.titleMedium
+        )
+        Slider(
+            value = intensity,
+            onValueChange = onIntensityChange,
+            valueRange = 1f..10f,
+            steps = 8
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        AutoCompleteTextField(
+            value = location,
+            onValueChange = onLocationChange,
+            suggestions = locationSuggestions,
+            label = "Location (e.g. Back, Knee)"
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = note,
+            onValueChange = onNoteChange,
+            label = { Text("Notes") },
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 3
         )
     }
 }

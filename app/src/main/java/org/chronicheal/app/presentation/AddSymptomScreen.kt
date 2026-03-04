@@ -3,6 +3,7 @@ package org.chronicheal.app.presentation
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -23,19 +24,19 @@ fun AddSymptomScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
-    var name by remember { mutableStateOf("") }
-    var severity by remember { mutableFloatStateOf(3f) }
-    var location by remember { mutableStateOf(locationString ?: "") }
-    var note by remember { mutableStateOf("") }
-    var logDate by remember { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
-    var startTime by remember { mutableStateOf(LocalTime.now()) }
+    var name by rememberSaveable { mutableStateOf("") }
+    var severity by rememberSaveable { mutableFloatStateOf(3f) }
+    var location by rememberSaveable { mutableStateOf(locationString ?: "") }
+    var note by rememberSaveable { mutableStateOf("") }
+    var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
+    var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
     val nameSuggestions by viewModel.symptomSuggestions.collectAsState()
     val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
 
     LaunchedEffect(id) {
-        if (id != null) {
+        if (id != null && existingEntry == null) {
             val entry = viewModel.getEntryById(id)
             if (entry != null) {
                 existingEntry = entry
