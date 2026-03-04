@@ -61,6 +61,15 @@ sealed class Screen(val route: String) {
     object AddPeriod : Screen("add_period?date={date}&location={location}&id={id}") {
         fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_period", date, location, id)
     }
+    object AddBeverage : Screen("add_beverage?date={date}&location={location}&id={id}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_beverage", date, location, id)
+    }
+    object AddStool : Screen("add_stool?date={date}&location={location}&id={id}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_stool", date, location, id)
+    }
+    object AddMood : Screen("add_mood?date={date}&location={location}&id={id}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_mood", date, location, id)
+    }
 
     protected fun createQueryRoute(base: String, date: String?, location: String?, id: Long? = null): String {
         val datePart = if (date != null) "date=$date" else null

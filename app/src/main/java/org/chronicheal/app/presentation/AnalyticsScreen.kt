@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,7 +28,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.CompareArrows
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,6 +39,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -80,8 +81,6 @@ import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
-import java.time.format.TextStyle
-import java.util.Locale
 import kotlin.math.ceil
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -99,6 +98,8 @@ fun AnalyticsScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val isDark = isSystemInDarkTheme()
+    val axisLabelColor = if (isDark) Color.White else Color.Black
 
     val palette = remember {
         listOf(
@@ -183,7 +184,7 @@ fun AnalyticsScreen(
             Text(text = "Pain Evolution", style = MaterialTheme.typography.titleLarge)
             if (uiState.painData.isNotEmpty()) {
                 val locations = uiState.painData.keys.toList()
-                val dates = uiState.painData.values.first().keys.toList()
+                val labels = uiState.painData.values.first().keys.toList()
                 
                 // Manually calculate stacked series for LineChart area stacking
                 val rawSeries = uiState.painData.values.toList()
@@ -204,14 +205,9 @@ fun AnalyticsScreen(
                     entryModelOf(*stackedSeries.reversed().toTypedArray())
                 }
                 
-                val bottomAxisFormatter = remember(dates, timeRange) {
+                val bottomAxisFormatter = remember(labels) {
                     AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-                        val date = dates.getOrNull(value.toInt()) ?: return@AxisValueFormatter ""
-                        when (timeRange) {
-                            TimeRange.WEEK -> date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
-                            TimeRange.MONTH -> date.dayOfMonth.toString()
-                            TimeRange.YEAR -> date.monthValue.toString()
-                        }
+                        labels.getOrNull(value.toInt()) ?: ""
                     }
                 }
 
@@ -233,20 +229,19 @@ fun AnalyticsScreen(
                     ),
                     model = model,
                     startAxis = rememberStartAxis(
+                        label = textComponent(color = axisLabelColor),
                         itemPlacer = AxisItemPlacer.Vertical.default(
                             maxItemCount = (ceil(maxTotalPain.toDouble()).toInt() + 1).coerceAtMost(30)
                         )
                     ),
                     bottomAxis = rememberBottomAxis(
-                        label = textComponent(color = Color.Black, lineCount = 1),
+                        label = textComponent(color = axisLabelColor, lineCount = 1),
                         valueFormatter = bottomAxisFormatter,
                         labelRotationDegrees = 45f,
-                        itemPlacer = remember(timeRange) {
-                            AxisItemPlacer.Horizontal.default(
-                                spacing = 1,
-                                offset = 0,
-                            )
-                        }
+                        itemPlacer = AxisItemPlacer.Horizontal.default(
+                            spacing = 1,
+                            offset = 0,
+                        )
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -307,7 +302,8 @@ fun AnalyticsScreen(
                 type1 = type1,
                 type2 = type2,
                 color1 = palette[0],
-                color2 = palette[1]
+                color2 = palette[1],
+                axisLabelColor = axisLabelColor
             )
         }
     }
@@ -379,23 +375,19 @@ fun CorrelationChart(
     type1: EntryType,
     type2: EntryType,
     color1: Color,
-    color2: Color
+    color2: Color,
+    axisLabelColor: Color
 ) {
-    if (correlationData.dates.isEmpty()) return
+    if (correlationData.labels.isEmpty()) return
 
     val series1 = correlationData.series1.mapIndexed { index, value -> FloatEntry(index.toFloat(), value) }
     val series2 = correlationData.series2.mapIndexed { index, value -> FloatEntry(index.toFloat(), value) }
     
     val model = entryModelOf(series1, series2)
 
-    val bottomAxisFormatter = remember(correlationData.dates, timeRange) {
+    val bottomAxisFormatter = remember(correlationData.labels) {
         AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-            val date = correlationData.dates.getOrNull(value.toInt()) ?: return@AxisValueFormatter ""
-            when (timeRange) {
-                TimeRange.WEEK -> date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault())
-                TimeRange.MONTH -> date.dayOfMonth.toString()
-                TimeRange.YEAR -> date.monthValue.toString()
-            }
+            correlationData.labels.getOrNull(value.toInt()) ?: ""
         }
     }
 
@@ -411,16 +403,20 @@ fun CorrelationChart(
             startAxis = rememberStartAxis(
                 label = textComponent(color = color1),
                 title = "${type1.emoji} Scale",
+                titleComponent = textComponent(color = color1),
                 itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 6)
             ),
             endAxis = rememberEndAxis(
                 label = textComponent(color = color2),
                 title = "${type2.emoji} Scale",
+                titleComponent = textComponent(color = color2),
                 itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 6)
             ),
             bottomAxis = rememberBottomAxis(
+                label = textComponent(color = axisLabelColor),
                 valueFormatter = bottomAxisFormatter,
-                labelRotationDegrees = 45f
+                labelRotationDegrees = 45f,
+                itemPlacer = AxisItemPlacer.Horizontal.default(spacing = 1, offset = 0)
             ),
             modifier = Modifier
                 .fillMaxWidth()
@@ -494,16 +490,16 @@ fun TypeDropdown(
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { },
+        onExpandedChange = { expanded = it },
         modifier = modifier
     ) {
         OutlinedTextField(
-            value = "${selectedType.emoji} ${selectedType.name.lowercase().replaceFirstChar { it.uppercase() }}",
+            value = "${selectedType.emoji} ${selectedType.name.lowercase().replaceFirstChar { it.uppercase() }.replace("_", " ")}",
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor(),
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
             shape = RoundedCornerShape(12.dp),
             textStyle = MaterialTheme.typography.bodySmall
         )
@@ -513,7 +509,7 @@ fun TypeDropdown(
         ) {
             EntryType.entries.forEach { type ->
                 DropdownMenuItem(
-                    text = { Text("${type.emoji} ${type.name.lowercase().replaceFirstChar { it.uppercase() }}") },
+                    text = { Text("${type.emoji} ${type.name.lowercase().replaceFirstChar { it.uppercase() }.replace("_", " ")}") },
                     onClick = {
                         onTypeSelected(type)
                         expanded = false

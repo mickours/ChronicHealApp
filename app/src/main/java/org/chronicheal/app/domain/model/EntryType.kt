@@ -14,7 +14,10 @@ enum class EntryType(val emoji: String) {
     ACTIVITY("🏃"),
     EXTERNAL_FACTOR("☁️"),
     JOURNAL("📝"),
-    PERIOD("🩸");
+    PERIOD("🩸"),
+    BEVERAGE("☕"),
+    STOOL("💩"),
+    MOOD("😊");
 
     enum class Category {
         OCCURRENCE, // "What occurs to you"
@@ -23,7 +26,7 @@ enum class EntryType(val emoji: String) {
 
     val category: Category
         get() = when (this) {
-            PAIN, SYMPTOM, DISEASE, EXTERNAL_FACTOR, PERIOD -> Category.OCCURRENCE
-            DRUG, MEAL, SLEEP, MEDICAL_APPOINTMENT, ACTIVITY, JOURNAL -> Category.MANAGEMENT
+            PAIN, SYMPTOM, DISEASE, EXTERNAL_FACTOR, PERIOD, STOOL, MOOD -> Category.OCCURRENCE
+            DRUG, MEAL, SLEEP, MEDICAL_APPOINTMENT, ACTIVITY, JOURNAL, BEVERAGE -> Category.MANAGEMENT
         }
 }

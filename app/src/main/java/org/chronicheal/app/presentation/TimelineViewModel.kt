@@ -154,6 +154,26 @@ class TimelineViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val beverageSuggestions: StateFlow<List<String>> = getEntriesUseCase()
+        .map { entries ->
+            entries
+                .filter { it.type == EntryType.BEVERAGE && !it.name.isNullOrBlank() }
+                .mapNotNull { it.name }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val stoolAspectSuggestions: StateFlow<List<String>> = getEntriesUseCase()
+        .map { entries ->
+            entries
+                .filter { it.type == EntryType.STOOL && !it.name.isNullOrBlank() }
+                .mapNotNull { it.name }
+                .distinct()
+                .sorted()
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }

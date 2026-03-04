@@ -12,16 +12,19 @@ import androidx.navigation.navArgument
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.presentation.AddActivityScreen
+import org.chronicheal.app.presentation.AddBeverageScreen
 import org.chronicheal.app.presentation.AddDiseaseScreen
 import org.chronicheal.app.presentation.AddDrugScreen
 import org.chronicheal.app.presentation.AddExternalFactorScreen
 import org.chronicheal.app.presentation.AddJournalScreen
 import org.chronicheal.app.presentation.AddMealScreen
 import org.chronicheal.app.presentation.AddMedicalAppointmentScreen
+import org.chronicheal.app.presentation.AddMoodScreen
 import org.chronicheal.app.presentation.AddPainScreen
 import org.chronicheal.app.presentation.AddPeriodScreen
 import org.chronicheal.app.presentation.AddReminderScreen
 import org.chronicheal.app.presentation.AddSleepScreen
+import org.chronicheal.app.presentation.AddStoolScreen
 import org.chronicheal.app.presentation.AddSymptomScreen
 import org.chronicheal.app.presentation.AnalyticsScreen
 import org.chronicheal.app.presentation.BodyScanRemindersScreen
@@ -81,6 +84,9 @@ fun NavGraph(
                 EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(id = entry.id, date = date)
                 EntryType.JOURNAL -> Screen.AddJournal.createRoute(id = entry.id, date = date)
                 EntryType.PERIOD -> Screen.AddPeriod.createRoute(id = entry.id, date = date)
+                EntryType.BEVERAGE -> Screen.AddBeverage.createRoute(id = entry.id, date = date)
+                EntryType.STOOL -> Screen.AddStool.createRoute(id = entry.id, date = date)
+                EntryType.MOOD -> Screen.AddMood.createRoute(id = entry.id, date = date)
             }
             navController.navigate(route)
         }
@@ -98,6 +104,9 @@ fun NavGraph(
                 EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute()
                 EntryType.JOURNAL -> Screen.AddJournal.createRoute()
                 EntryType.PERIOD -> Screen.AddPeriod.createRoute()
+                EntryType.BEVERAGE -> Screen.AddBeverage.createRoute()
+                EntryType.STOOL -> Screen.AddStool.createRoute()
+                EntryType.MOOD -> Screen.AddMood.createRoute()
             }
             navController.navigate(route)
         }
@@ -241,6 +250,9 @@ fun NavGraph(
                         EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(date, location)
                         EntryType.JOURNAL -> Screen.AddJournal.createRoute(date, location)
                         EntryType.PERIOD -> Screen.AddPeriod.createRoute(date, location)
+                        EntryType.BEVERAGE -> Screen.AddBeverage.createRoute(date, location)
+                        EntryType.STOOL -> Screen.AddStool.createRoute(date, location)
+                        EntryType.MOOD -> Screen.AddMood.createRoute(date, location)
                     }
                     navController.navigate(route)
                 },
@@ -447,6 +459,57 @@ fun NavGraph(
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddPeriodScreen(
+                dateString = date,
+                id = id,
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
+            )
+        }
+        composable(
+            route = Screen.AddBeverage.route,
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
+            )
+        ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
+            AddBeverageScreen(
+                dateString = date,
+                id = id,
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
+            )
+        }
+        composable(
+            route = Screen.AddStool.route,
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
+            )
+        ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
+            AddStoolScreen(
+                dateString = date,
+                id = id,
+                onBackClick = { onCancel(id) },
+                onSaveSuccess = { onSaveSuccess(date, id != null) }
+            )
+        }
+        composable(
+            route = Screen.AddMood.route,
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
+            )
+        ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
+            val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
+            AddMoodScreen(
                 dateString = date,
                 id = id,
                 onBackClick = { onCancel(id) },

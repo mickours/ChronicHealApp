@@ -20,6 +20,7 @@ import java.io.OutputStream
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.time.temporal.WeekFields
 import java.util.Locale
 import javax.inject.Inject
 
@@ -123,7 +124,7 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 
-    private fun getPainData(entries: List<HealthEntry>, range: TimeRange, start: LocalDate): Map<String, Map<LocalDate, Int>> {
+    private fun getPainData(entries: List<HealthEntry>, range: TimeRange, start: LocalDate): Map<String, Map<String, Int>> {
         val painEntries = entries.filter { it.type == EntryType.PAIN && it.intensity != null }
         
         val normalizedPainEntries = painEntries.map { entry ->
@@ -135,22 +136,56 @@ class AnalyticsViewModel @Inject constructor(
 
         val locations = normalizedPainEntries.map { it.location!! }.distinct()
         
-        val daysCount = getDaysCount(range, start)
-
         return locations.associateWith { location ->
-            val locationData = normalizedPainEntries
-                .filter { it.location == location }
-                .groupBy { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() }
-                .mapValues { (_, dayEntries) ->
-                    dayEntries.mapNotNull { it.intensity }.average().toInt()
+            val locationEntries = normalizedPainEntries.filter { it.location == location }
+            aggregateData(locationEntries, range, start) { it.mapNotNull { e -> e.intensity }.average().toInt() }
+        }
+    }
+
+    private fun aggregateData(
+        entries: List<HealthEntry>,
+        range: TimeRange,
+        start: LocalDate,
+        aggregator: (List<HealthEntry>) -> Int
+    ): Map<String, Int> {
+        return when (range) {
+            TimeRange.WEEK -> {
+                (0 until 7).associate { i ->
+                    val date = start.plusDays(i.toLong())
+                    val dayEntries = entries.filter { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() == date }
+                    date.dayOfWeek.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()) to if (dayEntries.isEmpty()) 0 else aggregator(dayEntries)
                 }
-            
-            val result = mutableMapOf<LocalDate, Int>()
-            for (i in 0 until daysCount) {
-                val date = start.plusDays(i)
-                result[date] = locationData[date] ?: 0
             }
-            result.toSortedMap()
+            TimeRange.MONTH -> {
+                // Group by week of month
+                val weekFields = WeekFields.of(Locale.getDefault())
+                val dataByWeek = entries.groupBy { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate().get(weekFields.weekOfMonth()) }
+                
+                // Usually 4-6 weeks in a month
+                val result = mutableMapOf<String, Int>()
+                val firstDay = start
+                val lastDay = start.plusMonths(1).minusDays(1)
+                var current = firstDay
+                var weekNum = 1
+                while (!current.isAfter(lastDay)) {
+                    val currentWeekNum = current.get(weekFields.weekOfMonth())
+                    val weekEntries = entries.filter { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate().get(weekFields.weekOfMonth()) == currentWeekNum }
+                    result["W$weekNum"] = if (weekEntries.isEmpty()) 0 else aggregator(weekEntries)
+                    current = current.plusWeeks(1)
+                    weekNum++
+                }
+                result
+            }
+            TimeRange.YEAR -> {
+                // Group by month
+                (1..12).associate { i ->
+                    val monthDate = start.withMonth(i) // This might be wrong if start is not Jan 1st
+                    // Better: start is some date, we want 12 months from start
+                    val targetMonth = start.plusMonths(i.toLong() - 1).month
+                    val monthEntries = entries.filter { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate().month == targetMonth }
+                    targetMonth.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()) to if (monthEntries.isEmpty()) 0 else aggregator(monthEntries)
+                }
+            }
         }
     }
 
@@ -176,39 +211,36 @@ class AnalyticsViewModel @Inject constructor(
         type1: EntryType,
         type2: EntryType
     ): CorrelationData {
-        val daysCount = getDaysCount(range, start)
-        val dates = (0 until daysCount).map { start.plusDays(it) }
-
-        fun getValues(type: EntryType): List<Float> {
+        
+        fun getValues(type: EntryType): Map<String, Int> {
             val typeEntries = entries.filter { it.type == type }
-            val dataByDate = typeEntries.groupBy { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() }
-            
-            return dates.map { date ->
-                val dayEntries = dataByDate[date] ?: emptyList()
-                if (dayEntries.isEmpty()) 0f
-                else {
-                    when (type) {
-                        EntryType.SLEEP -> {
-                            // Average quality or duration? Let's use intensity (quality) if available, otherwise duration
-                            dayEntries.mapNotNull { it.intensity?.toFloat() ?: it.durationMinutes?.toFloat()?.div(60f) }.average().toFloat()
-                        }
-                        EntryType.PAIN, EntryType.SYMPTOM, EntryType.DISEASE, EntryType.EXTERNAL_FACTOR, EntryType.PERIOD -> {
-                            dayEntries.mapNotNull { it.intensity?.toFloat() }.average().toFloat()
-                        }
-                        EntryType.DRUG, EntryType.MEAL, EntryType.ACTIVITY, EntryType.MEDICAL_APPOINTMENT, EntryType.JOURNAL -> {
-                            // Frequency or duration
-                            if (type == EntryType.ACTIVITY) dayEntries.sumOf { it.durationMinutes ?: 0 }.toFloat() / 60f
-                            else dayEntries.size.toFloat()
-                        }
+            return aggregateData(typeEntries, range, start) { dayEntries ->
+                when (type) {
+                    EntryType.SLEEP -> {
+                        dayEntries.mapNotNull { it.intensity?.toFloat() ?: it.durationMinutes?.toFloat()?.div(60f) }.average().toInt()
+                    }
+                    EntryType.PAIN, EntryType.SYMPTOM, EntryType.DISEASE, EntryType.EXTERNAL_FACTOR, EntryType.PERIOD, EntryType.MOOD -> {
+                        dayEntries.mapNotNull { it.intensity?.toFloat() }.average().toInt()
+                    }
+                    EntryType.BEVERAGE -> {
+                        dayEntries.sumOf { it.value ?: 0.0 }.toInt()
+                    }
+                    EntryType.DRUG, EntryType.MEAL, EntryType.ACTIVITY, EntryType.MEDICAL_APPOINTMENT, EntryType.JOURNAL, EntryType.STOOL -> {
+                        if (type == EntryType.ACTIVITY) dayEntries.sumOf { it.durationMinutes ?: 0 } / 60
+                        else dayEntries.size
                     }
                 }
             }
         }
 
+        val data1 = getValues(type1)
+        val data2 = getValues(type2)
+        val labels = data1.keys.toList()
+
         return CorrelationData(
-            dates = dates,
-            series1 = getValues(type1),
-            series2 = getValues(type2)
+            labels = labels,
+            series1 = data1.values.map { it.toFloat() },
+            series2 = data2.values.map { it.toFloat() }
         )
     }
 
@@ -226,13 +258,13 @@ enum class TimeRange {
 }
 
 data class AnalyticsUiState(
-    val painData: Map<String, Map<LocalDate, Int>> = emptyMap(),
+    val painData: Map<String, Map<String, Int>> = emptyMap(),
     val symptomSeveritySum: Map<String, Int> = emptyMap(),
     val correlationData: CorrelationData = CorrelationData()
 )
 
 data class CorrelationData(
-    val dates: List<LocalDate> = emptyList(),
+    val labels: List<String> = emptyList(),
     val series1: List<Float> = emptyList(),
     val series2: List<Float> = emptyList()
 )
