@@ -23,6 +23,7 @@ import java.time.temporal.ChronoUnit
 import java.time.temporal.WeekFields
 import java.util.Locale
 import javax.inject.Inject
+import kotlin.math.sqrt
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
@@ -236,12 +237,40 @@ class AnalyticsViewModel @Inject constructor(
         val data1 = getValues(type1)
         val data2 = getValues(type2)
         val labels = data1.keys.toList()
+        val series1 = data1.values.map { it.toFloat() }
+        val series2 = data2.values.map { it.toFloat() }
+
+        val pearsonCorrelation = calculatePearsonCorrelation(series1, series2)
 
         return CorrelationData(
             labels = labels,
-            series1 = data1.values.map { it.toFloat() },
-            series2 = data2.values.map { it.toFloat() }
+            series1 = series1,
+            series2 = series2,
+            pearsonCorrelation = pearsonCorrelation
         )
+    }
+
+    private fun calculatePearsonCorrelation(x: List<Float>, y: List<Float>): Double? {
+        if (x.size != y.size || x.size < 2) return null
+        
+        // Filter out pairs where at least one value is 0 (assuming 0 means no data for that period)
+        val pairs = x.zip(y).filter { it.first != 0f || it.second != 0f }
+        if (pairs.size < 2) return null
+
+        val filteredX = pairs.map { it.first }
+        val filteredY = pairs.map { it.second }
+
+        val n = filteredX.size
+        val sumX = filteredX.sum()
+        val sumY = filteredY.sum()
+        val sumX2 = filteredX.sumOf { (it * it).toDouble() }
+        val sumY2 = filteredY.sumOf { (it * it).toDouble() }
+        val sumXY = filteredX.zip(filteredY).sumOf { (it.first * it.second).toDouble() }
+
+        val numerator = n * sumXY - sumX * sumY
+        val denominator = sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY))
+
+        return if (denominator == 0.0) null else numerator / denominator
     }
 
     private fun getDaysCount(range: TimeRange, start: LocalDate): Long {
@@ -266,5 +295,6 @@ data class AnalyticsUiState(
 data class CorrelationData(
     val labels: List<String> = emptyList(),
     val series1: List<Float> = emptyList(),
-    val series2: List<Float> = emptyList()
+    val series2: List<Float> = emptyList(),
+    val pearsonCorrelation: Double? = null
 )

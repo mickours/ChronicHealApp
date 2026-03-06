@@ -36,29 +36,19 @@ fun AddEntryScaffold(
     existingEntry: HealthEntry?,
     currentEntry: () -> HealthEntry,
     onBackClick: () -> Unit,
+    onSaveSuccess: () -> Unit,
     onDeleteClick: () -> Unit,
-    onSaveClick: () -> Unit,
-    saveButtonEnabled: Boolean,
-    saveButtonText: String = if (existingEntry == null) "Save" else "Update",
     viewModel: TimelineViewModel,
     content: @Composable (PaddingValues) -> Unit
 ) {
     var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
 
-    val hasChanges by remember(existingEntry) {
-        derivedStateOf {
-            existingEntry?.let { it != currentEntry() } ?: false
-        }
+    val handleSave = {
+        viewModel.saveEntryAndNotify(existingEntry, currentEntry())
+        onSaveSuccess()
     }
 
-    val handleBack = {
-        if (existingEntry != null && hasChanges) {
-            viewModel.showMessage("Edition canceled")
-        }
-        onBackClick()
-    }
-
-    BackHandler(onBack = handleBack)
+    BackHandler(onBack = onBackClick)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -66,7 +56,7 @@ fun AddEntryScaffold(
             TopAppBar(
                 title = { Text(title) },
                 navigationIcon = {
-                    IconButton(onClick = handleBack) {
+                    IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -75,6 +65,12 @@ fun AddEntryScaffold(
                         IconButton(onClick = { showDeleteConfirmation = true }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }
+                    }
+                    Button(
+                        onClick = handleSave,
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text("Save")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -93,17 +89,6 @@ fun AddEntryScaffold(
         ) {
             Box(modifier = Modifier.weight(1f)) {
                 content(PaddingValues(0.dp))
-            }
-            
-            Button(
-                onClick = onSaveClick,
-                enabled = saveButtonEnabled,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .navigationBarsPadding() // ENSURE button is above navigation bar
-            ) {
-                Text(saveButtonText)
             }
         }
 
@@ -399,7 +384,7 @@ fun PainEntryForm(
             date = logDate,
             onDateChange = onDateChange,
             startTime = startTime,
-            onStartTimeChange = onStartTimeChange
+            onStartTimeChange = { onStartTimeChange(it) }
         )
 
         Spacer(modifier = Modifier.height(16.dp))

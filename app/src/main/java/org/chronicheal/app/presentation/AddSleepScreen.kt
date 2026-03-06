@@ -36,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
-import org.chronicheal.app.domain.model.Reminder
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
@@ -125,35 +124,11 @@ fun AddSleepScreen(
         existingEntry = existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
+        onSaveSuccess = onSaveSuccess,
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
-            onSaveSuccess()
+            onBackClick()
         },
-        onSaveClick = {
-            val entry = createEntry()
-            if (setReminder) {
-                val reminder = Reminder(
-                    id = existingEntry?.reminderId ?: 0,
-                    title = "Sleep Reminder",
-                    time = reminderTime,
-                    daysOfWeek = (1..7).toSet(),
-                    entryType = EntryType.SLEEP
-                )
-                if (id == null) {
-                    viewModel.addEntryWithReminder(entry, reminder)
-                } else {
-                    viewModel.updateEntryWithReminder(entry, reminder)
-                }
-            } else {
-                if (id == null) {
-                    viewModel.addEntry(entry)
-                } else {
-                    viewModel.updateEntry(entry)
-                }
-            }
-            onSaveSuccess()
-        },
-        saveButtonEnabled = true,
         viewModel = viewModel
     ) { innerPadding ->
         Column(

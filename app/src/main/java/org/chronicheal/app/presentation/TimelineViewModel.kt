@@ -39,6 +39,7 @@ class TimelineViewModel @Inject constructor(
 ) : ViewModel() {
 
     private var recentlyDeletedEntry: HealthEntry? = null
+    private var lastAction: UndoAction? = null
 
     private val _message = MutableStateFlow<String?>(null)
     private val _searchQuery = MutableStateFlow("")
@@ -205,6 +206,48 @@ class TimelineViewModel @Inject constructor(
         }
     }
 
+    fun saveEntryAndNotify(original: HealthEntry?, current: HealthEntry) {
+        if (original == current) return
+        
+        viewModelScope.launch {
+            if (original == null) {
+                // It's a new entry. We need to get the ID back to delete it on undo.
+                // However, our usecase doesn't return the ID. Let's assume most recent entry for simplicity or update usecase.
+                // Better: find by timestamp and type.
+                addEntryUseCase(current)
+                val savedEntry = getEntriesUseCase().first().find { 
+                    it.timestamp == current.timestamp && it.type == current.type 
+                }
+                savedEntry?.let {
+                    lastAction = UndoAction.Add(it)
+                    _message.value = "Entry added"
+                }
+            } else {
+                updateEntryUseCase(current)
+                lastAction = UndoAction.Update(original)
+                _message.value = "Entry updated"
+            }
+        }
+    }
+
+    fun undoAction() {
+        viewModelScope.launch {
+            when (val action = lastAction) {
+                is UndoAction.Add -> {
+                    deleteEntryUseCase(action.entry)
+                    lastAction = null
+                    _message.value = "Addition undone"
+                }
+                is UndoAction.Update -> {
+                    updateEntryUseCase(action.originalEntry)
+                    lastAction = null
+                    _message.value = "Changes undone"
+                }
+                else -> {}
+            }
+        }
+    }
+
     fun addEntryWithReminder(entry: HealthEntry, reminder: Reminder) {
         viewModelScope.launch {
             val reminderId = reminderRepository.insertReminder(reminder)
@@ -237,6 +280,7 @@ class TimelineViewModel @Inject constructor(
         viewModelScope.launch {
             recentlyDeletedEntry = entry
             deleteEntryUseCase(entry)
+            _message.value = "Entry deleted"
         }
     }
 
@@ -245,6 +289,7 @@ class TimelineViewModel @Inject constructor(
             recentlyDeletedEntry?.let {
                 addEntryUseCase(it)
                 recentlyDeletedEntry = null
+                _message.value = "Deletion undone"
             }
         }
     }
@@ -264,6 +309,11 @@ class TimelineViewModel @Inject constructor(
     fun clearMessage() {
         _message.value = null
     }
+}
+
+sealed class UndoAction {
+    data class Add(val entry: HealthEntry) : UndoAction()
+    data class Update(val originalEntry: HealthEntry) : UndoAction()
 }
 
 data class TimelineUiState(

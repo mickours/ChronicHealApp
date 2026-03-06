@@ -81,6 +81,7 @@ import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
+import java.util.Locale
 import kotlin.math.ceil
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -298,7 +299,6 @@ fun AnalyticsScreen(
 
             CorrelationChart(
                 correlationData = uiState.correlationData,
-                timeRange = timeRange,
                 type1 = type1,
                 type2 = type2,
                 color1 = palette[0],
@@ -371,7 +371,6 @@ fun SymptomImpactPieChart(
 @Composable
 fun CorrelationChart(
     correlationData: CorrelationData,
-    timeRange: TimeRange,
     type1: EntryType,
     type2: EntryType,
     color1: Color,
@@ -431,6 +430,49 @@ fun CorrelationChart(
             LegendItem(color = color1, label = "${type1.emoji} ${type1.name}")
             Spacer(Modifier.width(16.dp))
             LegendItem(color = color2, label = "${type2.emoji} ${type2.name}")
+        }
+
+        // Correlation Score and Insight
+        correlationData.pearsonCorrelation?.let { score ->
+            val (strength, color) = when {
+                score > 0.7 -> "Strong positive correlation" to Color(0xFF2E7D32)
+                score > 0.3 -> "Moderate positive correlation" to Color(0xFF4CAF50)
+                score > -0.3 -> "No clear correlation" to Color.Gray
+                score > -0.7 -> "Moderate negative correlation" to Color(0xFFFF9800)
+                else -> "Strong negative correlation" to Color(0xFFD32F2F)
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(color.copy(alpha = 0.1f))
+                    .padding(12.dp)
+            ) {
+                Column {
+                    Text(
+                        text = "Correlation Insight",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = color
+                    )
+                    Text(
+                        text = "$strength (${String.format(Locale.getDefault(), "%.2f", score)})",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    
+                    val insight = when {
+                        score > 0.5 -> "When ${type1.name.lowercase()} increases, ${type2.name.lowercase()} also tends to increase."
+                        score < -0.5 -> "When ${type1.name.lowercase()} increases, ${type2.name.lowercase()} tends to decrease."
+                        else -> "No strong linear relationship found between ${type1.name.lowercase()} and ${type2.name.lowercase()} for this period."
+                    }
+                    Text(
+                        text = insight,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
         }
     }
 }

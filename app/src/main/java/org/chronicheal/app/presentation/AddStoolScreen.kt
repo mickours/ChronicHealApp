@@ -72,20 +72,11 @@ fun AddStoolScreen(
         existingEntry = existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
+        onSaveSuccess = onSaveSuccess,
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
-            onSaveSuccess()
+            onBackClick()
         },
-        onSaveClick = {
-            val entry = createEntry()
-            if (id == null) {
-                viewModel.addEntry(entry)
-            } else {
-                viewModel.updateEntry(entry)
-            }
-            onSaveSuccess()
-        },
-        saveButtonEnabled = true, // Optional field
         viewModel = viewModel
     ) { innerPadding ->
         Column(

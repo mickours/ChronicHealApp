@@ -81,6 +81,8 @@ Goal: Interactive tools and notifications.
     - **Mood**: High-fidelity mood tracking with a 1-10 slider that updates a central smiley and text label (e.g., "Very Bad" to "Amazing").
 - **Analytics Integration**: Updated correlation analytics to handle new types (e.g., Beverage quantity sums, Mood intensity averages).
 
-## Phase 12: Advanced Analytics (Planned)
-- **Correlation Insights**: Visualize correlations between different health metrics.
-- **Custom Dashboard**: Allow users to pin specific charts to the home screen.
+## Phase 12: Advanced Analytics (Completed)
+- **Correlation Insights**: Implemented Pearson correlation coefficient calculation in `AnalyticsViewModel` to quantify the relationship between different health metrics (e.g., Pain vs. Sleep).
+- **Correlation UI**: Added visual feedback in `AnalyticsScreen` with text-based insights based on the correlation score (Strong, Moderate, No correlation).
+- **UX Refinement**: Added an explicit "Save" button in the TopAppBar of entry screens via `AddEntryScaffold` to improve discoverability and prevent accidental loss of data on back navigation.
+- **Stability**: Fixed build errors related to missing `onSaveSuccess` parameter in various add/edit screens.
