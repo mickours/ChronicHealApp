@@ -95,10 +95,19 @@ Goal: Interactive tools and notifications.
 ## Phase 14: Smart Autocomplete and Enhanced Calendar UX (Completed)
 - **Frequency-Based Autocomplete**:
     - Updated `TimelineViewModel` to sort all entry suggestions by usage frequency.
-    - Enhanced `AutoCompleteTextField` with a horizontal row of clickable `SuggestionChip`s for the most common entries.
-    - Suggestions are dynamically filtered and updated as the user types.
+    - Enhanced `AutoCompleteTextField` with a horizontal row of frequency-sorted clickable `SuggestionChip`s directly below the input field.
+    - Labels use the theme's `PrimaryContainerLight` (light button) color.
+    - Top 5 suggestions are displayed even when the field is empty and filter in real-time as the user types.
 - **Calendar Redesign**:
-    - Removed the secondary reminder list from the `CalendarScreen` to provide a cleaner interface.
-    - Implemented a collapsible, scrollable bottom sheet/section for daily entry details.
-    - Daily entries are now sorted by intensity for quick identification of high-impact events.
-    - Added stateful date selection with visual highlighting in the calendar grid.
+    - Removed the secondary reminder list from the `CalendarScreen` to provide a full-screen grid.
+    - Implemented a collapsible, scrollable section for daily entry details below the grid.
+    - Daily entries are now sorted by intensity level.
+    - Drug entries in the daily list now display dosage (value/unit).
+
+## Phase 15: Interactive Reminder Logging (Completed)
+- **Renamed "Quick Log" to "Log Now"**: Improved clarity for the notification action.
+- **Direct Entry Editing from Notifications**:
+    - Instead of background insertion, tapping "**Log Now**" now opens the app directly to the entry's creation screen.
+    - The screen is pre-filled using the previous entry associated with that reminder as a template.
+    - ID and Timestamp are reset to ensure it's saved as a new record, while preserving dosage, name, and notes.
+- **Smart Navigation Routing**: Updated `MainActivity` and `ReminderReceiver` to pass and handle `EXTRA_REMINDER_ID` for contextual screen initialization.

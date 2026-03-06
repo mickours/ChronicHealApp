@@ -3,7 +3,6 @@ package org.chronicheal.app.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +15,7 @@ import org.chronicheal.app.data.notification.ReminderScheduler
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
+import org.chronicheal.app.domain.repository.EntryRepository
 import org.chronicheal.app.domain.repository.ReminderRepository
 import org.chronicheal.app.domain.repository.SettingsRepository
 import org.chronicheal.app.domain.usecase.AddEntryUseCase
@@ -34,6 +34,7 @@ class TimelineViewModel @Inject constructor(
     private val updateEntryUseCase: UpdateEntryUseCase,
     private val getEntryByIdUseCase: GetEntryByIdUseCase,
     private val getReminderByIdUseCase: GetReminderByIdUseCase,
+    private val entryRepository: EntryRepository,
     private val reminderRepository: ReminderRepository,
     private val reminderScheduler: ReminderScheduler,
     private val settingsRepository: SettingsRepository
@@ -177,11 +178,11 @@ class TimelineViewModel @Inject constructor(
     }
 
     fun saveEntryAndNotify(original: HealthEntry?, current: HealthEntry) {
-        if (original == current) return
+        if (original != null && original.id != 0L && original == current) return
         
         viewModelScope.launch {
-            if (original == null) {
-                // It's a new entry. We need to get the ID back to delete it on undo.
+            if (original == null || original.id == 0L) {
+                // It's a new entry (or a new entry from a template)
                 addEntryUseCase(current)
                 val savedEntry = getEntriesUseCase().first().find { 
                     it.timestamp == current.timestamp && it.type == current.type 
@@ -264,6 +265,10 @@ class TimelineViewModel @Inject constructor(
 
     suspend fun getEntryById(id: Long): HealthEntry? {
         return getEntryByIdUseCase(id)
+    }
+
+    suspend fun getEntryByReminderId(reminderId: Long): HealthEntry? {
+        return entryRepository.getEntryByReminderId(reminderId)
     }
 
     suspend fun getReminderById(id: Long): Reminder? {

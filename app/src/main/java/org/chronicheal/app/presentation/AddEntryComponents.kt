@@ -24,11 +24,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.ui.theme.HeaderBlue
+import org.chronicheal.app.ui.theme.PrimaryContainerLight
+import org.chronicheal.app.ui.theme.OnPrimaryContainerLight
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,13 +44,18 @@ fun AddEntryScaffold(
     onSaveSuccess: () -> Unit,
     onDeleteClick: () -> Unit,
     viewModel: TimelineViewModel,
+    onSave: (() -> Unit)? = null,
     content: @Composable (PaddingValues) -> Unit
 ) {
     var showDeleteConfirmation by rememberSaveable { mutableStateOf(false) }
 
     val handleSave = {
-        viewModel.saveEntryAndNotify(existingEntry, currentEntry())
-        onSaveSuccess()
+        if (onSave != null) {
+            onSave()
+        } else {
+            viewModel.saveEntryAndNotify(existingEntry, currentEntry())
+            onSaveSuccess()
+        }
     }
 
     BackHandler(onBack = onBackClick)
@@ -259,73 +267,47 @@ fun AutoCompleteTextField(
     label: String,
     modifier: Modifier = Modifier
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
     val filteredSuggestions = remember(value, suggestions) {
-        if (value.isBlank()) suggestions.take(10)
-        else suggestions.filter { it.contains(value, ignoreCase = true) && it != value }
-    }
-
-    val quickLabels = remember(value, suggestions) {
-        suggestions
-            .filter { it.contains(value, ignoreCase = true) && it != value }
-            .take(5)
+        if (value.isBlank()) {
+            suggestions.take(5)
+        } else {
+            suggestions
+                .filter { it.contains(value, ignoreCase = true) && it != value }
+                .take(5)
+        }
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        if (quickLabels.isNotEmpty()) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+
+        if (filteredSuggestions.isNotEmpty()) {
             LazyRow(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 4.dp),
+                    .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(horizontal = 4.dp)
             ) {
-                items(quickLabels) { labelText ->
+                items(filteredSuggestions) { suggestion ->
                     SuggestionChip(
-                        onClick = { onValueChange(labelText) },
+                        onClick = { onValueChange(suggestion) },
                         label = {
                             Text(
-                                text = labelText,
+                                text = suggestion,
                                 style = MaterialTheme.typography.labelSmall
                             )
-                        }
-                    )
-                }
-            }
-        }
-
-        ExposedDropdownMenuBox(
-            expanded = expanded && filteredSuggestions.isNotEmpty(),
-            onExpandedChange = { expanded = it },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            OutlinedTextField(
-                value = value,
-                onValueChange = {
-                    onValueChange(it)
-                    expanded = true
-                },
-                label = { Text(label) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
-                singleLine = true
-            )
-
-            if (filteredSuggestions.isNotEmpty()) {
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    filteredSuggestions.forEach { suggestion ->
-                        DropdownMenuItem(
-                            text = { Text(suggestion) },
-                            onClick = {
-                                onValueChange(suggestion)
-                                expanded = false
-                            }
+                        },
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = PrimaryContainerLight,
+                            labelColor = OnPrimaryContainerLight
                         )
-                    }
+                    )
                 }
             }
         }

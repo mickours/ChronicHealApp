@@ -26,10 +26,12 @@ class NotificationHelper @Inject constructor(
         const val REMINDER_CHANNEL_NAME = "Reminders"
         
         const val EXTRA_ENTRY_TYPE = "extra_entry_type"
+        const val EXTRA_REMINDER_ID = "extra_reminder_id"
+        
         const val ACTION_SKIP = "org.chronicheal.app.ACTION_SKIP"
         const val ACTION_SNOOZE_10 = "org.chronicheal.app.ACTION_SNOOZE_10"
         const val ACTION_SNOOZE_60 = "org.chronicheal.app.ACTION_SNOOZE_60"
-        const val ACTION_QUICK_LOG = "org.chronicheal.app.ACTION_QUICK_LOG"
+        const val ACTION_LOG_NOW = "org.chronicheal.app.ACTION_LOG_NOW"
     }
 
     init {
@@ -104,14 +106,14 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val quickLogIntent = Intent(context, ReminderReceiver::class.java).apply {
-            action = ACTION_QUICK_LOG
+        val logNowIntent = Intent(context, ReminderReceiver::class.java).apply {
+            action = ACTION_LOG_NOW
             putExtra("reminder_id", reminderId)
         }
-        val quickLogPendingIntent = PendingIntent.getBroadcast(
+        val logNowPendingIntent = PendingIntent.getBroadcast(
             context,
             reminderId.toInt() + 4000,
-            quickLogIntent,
+            logNowIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
@@ -125,7 +127,7 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(openPendingIntent)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .addAction(android.R.drawable.ic_menu_add, "Quick Log", quickLogPendingIntent)
+            .addAction(android.R.drawable.ic_menu_add, "Log Now", logNowPendingIntent)
             .addAction(android.R.drawable.ic_menu_recent_history, "10 min", snooze10PendingIntent)
             .addAction(android.R.drawable.ic_menu_recent_history, "1 hour", snooze60PendingIntent)
 

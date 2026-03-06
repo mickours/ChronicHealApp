@@ -20,9 +20,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.model.Reminder
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -68,6 +69,7 @@ fun AddDrugScreen(
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    var isNewFromTemplate by remember { mutableStateOf(false) }
 
     val nameSuggestions by viewModel.drugSuggestions.collectAsState()
 
@@ -85,14 +87,26 @@ fun AddDrugScreen(
 
     LaunchedEffect(id) {
         if (id != null && existingEntry == null) {
-            val entry = viewModel.getEntryById(id)
+            // Check if ID is for an existing entry or a reminder template
+            var entry = viewModel.getEntryById(id)
+            if (entry == null) {
+                // Try fetching by reminder ID (template for Log Now)
+                entry = viewModel.getEntryByReminderId(id)
+                if (entry != null) {
+                    isNewFromTemplate = true
+                }
+            }
+            
             if (entry != null) {
                 existingEntry = entry
                 name = entry.name ?: ""
                 dosage = entry.unit ?: ""
                 note = entry.note
-                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                // If it's a template, keep current time. If it's an edit, keep original time.
+                if (!isNewFromTemplate) {
+                    logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                    startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                }
                 setReminder = entry.hasReminder
                 
                 if (entry.hasReminder && entry.reminderId != null) {
@@ -106,7 +120,7 @@ fun AddDrugScreen(
 
     val createEntry = {
         HealthEntry(
-            id = id ?: 0,
+            id = if (isNewFromTemplate) 0 else (id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.DRUG,
             name = name.trim(),
@@ -118,9 +132,31 @@ fun AddDrugScreen(
         )
     }
 
+    val handleSave = {
+        val entry = createEntry()
+        if (setReminder) {
+            val reminder = Reminder(
+                id = existingEntry?.reminderId ?: 0,
+                title = "Medication: ${entry.name}",
+                time = reminderTime,
+                daysOfWeek = setOf(1, 2, 3, 4, 5, 6, 7), // Every day
+                isEnabled = true,
+                entryType = EntryType.DRUG
+            )
+            if (entry.id == 0L) {
+                viewModel.addEntryWithReminder(entry, reminder)
+            } else {
+                viewModel.updateEntryWithReminder(entry, reminder)
+            }
+        } else {
+            viewModel.saveEntryAndNotify(if (isNewFromTemplate) null else existingEntry, entry)
+        }
+        onSaveSuccess()
+    }
+
     AddEntryScaffold(
-        title = if (id == null) "Log Medication" else "Edit Medication",
-        existingEntry = existingEntry,
+        title = if (id == null || isNewFromTemplate) "Log Medication" else "Edit Medication",
+        existingEntry = if (isNewFromTemplate) null else existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
         onSaveSuccess = onSaveSuccess,
@@ -128,7 +164,8 @@ fun AddDrugScreen(
             existingEntry?.let { viewModel.deleteEntry(it) }
             onBackClick()
         },
-        viewModel = viewModel
+        viewModel = viewModel,
+        onSave = handleSave
     ) { innerPadding ->
         Column(
             modifier = Modifier
