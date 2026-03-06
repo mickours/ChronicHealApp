@@ -86,3 +86,8 @@ Goal: Interactive tools and notifications.
 - **Correlation UI**: Added visual feedback in `AnalyticsScreen` with text-based insights based on the correlation score (Strong, Moderate, No correlation).
 - **UX Refinement**: Added an explicit "Save" button in the TopAppBar of entry screens via `AddEntryScaffold` to improve discoverability and prevent accidental loss of data on back navigation.
 - **Stability**: Fixed build errors related to missing `onSaveSuccess` parameter in various add/edit screens.
+
+## Phase 13: Notification and UX Refinements (Completed)
+- **Quick Log from Notifications**: Added a "Quick Log" button to health reminders. When pressed, it automatically creates a new entry of the same type and values as the original entry that created the reminder, but with the current timestamp.
+- **DAO & Repository Enhancement**: Added `getEntryByReminderId` to `EntryDao` and `EntryRepository` to support the Quick Log feature.
+- **Swipe-to-Dismiss Adjustment**: Increased the positional threshold for the swipe-to-delete action on the timeline cards to 60% of the screen width to prevent accidental deletions.

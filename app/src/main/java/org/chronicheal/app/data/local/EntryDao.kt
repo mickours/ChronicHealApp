@@ -17,6 +17,9 @@ interface EntryDao {
     @Query("SELECT * FROM health_entries WHERE id = :id")
     suspend fun getEntryById(id: Long): HealthEntry?
 
+    @Query("SELECT * FROM health_entries WHERE reminderId = :reminderId LIMIT 1")
+    suspend fun getEntryByReminderId(reminderId: Long): HealthEntry?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntry(entry: HealthEntry)
 

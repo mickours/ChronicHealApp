@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.chronicheal.app.MainActivity
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -28,6 +29,7 @@ class NotificationHelper @Inject constructor(
         const val ACTION_SKIP = "org.chronicheal.app.ACTION_SKIP"
         const val ACTION_SNOOZE_10 = "org.chronicheal.app.ACTION_SNOOZE_10"
         const val ACTION_SNOOZE_60 = "org.chronicheal.app.ACTION_SNOOZE_60"
+        const val ACTION_QUICK_LOG = "org.chronicheal.app.ACTION_QUICK_LOG"
     }
 
     init {
@@ -102,8 +104,19 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
+        val quickLogIntent = Intent(context, ReminderReceiver::class.java).apply {
+            action = ACTION_QUICK_LOG
+            putExtra("reminder_id", reminderId)
+        }
+        val quickLogPendingIntent = PendingIntent.getBroadcast(
+            context,
+            reminderId.toInt() + 4000,
+            quickLogIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val builder = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -112,6 +125,7 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(openPendingIntent)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .addAction(android.R.drawable.ic_menu_add, "Quick Log", quickLogPendingIntent)
             .addAction(android.R.drawable.ic_menu_recent_history, "10 min", snooze10PendingIntent)
             .addAction(android.R.drawable.ic_menu_recent_history, "1 hour", snooze60PendingIntent)
 

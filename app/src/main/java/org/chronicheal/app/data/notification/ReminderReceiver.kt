@@ -7,7 +7,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.chronicheal.app.domain.repository.EntryRepository
 import org.chronicheal.app.domain.repository.ReminderRepository
+import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -16,6 +18,9 @@ class ReminderReceiver : BroadcastReceiver() {
 
     @Inject
     lateinit var reminderRepository: ReminderRepository
+
+    @Inject
+    lateinit var entryRepository: EntryRepository
 
     @Inject
     lateinit var notificationHelper: NotificationHelper
@@ -40,6 +45,25 @@ class ReminderReceiver : BroadcastReceiver() {
             NotificationHelper.ACTION_SNOOZE_60 -> {
                 notificationHelper.cancelNotification(reminderId.toInt())
                 reminderScheduler.snooze(reminderId, 60)
+                return
+            }
+            NotificationHelper.ACTION_QUICK_LOG -> {
+                notificationHelper.cancelNotification(reminderId.toInt())
+                val pendingResult = goAsync()
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val originalEntry = entryRepository.getEntryByReminderId(reminderId)
+                        if (originalEntry != null) {
+                            val newEntry = originalEntry.copy(
+                                id = 0,
+                                timestamp = Instant.now()
+                            )
+                            entryRepository.insertEntry(newEntry)
+                        }
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
                 return
             }
         }

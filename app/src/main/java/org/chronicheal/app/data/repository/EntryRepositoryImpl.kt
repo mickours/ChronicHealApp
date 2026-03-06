@@ -18,6 +18,10 @@ class EntryRepositoryImpl @Inject constructor(
         return dao.getEntryById(id)
     }
 
+    override suspend fun getEntryByReminderId(reminderId: Long): HealthEntry? {
+        return dao.getEntryByReminderId(reminderId)
+    }
+
     override suspend fun insertEntry(entry: HealthEntry) {
         dao.insertEntry(entry)
     }
