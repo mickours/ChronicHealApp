@@ -91,3 +91,14 @@ Goal: Interactive tools and notifications.
 - **Quick Log from Notifications**: Added a "Quick Log" button to health reminders. When pressed, it automatically creates a new entry of the same type and values as the original entry that created the reminder, but with the current timestamp.
 - **DAO & Repository Enhancement**: Added `getEntryByReminderId` to `EntryDao` and `EntryRepository` to support the Quick Log feature.
 - **Swipe-to-Dismiss Adjustment**: Increased the positional threshold for the swipe-to-delete action on the timeline cards to 60% of the screen width to prevent accidental deletions.
+
+## Phase 14: Smart Autocomplete and Enhanced Calendar UX (Completed)
+- **Frequency-Based Autocomplete**:
+    - Updated `TimelineViewModel` to sort all entry suggestions by usage frequency.
+    - Enhanced `AutoCompleteTextField` with a horizontal row of clickable `SuggestionChip`s for the most common entries.
+    - Suggestions are dynamically filtered and updated as the user types.
+- **Calendar Redesign**:
+    - Removed the secondary reminder list from the `CalendarScreen` to provide a cleaner interface.
+    - Implemented a collapsible, scrollable bottom sheet/section for daily entry details.
+    - Daily entries are now sorted by intensity for quick identification of high-impact events.
+    - Added stateful date selection with visual highlighting in the calendar grid.

@@ -3,6 +3,7 @@ package org.chronicheal.app.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -75,105 +76,74 @@ class TimelineViewModel @Inject constructor(
         initialValue = TimelineUiState()
     )
 
-    val symptomSuggestions: StateFlow<List<String>> = getEntriesUseCase()
-        .map { entries ->
-            entries
-                .filter { it.type == EntryType.SYMPTOM && !it.name.isNullOrBlank() }
-                .mapNotNull { it.name }
-                .distinct()
-                .sorted()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private fun createSortedSuggestions(
+        filter: (HealthEntry) -> Boolean,
+        selector: (HealthEntry) -> String?
+    ): StateFlow<List<String>> {
+        return getEntriesUseCase()
+            .map { entries ->
+                entries
+                    .filter(filter)
+                    .mapNotNull(selector)
+                    .filter { it.isNotBlank() }
+                    .groupBy { it }
+                    .mapValues { it.value.size }
+                    .toList()
+                    .sortedByDescending { it.second }
+                    .map { it.first }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }
 
-    val painLocationSuggestions: StateFlow<List<String>> = getEntriesUseCase()
-        .map { entries ->
-            entries
-                .filter { (it.type == EntryType.PAIN || it.type == EntryType.SYMPTOM) && !it.location.isNullOrBlank() }
-                .mapNotNull { it.location }
-                .distinct()
-                .sorted()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val symptomSuggestions: StateFlow<List<String>> = createSortedSuggestions(
+        filter = { it.type == EntryType.SYMPTOM },
+        selector = { it.name }
+    )
 
-    val drugSuggestions: StateFlow<List<String>> = getEntriesUseCase()
-        .map { entries ->
-            entries
-                .filter { it.type == EntryType.DRUG && !it.name.isNullOrBlank() }
-                .mapNotNull { it.name }
-                .distinct()
-                .sorted()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val painLocationSuggestions: StateFlow<List<String>> = createSortedSuggestions(
+        filter = { it.type == EntryType.PAIN || it.type == EntryType.SYMPTOM },
+        selector = { it.location }
+    )
 
-    val activitySuggestions: StateFlow<List<String>> = getEntriesUseCase()
-        .map { entries ->
-            entries
-                .filter { it.type == EntryType.ACTIVITY && !it.name.isNullOrBlank() }
-                .mapNotNull { it.name }
-                .distinct()
-                .sorted()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val drugSuggestions: StateFlow<List<String>> = createSortedSuggestions(
+        filter = { it.type == EntryType.DRUG },
+        selector = { it.name }
+    )
 
-    val diseaseSuggestions: StateFlow<List<String>> = getEntriesUseCase()
-        .map { entries ->
-            entries
-                .filter { it.type == EntryType.DISEASE && !it.name.isNullOrBlank() }
-                .mapNotNull { it.name }
-                .distinct()
-                .sorted()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val activitySuggestions: StateFlow<List<String>> = createSortedSuggestions(
+        filter = { it.type == EntryType.ACTIVITY },
+        selector = { it.name }
+    )
 
-    val doctorSuggestions: StateFlow<List<String>> = getEntriesUseCase()
-        .map { entries ->
-            entries
-                .filter { it.type == EntryType.MEDICAL_APPOINTMENT && !it.name.isNullOrBlank() }
-                .mapNotNull { it.name }
-                .distinct()
-                .sorted()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val diseaseSuggestions: StateFlow<List<String>> = createSortedSuggestions(
+        filter = { it.type == EntryType.DISEASE },
+        selector = { it.name }
+    )
 
-    val mealSuggestions: StateFlow<List<String>> = getEntriesUseCase()
-        .map { entries ->
-            entries
-                .filter { it.type == EntryType.MEAL && !it.name.isNullOrBlank() }
-                .mapNotNull { it.name }
-                .distinct()
-                .sorted()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val doctorSuggestions: StateFlow<List<String>> = createSortedSuggestions(
+        filter = { it.type == EntryType.MEDICAL_APPOINTMENT },
+        selector = { it.name }
+    )
 
-    val externalFactorSuggestions: StateFlow<List<String>> = getEntriesUseCase()
-        .map { entries ->
-            entries
-                .filter { it.type == EntryType.EXTERNAL_FACTOR && !it.name.isNullOrBlank() }
-                .mapNotNull { it.name }
-                .distinct()
-                .sorted()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val mealSuggestions: StateFlow<List<String>> = createSortedSuggestions(
+        filter = { it.type == EntryType.MEAL },
+        selector = { it.name }
+    )
 
-    val beverageSuggestions: StateFlow<List<String>> = getEntriesUseCase()
-        .map { entries ->
-            entries
-                .filter { it.type == EntryType.BEVERAGE && !it.name.isNullOrBlank() }
-                .mapNotNull { it.name }
-                .distinct()
-                .sorted()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val externalFactorSuggestions: StateFlow<List<String>> = createSortedSuggestions(
+        filter = { it.type == EntryType.EXTERNAL_FACTOR },
+        selector = { it.name }
+    )
 
-    val stoolAspectSuggestions: StateFlow<List<String>> = getEntriesUseCase()
-        .map { entries ->
-            entries
-                .filter { it.type == EntryType.STOOL && !it.name.isNullOrBlank() }
-                .mapNotNull { it.name }
-                .distinct()
-                .sorted()
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val beverageSuggestions: StateFlow<List<String>> = createSortedSuggestions(
+        filter = { it.type == EntryType.BEVERAGE },
+        selector = { it.name }
+    )
+
+    val stoolAspectSuggestions: StateFlow<List<String>> = createSortedSuggestions(
+        filter = { it.type == EntryType.STOOL },
+        selector = { it.name }
+    )
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
@@ -212,8 +182,6 @@ class TimelineViewModel @Inject constructor(
         viewModelScope.launch {
             if (original == null) {
                 // It's a new entry. We need to get the ID back to delete it on undo.
-                // However, our usecase doesn't return the ID. Let's assume most recent entry for simplicity or update usecase.
-                // Better: find by timestamp and type.
                 addEntryUseCase(current)
                 val savedEntry = getEntriesUseCase().first().find { 
                     it.timestamp == current.timestamp && it.type == current.type 

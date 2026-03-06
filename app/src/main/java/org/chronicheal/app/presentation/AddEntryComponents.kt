@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -259,41 +261,71 @@ fun AutoCompleteTextField(
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val filteredSuggestions = remember(value, suggestions) {
-        if (value.isBlank()) emptyList()
+        if (value.isBlank()) suggestions.take(10)
         else suggestions.filter { it.contains(value, ignoreCase = true) && it != value }
     }
 
-    ExposedDropdownMenuBox(
-        expanded = expanded && filteredSuggestions.isNotEmpty(),
-        onExpandedChange = { expanded = it },
-        modifier = modifier
-    ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {
-                onValueChange(it)
-                expanded = true
-            },
-            label = { Text(label) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(),
-            singleLine = true
-        )
+    val quickLabels = remember(value, suggestions) {
+        suggestions
+            .filter { it.contains(value, ignoreCase = true) && it != value }
+            .take(5)
+    }
 
-        if (filteredSuggestions.isNotEmpty()) {
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (quickLabels.isNotEmpty()) {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp)
             ) {
-                filteredSuggestions.forEach { suggestion ->
-                    DropdownMenuItem(
-                        text = { Text(suggestion) },
-                        onClick = {
-                            onValueChange(suggestion)
-                            expanded = false
+                items(quickLabels) { labelText ->
+                    SuggestionChip(
+                        onClick = { onValueChange(labelText) },
+                        label = {
+                            Text(
+                                text = labelText,
+                                style = MaterialTheme.typography.labelSmall
+                            )
                         }
                     )
+                }
+            }
+        }
+
+        ExposedDropdownMenuBox(
+            expanded = expanded && filteredSuggestions.isNotEmpty(),
+            onExpandedChange = { expanded = it },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = value,
+                onValueChange = {
+                    onValueChange(it)
+                    expanded = true
+                },
+                label = { Text(label) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                singleLine = true
+            )
+
+            if (filteredSuggestions.isNotEmpty()) {
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    filteredSuggestions.forEach { suggestion ->
+                        DropdownMenuItem(
+                            text = { Text(suggestion) },
+                            onClick = {
+                                onValueChange(suggestion)
+                                expanded = false
+                            }
+                        )
+                    }
                 }
             }
         }

@@ -1,54 +1,36 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -58,6 +40,7 @@ import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.min
@@ -68,15 +51,21 @@ fun CalendarScreen(
     onBackClick: () -> Unit,
     onDateClick: (LocalDate) -> Unit,
     onManageRemindersClick: () -> Unit,
-    viewModel: TimelineViewModel = hiltViewModel(),
-    remindersViewModel: RemindersViewModel = hiltViewModel()
+    viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val reminders by remindersViewModel.reminders.collectAsState()
     val currentMonth = remember { mutableStateOf(YearMonth.now()) }
+    var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
+    var isExpanded by rememberSaveable { mutableStateOf(true) }
     
-    val activeReminders = remember(reminders) {
-        reminders.filter { it.isEnabled }
+    val entriesByDate = remember(uiState.entries) {
+        uiState.entries.groupBy {
+            it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+        }
+    }
+
+    val selectedDayEntries = remember(selectedDate, entriesByDate) {
+        entriesByDate[selectedDate]?.sortedByDescending { it.intensity ?: 0 } ?: emptyList()
     }
 
     Scaffold(
@@ -91,7 +80,10 @@ fun CalendarScreen(
                 },
                 actions = {
                     TextButton(
-                        onClick = { currentMonth.value = YearMonth.now() },
+                        onClick = { 
+                            currentMonth.value = YearMonth.now()
+                            selectedDate = LocalDate.now()
+                        },
                         colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
                     ) {
                         Icon(Icons.Default.Today, contentDescription = null)
@@ -111,38 +103,152 @@ fun CalendarScreen(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            item {
-                CalendarHeader(
-                    currentMonth = currentMonth.value,
-                    onMonthChange = { currentMonth.value = it }
-                )
-            }
-            item {
-                CalendarGrid(
-                    currentMonth = currentMonth.value,
-                    entries = uiState.entries,
-                    onDateClick = onDateClick
-                )
-            }
+            CalendarHeader(
+                currentMonth = currentMonth.value,
+                onMonthChange = { currentMonth.value = it }
+            )
             
-            if (activeReminders.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Daily Reminders",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(16.dp)
-                    )
+            CalendarGrid(
+                currentMonth = currentMonth.value,
+                entries = uiState.entries,
+                selectedDate = selectedDate,
+                onDateClick = { 
+                    selectedDate = it
+                    isExpanded = true
                 }
-                
-                items(activeReminders) { reminder ->
-                    ReminderItemSmall(
-                        reminder = reminder,
-                        onToggle = { remindersViewModel.toggleReminder(reminder) }
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isExpanded = !isExpanded }
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = selectedDate.format(DateTimeFormatter.ofPattern("EEEE, MMM dd")),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "${selectedDayEntries.size} entries",
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Icon(
+                                if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = if (isExpanded) "Collapse" else "Expand"
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = isExpanded,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        if (selectedDayEntries.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    "No entries for this day",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 400.dp),
+                                contentPadding = PaddingValues(bottom = 16.dp)
+                            ) {
+                                items(selectedDayEntries) { entry ->
+                                    DayEntryItem(
+                                        entry = entry,
+                                        onClick = { onDateClick(selectedDate) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DayEntryItem(
+    entry: HealthEntry,
+    onClick: () -> Unit
+) {
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    val time = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = entry.type.emoji,
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(end = 12.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = entry.name ?: entry.type.name.lowercase().capitalize(Locale.getDefault()),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = time.format(timeFormatter),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (entry.intensity != null) {
+                Surface(
+                    color = getIntensityColor(entry.intensity).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "${entry.intensity}/10",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = getIntensityColor(entry.intensity)
                     )
                 }
             }
@@ -151,39 +257,11 @@ fun CalendarScreen(
 }
 
 @Composable
-fun ReminderItemSmall(
-    reminder: org.chronicheal.app.domain.model.Reminder,
-    onToggle: () -> Unit
-) {
-    val timeFormatter = remember { java.time.format.DateTimeFormatter.ofPattern("HH:mm") }
-    
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = reminder.title, style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    text = "${reminder.time.format(timeFormatter)} - ${formatDaysOfWeek(reminder.daysOfWeek)}",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Switch(
-                checked = reminder.isEnabled,
-                onCheckedChange = { onToggle() },
-                modifier = Modifier.scale(0.8f)
-            )
-        }
+fun getIntensityColor(intensity: Int): Color {
+    return when {
+        intensity >= 8 -> Color(0xFFD32F2F)
+        intensity >= 5 -> Color(0xFFF57C00)
+        else -> Color(0xFF388E3C)
     }
 }
 
@@ -217,10 +295,11 @@ fun CalendarHeader(
 fun CalendarGrid(
     currentMonth: YearMonth,
     entries: List<HealthEntry>,
+    selectedDate: LocalDate,
     onDateClick: (LocalDate) -> Unit
 ) {
     val daysInMonth = currentMonth.lengthOfMonth()
-    val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek.value % 7 // 0 for Sunday, 1 for Monday...
+    val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek.value % 7 
     val days = (1..daysInMonth).toList()
     val emptyDaysBefore = (0 until firstDayOfMonth).toList()
     val today = LocalDate.now()
@@ -232,21 +311,19 @@ fun CalendarGrid(
     }
 
     Column(modifier = Modifier.padding(8.dp)) {
-        // Day names
         Row(modifier = Modifier.fillMaxWidth()) {
             val dayNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
             dayNames.forEach { day ->
                 Text(
                     text = day,
                     modifier = Modifier.weight(1f),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
 
-        // We use a non-scrollable grid inside the LazyColumn
         val rows = (days.size + emptyDaysBefore.size + 6) / 7
         for (row in 0 until rows) {
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -268,12 +345,12 @@ fun CalendarGrid(
                                 
                                 val hasManagement = dayEntries.any { it.type.category == EntryType.Category.MANAGEMENT }
                                 
-                                val isToday = date == today
                                 DayCell(
                                     day = day, 
                                     occurrenceIntensity = occurrenceIntensitySum,
                                     hasManagement = hasManagement,
-                                    isToday = isToday,
+                                    isToday = date == today,
+                                    isSelected = date == selectedDate,
                                     onClick = { onDateClick(date) }
                                 )
                             } else {
@@ -293,12 +370,12 @@ fun DayCell(
     occurrenceIntensity: Int,
     hasManagement: Boolean,
     isToday: Boolean,
+    isSelected: Boolean,
     onClick: () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
-    // Ultra-contrasted colors for indicators
-    val occColor = if (isDark) Color(0xFFFF5722) else Color(0xFFBF360C) // Deep Orange
-    val mangColor = if (isDark) Color(0xFF00BCD4) else Color(0xFF006064) // Bright Cyan
+    val occColor = if (isDark) Color(0xFFFF5722) else Color(0xFFBF360C) 
+    val mangColor = if (isDark) Color(0xFF00BCD4) else Color(0xFF006064) 
 
     Box(
         modifier = Modifier
@@ -306,14 +383,16 @@ fun DayCell(
             .padding(2.dp)
             .clip(CircleShape)
             .background(
-                if (isToday) MaterialTheme.colorScheme.primaryContainer else Color.Transparent
-            )
-            .then(
-                if (isToday) {
-                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                } else {
-                    Modifier
+                when {
+                    isSelected -> MaterialTheme.colorScheme.primaryContainer
+                    isToday -> MaterialTheme.colorScheme.surfaceVariant
+                    else -> Color.Transparent
                 }
+            )
+            .border(
+                width = if (isSelected) 2.dp else if (isToday) 1.dp else 0.dp,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else if (isToday) MaterialTheme.colorScheme.outline else Color.Transparent,
+                shape = CircleShape
             )
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
@@ -326,8 +405,8 @@ fun DayCell(
             Text(
                 text = day.toString(),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.Bold,
-                color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                fontWeight = if (isSelected || isToday) FontWeight.ExtraBold else FontWeight.Bold,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
             )
             Row(
                 horizontalArrangement = Arrangement.Center,
@@ -335,7 +414,6 @@ fun DayCell(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (occurrenceIntensity > 0) {
-                    // Size scales from 10dp to 20dp based on intensity sum for maximum visibility
                     val dotSize = min(20f, 10f + (occurrenceIntensity / 2f)).dp
                     CategoryDot(color = occColor, size = dotSize)
                 }
@@ -354,14 +432,6 @@ fun CategoryDot(color: Color, size: Dp = 10.dp) {
             .padding(horizontal = 1.dp)
             .size(size)
             .background(color, shape = CircleShape)
-            .border(1.2.dp, Color.White.copy(alpha = 0.5f), CircleShape) // Thicker border for contrast
+            .border(1.2.dp, Color.White.copy(alpha = 0.5f), CircleShape) 
     )
-}
-
-private fun formatDaysOfWeek(days: Set<Int>): String {
-    if (days.size == 7) return "Every day"
-    if (days.isEmpty()) return "Never"
-    
-    val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-    return days.sorted().joinToString(", ") { dayNames[it - 1] }
 }
