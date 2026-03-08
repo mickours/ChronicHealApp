@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,10 +20,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
@@ -86,21 +87,15 @@ fun AddMoodScreen(
     }
 
     val moodLabel = when (moodLevel.roundToInt()) {
-        1 -> "Very Bad"
-        2 -> "Bad"
-        3 -> "Poor"
-        4 -> "Somewhat Poor"
-        5 -> "Neutral"
-        6 -> "Good"
-        7 -> "Very Good"
-        8 -> "Great"
-        9 -> "Excellent"
-        10 -> "Amazing"
-        else -> "Neutral"
+        in 1..2 -> stringResource(R.string.mood_very_bad)
+        in 3..4 -> stringResource(R.string.mood_bad)
+        in 5..6 -> stringResource(R.string.mood_neutral)
+        in 7..8 -> stringResource(R.string.mood_good)
+        else -> stringResource(R.string.mood_amazing)
     }
 
     AddEntryScaffold(
-        title = if (id == null) "Log Mood" else "Edit Mood",
+        title = if (id == null) stringResource(R.string.log_mood) else stringResource(R.string.edit_mood),
         existingEntry = existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
@@ -142,7 +137,7 @@ fun AddMoodScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Level: ${moodLevel.roundToInt()}/10",
+                text = stringResource(R.string.intensity_label, moodLevel.roundToInt()),
                 style = MaterialTheme.typography.titleMedium
             )
             Slider(
@@ -155,11 +150,10 @@ fun AddMoodScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("How are you feeling? (Optional)") },
-                modifier = Modifier.fillMaxWidth(),
+                label = stringResource(R.string.section_mood),
                 minLines = 3
             )
         }

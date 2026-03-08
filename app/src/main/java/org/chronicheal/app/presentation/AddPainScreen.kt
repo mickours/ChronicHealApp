@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,8 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
@@ -76,7 +77,7 @@ fun AddPainScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null) "Log Pain" else "Edit Pain",
+        title = if (id == null) stringResource(R.string.log_pain) else stringResource(R.string.edit_pain),
         existingEntry = existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
@@ -103,7 +104,7 @@ fun AddPainScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Intensity: ${intensity.roundToInt()}/10",
+                text = stringResource(R.string.intensity_label, intensity.roundToInt()),
                 style = MaterialTheme.typography.titleMedium
             )
             Slider(
@@ -119,16 +120,15 @@ fun AddPainScreen(
                 value = location,
                 onValueChange = { location = it },
                 suggestions = locationSuggestions,
-                label = "Location (e.g. Back, Knee)"
+                label = stringResource(R.string.location_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Notes") },
-                modifier = Modifier.fillMaxWidth(),
+                label = stringResource(R.string.notes_label),
                 minLines = 3
             )
         }

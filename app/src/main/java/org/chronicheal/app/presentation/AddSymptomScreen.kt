@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,8 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
@@ -80,7 +81,7 @@ fun AddSymptomScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null) "Log Symptom" else "Edit Symptom",
+        title = if (id == null) stringResource(R.string.log_symptom) else stringResource(R.string.edit_symptom),
         existingEntry = existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
@@ -110,13 +111,13 @@ fun AddSymptomScreen(
                 value = name,
                 onValueChange = { name = it },
                 suggestions = nameSuggestions,
-                label = "Symptom Name (e.g. Fatigue, Nausea)"
+                label = stringResource(R.string.name_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Severity: ${severity.roundToInt()}/10",
+                text = stringResource(R.string.intensity_label, severity.roundToInt()),
                 style = MaterialTheme.typography.titleMedium
             )
             Slider(
@@ -132,16 +133,15 @@ fun AddSymptomScreen(
                 value = location,
                 onValueChange = { location = it },
                 suggestions = locationSuggestions,
-                label = "Location (Optional)"
+                label = stringResource(R.string.location_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Notes") },
-                modifier = Modifier.fillMaxWidth(),
+                label = stringResource(R.string.notes_label),
                 minLines = 3
             )
         }

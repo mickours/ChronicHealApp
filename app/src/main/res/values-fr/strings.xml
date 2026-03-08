@@ -1,0 +1,215 @@
+<resources>
+    <string name="app_name">ChronicHeal</string>
+    <string name="action_settings">Paramètres</string>
+    <string name="next">Suivant</string>
+    <string name="previous">Précédent</string>
+
+    <!-- Navigation & Common Actions -->
+    <string name="back">Retour</string>
+    <string name="save">Enregistrer</string>
+    <string name="delete">Supprimer</string>
+    <string name="cancel">Annuler</string>
+    <string name="confirm">Confirmer</string>
+    <string name="ok">OK</string>
+    <string name="today">Aujourd\'hui</string>
+    <string name="search_placeholder">Rechercher par nom, lieu ou note...</string>
+    <string name="no_matches">Aucun résultat trouvé.</string>
+    <string name="no_entries_yet">Aucune entrée pour le moment. Appuyez sur + pour commencer le suivi.</string>
+    <string name="delete_entry_title">Supprimer l\'entrée</string>
+    <string name="delete_entry_msg">Êtes-vous sûr de vouloir supprimer ce log ?</string>
+    <string name="menu">Menu</string>
+
+    <!-- Timeline Screen -->
+    <string name="timeline_title">Journal</string>
+    <string name="quick_add">AJOUT RAPIDE</string>
+    <string name="weekly_insights_title">Aperçu des 7 derniers jours</string>
+    <string name="avg_pain">Douleur moy.</string>
+    <string name="medications">Médicaments</string>
+    <string name="avg_sleep">Sommeil moy.</string>
+    <string name="entry_saved">Entrée enregistrée</string>
+    <string name="entry_updated">Entrée mise à jour</string>
+    <string name="entry_deleted">Entrée supprimée</string>
+    <string name="edition_canceled">Édition annulée</string>
+    <string name="undo_deletion">Suppression annulée</string>
+    <string name="undo_addition">Ajout annulé</string>
+    <string name="undo_changes">Modifications annulées</string>
+
+    <!-- Voice Logging -->
+    <string name="voice_logging_title">Saisie Vocale</string>
+    <string name="voice_listening">Écoute en cours...</string>
+    <string name="voice_tap_to_speak">Appuyez sur le micro et parlez</string>
+    <string name="voice_detected_log">Log détecté</string>
+    <string name="voice_save_hint">Dites \"Enregistrer\" pour confirmer ou \"Annuler\" pour ignorer</string>
+    <string name="voice_save_now">Enregistrer maintenant</string>
+    <string name="voice_saved_message">Entrée enregistrée par la voix</string>
+    <string name="voice_error_no_match">Aucune correspondance vocale trouvée. Essayez de parler plus clairement.</string>
+    <string name="voice_error_quiet_hint">Essayez de vous déplacer dans un endroit plus calme ou parlez plus près du microphone.</string>
+
+    <!-- Entry Selection -->
+    <string name="track_selection_title">Que souhaitez-vous suivre ?</string>
+    <string name="category_occurrence">Ce qui vous arrive</string>
+    <string name="category_management">Ce que vous gérez</string>
+    <string name="complete_checkin">Bilan complet</string>
+    <string name="complete_checkin_desc">Notez humeur, douleur, sommeil et médicaments d\'un coup</string>
+
+    <!-- Entry Details Labels -->
+    <string name="intensity_label">Intensité : %1$d/10</string>
+    <string name="intensity_short_label">Intensité</string>
+    <string name="location_label">Localisation</string>
+    <string name="location_label_format">Localisation : %1$s</string>
+    <string name="name_label">Nom</string>
+    <string name="name_label_format">Nom : %1$s</string>
+    <string name="duration_label">Durée</string>
+    <string name="duration_mins_label">Durée : %1$dmin</string>
+    <string name="duration_hours_label">Durée (Heures)</string>
+    <string name="dosage_label">Dosage</string>
+    <string name="dosage_label_format">Dosage : %1$s</string>
+    <string name="notes_label">Notes</string>
+    <string name="date_label">Date</string>
+    <string name="time_label">Heure</string>
+    <string name="start_time_label">Heure de début</string>
+    <string name="value_label">Valeur : %1$s %2$s</string>
+    <string name="bedtime_label">Heure du coucher :</string>
+    <string name="wakeup_time_label">Heure de réveil :</string>
+    <string name="computed_duration_label">Durée calculée</string>
+    <string name="quality_label">Qualité : %1$d/5</string>
+    <string name="impact_label">Impact/Intensité : %1$d/10</string>
+    <string name="scale_label">Échelle %1$s</string>
+    <string name="select_items_legend">Sélectionnez des éléments dans la légende pour afficher les données</string>
+    
+    <!-- Specific Entry Actions -->
+    <string name="log_pain">Noter Douleur</string>
+    <string name="edit_pain">Modifier Douleur</string>
+    <string name="log_drug">Noter Médicament</string>
+    <string name="edit_drug">Modifier Médicament</string>
+    <string name="log_symptom">Noter Symptôme</string>
+    <string name="edit_symptom">Modifier Symptôme</string>
+    <string name="log_meal">Noter Repas</string>
+    <string name="edit_meal">Modifier Repas</string>
+    <string name="log_mood">Noter Humeur</string>
+    <string name="edit_mood">Modifier Humeur</string>
+    <string name="log_sleep">Noter Sommeil</string>
+    <string name="edit_sleep">Modifier Sommeil</string>
+    <string name="log_activity">Noter Activité</string>
+    <string name="edit_activity">Modifier Activité</string>
+    <string name="log_disease">Noter Pathologie</string>
+    <string name="edit_disease">Modifier Pathologie</string>
+    <string name="log_appointment">Noter RDV Médical</string>
+    <string name="edit_appointment">Modifier RDV Médical</string>
+    <string name="log_factor">Noter Facteur Externe</string>
+    <string name="edit_factor">Modifier Facteur Externe</string>
+    <string name="log_journal">Noter Journal</string>
+    <string name="edit_journal">Modifier Journal</string>
+    <string name="log_period">Noter Règles</string>
+    <string name="edit_period">Modifier Règles</string>
+    <string name="log_beverage">Noter Boisson</string>
+    <string name="edit_beverage">Modifier Boisson</string>
+    <string name="log_stool">Noter Selles</string>
+    <string name="edit_stool">Modifier Selles</string>
+
+    <!-- Specific Entry Types -->
+    <string name="type_pain">Douleur</string>
+    <string name="type_drug">Médicament</string>
+    <string name="type_symptom">Symptôme</string>
+    <string name="type_disease">Pathologie</string>
+    <string name="type_meal">Repas</string>
+    <string name="type_sleep">Sommeil</string>
+    <string name="type_appointment">Rendez-vous</string>
+    <string name="type_activity">Activité</string>
+    <string name="type_factor">Facteur Externe</string>
+    <string name="type_journal">Journal</string>
+    <string name="type_period">Règles</string>
+    <string name="type_beverage">Boisson</string>
+    <string name="type_stool">Selles</string>
+    <string name="type_mood">Humeur</string>
+
+    <!-- Specific Logging Labels -->
+    <string name="disease_name_label">Nom de la pathologie</string>
+    <string name="symptom_name_label">Nom du symptôme (ex: Fatigue, Nausée)</string>
+    <string name="meal_name_label">Nom du repas (ex: Petit-déjeuner, Déjeuner)</string>
+    <string name="activity_name_label">Nom de l\'activité (ex: Marche, Yoga)</string>
+    <string name="appointment_name_label">Nom du médecin ou de la clinique</string>
+    <string name="factor_name_label">Facteur (ex: Météo, Stress, Pollution)</string>
+    <string name="beverage_name_label">Nom de la boisson (ex: Eau, Café)</string>
+    <string name="stool_aspect_label">Aspect (Optionnel)</string>
+    
+    <!-- Calendar Screen -->
+    <string name="calendar_title">Calendrier</string>
+    <string name="select_date">Sélectionnez une date</string>
+    <string name="show_individual_entries">Afficher les entrées individuelles</string>
+    <string name="entries_count">%1$d entrées</string>
+    <string name="no_entries_period">Aucune entrée pour cette période</string>
+    <string name="occurred_count">Apparu %1$d fois</string>
+    <string name="total_duration">Durée totale : %1$s</string>
+    <string name="average_label">Moy : %1$s/10</string>
+    <string name="at_time">à %1$s</string>
+
+    <!-- Week Days -->
+    <string name="day_sun">Dim</string>
+    <string name="day_mon">Lun</string>
+    <string name="day_tue">Mar</string>
+    <string name="day_wed">Mer</string>
+    <string name="day_thu">Jeu</string>
+    <string name="day_fri">Ven</string>
+    <string name="day_sat">Sam</string>
+
+    <!-- Reminders -->
+    <string name="reminders_title">Rappels</string>
+    <string name="add_reminder">Ajouter un rappel</string>
+    <string name="set_daily_reminder">Définir un rappel quotidien</string>
+    <string name="update_daily_reminder">Modifier le rappel quotidien</string>
+    <string name="notification_permission_required">La permission de notification est requise pour les rappels.</string>
+    <string name="reminder_saved">Rappel enregistré</string>
+    <string name="reminder_deleted">Rappel supprimé</string>
+    <string name="no_reminders">Aucun rappel défini.</string>
+
+    <!-- Analytics -->
+    <string name="analytics_title">Analyses</string>
+    <string name="export_pdf">Exporter en PDF</string>
+    <string name="pdf_exported_success">PDF exporté avec succès</string>
+    <string name="open">Ouvrir</string>
+    <string name="no_pain_data">Aucune donnée de douleur pour cette période.</string>
+    <string name="no_symptom_data">Aucune donnée de symptôme pour cette période.</string>
+    <string name="pain_evolution">Évolution de la douleur</string>
+    <string name="symptom_evolution">Évolution des symptômes</string>
+    <string name="correlation_analysis">Analyse de Corrélation</string>
+    <string name="correlation_insight">Aperçu de Corrélation</string>
+    <string name="metric_1">Métrique 1</string>
+    <string name="metric_2">Métrique 2</string>
+    <string name="strong_pos_corr">Forte corrélation positive</string>
+    <string name="mod_pos_corr">Corrélation positive modérée</string>
+    <string name="no_clear_corr">Pas de corrélation claire</string>
+    <string name="mod_neg_corr">Corrélation négative modérée</string>
+    <string name="strong_neg_corr">Forte corrélation négative</string>
+    <string name="insight_increase_increase">Quand %1$s augmente, %2$s a aussi tendance à augmenter.</string>
+    <string name="insight_increase_decrease">Quand %1$s augmente, %2$s a tendance à diminuer.</string>
+    <string name="insight_no_relationship">Aucune relation linéaire forte trouvée entre %1$s et %2$s pour cette période.</string>
+
+    <!-- Complete Check-in -->
+    <string name="section_mood">Comment vous sentez-vous ?</string>
+    <string name="section_pain">Des douleurs ?</string>
+    <string name="section_sleep">Sommeil de la nuit dernière</string>
+    <string name="section_medication">Médications</string>
+    <string name="section_anything_else">Autre chose ?</string>
+
+    <!-- Mood Labels -->
+    <string name="mood_very_bad">Très Mauvais</string>
+    <string name="mood_bad">Mauvais</string>
+    <string name="mood_poor">Médiocre</string>
+    <string name="mood_somewhat_poor">Assez médiocre</string>
+    <string name="mood_neutral">Neutre</string>
+    <string name="mood_good">Bon</string>
+    <string name="mood_very_good">Très Bon</string>
+    <string name="mood_great">Super</string>
+    <string name="mood_excellent">Excellent</string>
+    <string name="mood_amazing">Incroyable</string>
+    
+    <!-- Body Scan -->
+    <string name="body_scan_title">Scan Corporel</string>
+    <string name="select_body_part">Sélectionnez une partie du corps pour noter une douleur</string>
+    <string name="pain_log_added">Douleur notée pour %1$s</string>
+    <string name="pain_log_updated">Douleur mise à jour pour %1$s</string>
+    <string name="pain_log_deleted">Douleur supprimée pour %1$s</string>
+    <string name="save_pain_log">Enregistrer la douleur</string>
+    <string name="update_pain_log">Modifier la douleur</string>
+</resources>

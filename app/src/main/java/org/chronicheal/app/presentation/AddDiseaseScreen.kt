@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,8 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
@@ -75,7 +76,7 @@ fun AddDiseaseScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null) "Log Disease/Condition" else "Edit Disease/Condition",
+        title = if (id == null) stringResource(R.string.log_disease) else stringResource(R.string.edit_disease),
         existingEntry = existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
@@ -105,13 +106,13 @@ fun AddDiseaseScreen(
                 value = name,
                 onValueChange = { name = it },
                 suggestions = nameSuggestions,
-                label = "Disease or Condition Name"
+                label = stringResource(R.string.disease_name_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Impact/Intensity: ${intensity.roundToInt()}/10",
+                text = stringResource(R.string.impact_label, intensity.roundToInt()),
                 style = MaterialTheme.typography.titleMedium
             )
             Slider(
@@ -123,11 +124,10 @@ fun AddDiseaseScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Notes/Details") },
-                modifier = Modifier.fillMaxWidth(),
+                label = stringResource(R.string.notes_label),
                 minLines = 3
             )
         }

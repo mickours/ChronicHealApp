@@ -13,6 +13,7 @@ import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.presentation.AddActivityScreen
 import org.chronicheal.app.presentation.AddBeverageScreen
+import org.chronicheal.app.presentation.AddCompleteEntryScreen
 import org.chronicheal.app.presentation.AddDiseaseScreen
 import org.chronicheal.app.presentation.AddDrugScreen
 import org.chronicheal.app.presentation.AddExternalFactorScreen
@@ -36,6 +37,7 @@ import org.chronicheal.app.presentation.RemindersScreen
 import org.chronicheal.app.presentation.SettingsScreen
 import org.chronicheal.app.presentation.TimelineScreen
 import org.chronicheal.app.presentation.TimelineViewModel
+import org.chronicheal.app.presentation.VoiceLoggingScreen
 import org.chronicheal.app.presentation.WelcomeWizardScreen
 
 @Composable
@@ -139,6 +141,9 @@ fun NavGraph(
                 },
                 onBodyScanClick = {
                     navController.navigate(Screen.BodyScan.route)
+                },
+                onVoiceLoggingClick = {
+                    navController.navigate(Screen.VoiceLogging.route)
                 },
                 onEntryTypeClick = onEntryTypeClick,
                 onEntryClick = { entry -> onEntryClick(entry, null) },
@@ -255,6 +260,9 @@ fun NavGraph(
                         EntryType.MOOD -> Screen.AddMood.createRoute(date, location)
                     }
                     navController.navigate(route)
+                },
+                onCompleteEntryClick = {
+                    navController.navigate(Screen.AddCompleteEntry.createRoute(date))
                 },
                 onBackClick = { navController.popBackStack() }
             )
@@ -514,6 +522,28 @@ fun NavGraph(
                 id = id,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
+            )
+        }
+        composable(
+            route = Screen.AddCompleteEntry.route,
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
+            AddCompleteEntryScreen(
+                dateString = date,
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = { onSaveSuccess(date, false) }
+            )
+        }
+        composable(route = Screen.VoiceLogging.route) {
+            VoiceLoggingScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = { 
+                    navController.popBackStack(Screen.Timeline.route, inclusive = false)
+                    navController.getBackStackEntry(Screen.Timeline.route).savedStateHandle.set("message", "Entry saved via voice")
+                }
             )
         }
     }

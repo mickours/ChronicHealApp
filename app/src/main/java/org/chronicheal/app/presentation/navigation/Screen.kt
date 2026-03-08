@@ -70,6 +70,10 @@ sealed class Screen(val route: String) {
     object AddMood : Screen("add_mood?date={date}&location={location}&id={id}") {
         fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_mood", date, location, id)
     }
+    object AddCompleteEntry : Screen("add_complete_entry?date={date}") {
+        fun createRoute(date: String? = null) = if (date != null) "add_complete_entry?date=$date" else "add_complete_entry"
+    }
+    object VoiceLogging : Screen("voice_logging")
 
     protected fun createQueryRoute(base: String, date: String?, location: String?, id: Long? = null): String {
         val datePart = if (date != null) "date=$date" else null

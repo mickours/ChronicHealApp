@@ -26,8 +26,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
@@ -90,7 +92,7 @@ fun AddMealScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null) "Log Meal" else "Edit Meal",
+        title = if (id == null) stringResource(R.string.log_meal) else stringResource(R.string.edit_meal),
         existingEntry = existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
@@ -120,7 +122,7 @@ fun AddMealScreen(
                 value = name,
                 onValueChange = { name = it },
                 suggestions = nameSuggestions,
-                label = "Meal Name (e.g. Breakfast, Lunch, Snack)"
+                label = stringResource(R.string.name_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -128,7 +130,7 @@ fun AddMealScreen(
             OutlinedTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Notes (What did you eat?)") },
+                label = { Text(stringResource(R.string.notes_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3
             )
@@ -144,17 +146,18 @@ fun AddMealScreen(
                     onCheckedChange = { setReminder = it }
                 )
                 Text(
-                    text = if (existingEntry?.hasReminder == true) "Update daily reminder" else "Set daily reminder for this meal",
+                    text = if (existingEntry?.hasReminder == true) stringResource(R.string.update_daily_reminder) else stringResource(R.string.set_daily_reminder),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
 
             if (setReminder) {
+                val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
                 OutlinedButton(
                     onClick = { showTimePicker = true },
                     modifier = Modifier.padding(start = 32.dp)
                 ) {
-                    Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+                    Text(stringResource(R.string.time_label) + ": ${reminderTime.format(timeFormatter)}")
                 }
             }
         }
@@ -171,12 +174,12 @@ fun AddMealScreen(
                         reminderTime = LocalTime.of(timeState.hour, timeState.minute)
                         showTimePicker = false
                     }) {
-                        Text("OK")
+                        Text(stringResource(R.string.ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showTimePicker = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             ) {

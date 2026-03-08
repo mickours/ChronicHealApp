@@ -34,17 +34,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingFlat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.TrendingFlat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,6 +77,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -84,6 +87,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.ui.theme.HeaderBlue
@@ -104,6 +108,7 @@ fun TimelineScreen(
     onSettingsClick: () -> Unit,
     onAnalyticsClick: () -> Unit,
     onBodyScanClick: () -> Unit,
+    onVoiceLoggingClick: () -> Unit,
     onEntryTypeClick: (EntryType) -> Unit,
     onEntryClick: (HealthEntry) -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -111,6 +116,7 @@ fun TimelineScreen(
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     
     var isSearchVisible by rememberSaveable { mutableStateOf(false) }
     var hasPerformedInitialScroll by rememberSaveable { mutableStateOf(false) }
@@ -135,14 +141,30 @@ fun TimelineScreen(
 
     LaunchedEffect(navMessage?.value) {
         navMessage?.value?.let { msg ->
-            snackbarHostState.showSnackbar(msg)
+            // Localization fix: Map message keys to localized strings
+            val localizedMsg = when(msg) {
+                "Edition canceled" -> context.getString(R.string.edition_canceled)
+                "Entry updated" -> context.getString(R.string.entry_updated)
+                "Entry saved" -> context.getString(R.string.entry_saved)
+                else -> msg
+            }
+            snackbarHostState.showSnackbar(localizedMsg)
             savedStateHandle.remove<String>("message")
         }
     }
 
     LaunchedEffect(uiState.message) {
-        uiState.message?.let {
-            snackbarHostState.showSnackbar(it)
+        uiState.message?.let { msg ->
+            val localizedMsg = when(msg) {
+                "Entry deleted" -> context.getString(R.string.entry_deleted)
+                "Entry updated" -> context.getString(R.string.entry_updated)
+                "Entry added" -> context.getString(R.string.entry_saved)
+                "Deletion undone" -> context.getString(R.string.undo_deletion)
+                "Addition undone" -> context.getString(R.string.undo_addition)
+                "Changes undone" -> context.getString(R.string.undo_changes)
+                else -> msg
+            }
+            snackbarHostState.showSnackbar(localizedMsg)
             viewModel.clearMessage()
         }
     }
@@ -161,6 +183,9 @@ fun TimelineScreen(
                         )
                     },
                     actions = {
+                        IconButton(onClick = onVoiceLoggingClick) {
+                            Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.voice_logging_title))
+                        }
                         IconButton(onClick = { 
                             isSearchVisible = !isSearchVisible 
                             if (!isSearchVisible) {
@@ -182,7 +207,7 @@ fun TimelineScreen(
                             Icon(Icons.Default.CalendarMonth, contentDescription = "Calendar")
                         }
                         IconButton(onClick = onSettingsClick) {
-                            Icon(Icons.Default.Settings, contentDescription = "Settings")
+                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.action_settings))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -206,7 +231,7 @@ fun TimelineScreen(
                             value = uiState.searchQuery,
                             onValueChange = viewModel::setSearchQuery,
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Search by name, location or note...") },
+                            placeholder = { Text(stringResource(R.string.search_placeholder)) },
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                             trailingIcon = {
                                 if (uiState.searchQuery.isNotEmpty()) {
@@ -242,7 +267,7 @@ fun TimelineScreen(
                                 FilterChip(
                                     selected = isSelected,
                                     onClick = { viewModel.toggleTypeFilter(type) },
-                                    label = { Text("${type.emoji} ${type.name.lowercase().replaceFirstChar { it.uppercase() }}") },
+                                    label = { Text("${type.emoji} ${stringResource(type.displayRes)}") },
                                     leadingIcon = if (isSelected) {
                                         { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                     } else null,
@@ -285,7 +310,7 @@ fun TimelineScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "QUICK ADD",
+                            text = stringResource(R.string.quick_add),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(bottom = 4.dp),
@@ -313,7 +338,7 @@ fun TimelineScreen(
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
                 Text(
                     text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedTypes.isNotEmpty()) 
-                        "No matches found." else "No entries yet. Tap + to start tracking.",
+                        stringResource(R.string.no_matches) else stringResource(R.string.no_entries_yet),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(32.dp)
                 )
@@ -375,7 +400,7 @@ fun WeeklyInsightsCard(stats: WeeklyStats) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Last 7 Days Insights",
+                text = stringResource(R.string.weekly_insights_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -386,21 +411,21 @@ fun WeeklyInsightsCard(stats: WeeklyStats) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 InsightItem(
-                    label = "Avg Pain",
+                    label = stringResource(R.string.avg_pain),
                     value = stats.avgPain?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "-",
                     trend = stats.painTrend,
                     isPositiveBetter = false,
                     modifier = Modifier.weight(1f)
                 )
                 InsightItem(
-                    label = "Medications",
+                    label = stringResource(R.string.medications),
                     value = stats.drugCount.toString(),
                     trend = stats.drugTrend,
                     isPositiveBetter = null, // Neutral
                     modifier = Modifier.weight(1f)
                 )
                 InsightItem(
-                    label = "Avg Sleep",
+                    label = stringResource(R.string.avg_sleep),
                     value = stats.avgSleepMinutes?.let { "${it / 60}h" } ?: "-",
                     trend = stats.sleepTrend,
                     isPositiveBetter = true,
@@ -427,28 +452,29 @@ fun InsightItem(
         Text(text = value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
         
         if (trend != null && trend != 0) {
-            val isTrendPositive = trend > 0
             val color = when {
                 isPositiveBetter == null -> MaterialTheme.colorScheme.onSurfaceVariant
-                isPositiveBetter && isTrendPositive -> Color(0xFF388E3C) // Green
-                !isPositiveBetter && !isTrendPositive -> Color(0xFF388E3C) // Green
+                isPositiveBetter && trend > 0 -> Color(0xFF388E3C) // Green
+                !isPositiveBetter && trend < 0 -> Color(0xFF388E3C) // Green
                 else -> Color(0xFFD32F2F) // Red
             }
             
             Row(verticalAlignment = Alignment.CenterVertically) {
+                val icon = when {
+                    trend > 0 -> Icons.AutoMirrored.Filled.TrendingUp
+                    trend < 0 -> Icons.AutoMirrored.Filled.TrendingDown
+                    else -> Icons.AutoMirrored.Filled.TrendingFlat
+                }
                 Icon(
-                    imageVector = when {
-                        trend > 0 -> Icons.AutoMirrored.Filled.TrendingUp
-                        trend < 0 -> Icons.AutoMirrored.Filled.TrendingDown
-                        else -> Icons.Default.TrendingFlat
-                    },
+                    imageVector = icon,
                     contentDescription = null,
                     tint = color,
                     modifier = Modifier.size(12.dp)
                 )
                 Spacer(modifier = Modifier.width(2.dp))
+                val isAvg = label.contains("Avg") || label.contains("moy")
                 Text(
-                    text = "${if (trend > 0) "+" else ""}$trend${if (label.contains("Avg")) "%" else ""}",
+                    text = "${if (trend > 0) "+" else ""}$trend${if (isAvg) "%" else ""}",
                     style = MaterialTheme.typography.labelSmall,
                     color = color,
                     fontWeight = FontWeight.Bold
@@ -482,7 +508,7 @@ fun QuickAddChip(
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = type.name.lowercase().replaceFirstChar { it.uppercase() },
+            text = stringResource(type.displayRes),
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -518,6 +544,8 @@ fun buildTimelineItems(entries: List<HealthEntry>, stats: WeeklyStats?): List<Ti
     var lastYear = -1
     var lastMonth = -1
 
+    val dayGroupFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
+
     allDates.forEach { date ->
         if (date.year != lastYear) {
             items.add(TimelineItem.YearHeader(date.year))
@@ -530,8 +558,8 @@ fun buildTimelineItems(entries: List<HealthEntry>, stats: WeeklyStats?): List<Ti
         }
         
         val isToday = date == today
-        // Use full localized date format for the header
-        val fullDate = date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
+        // Use localized date format for the header
+        val fullDate = date.format(dayGroupFormatter)
         items.add(TimelineItem.DayHeader(fullDate, isToday))
         
         entriesByDate[date]?.forEach { entry ->
@@ -611,7 +639,7 @@ fun DayHeader(day: String, isToday: Boolean) {
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
                         Text(
-                            text = "TODAY",
+                            text = stringResource(R.string.today).uppercase(),
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -684,8 +712,7 @@ fun EntryItem(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Text(
-                                    text = "${entry.type.emoji} ${entry.type.name.replace("_", " ").lowercase()
-                                        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}",
+                                    text = "${entry.type.emoji} ${stringResource(entry.type.displayRes)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -733,7 +760,7 @@ fun EntryItem(
                 // If both name and location exist, we already showed one. 
                 // Show the other one here if it wasn't the one highlighted.
                 if (entry.name != null && entry.location != null) {
-                    Text(text = "Location: ${entry.location}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                    Text(text = stringResource(R.string.location_label_format, entry.location), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                 }
                 
                 entry.value?.let {
@@ -750,7 +777,7 @@ fun EntryItem(
                             else -> "${mins}min"
                         }
                         Text(
-                            text = "Duration: $durationText", 
+                            text = stringResource(R.string.duration_label) + ": $durationText", 
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp)

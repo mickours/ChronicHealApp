@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -53,7 +55,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -65,11 +70,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.presentation.util.SvgBodyParser
@@ -89,6 +96,7 @@ fun BodyScanScreen(
     onRemindersClick: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val sheetState = rememberModalBottomSheetState()
     var showBottomSheet by remember { mutableStateOf(false) }
@@ -114,23 +122,23 @@ fun BodyScanScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Body Scan") },
+                title = { Text(stringResource(R.string.body_scan_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     Box {
                         IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.menu))
                         }
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Reminders") },
+                                text = { Text(stringResource(R.string.reminders_title)) },
                                 onClick = {
                                     showMenu = false
                                     onRemindersClick()
@@ -207,16 +215,16 @@ fun BodyScanScreen(
                                 )
                                 if (existingEntryId == null) {
                                     viewModel.addEntry(entry)
-                                    viewModel.showMessage("Pain log added for $selectedRegion")
+                                    viewModel.showMessage(context.getString(R.string.pain_log_added, selectedRegion))
                                 } else {
                                     viewModel.updateEntry(entry)
-                                    viewModel.showMessage("Pain log updated for $selectedRegion")
+                                    viewModel.showMessage(context.getString(R.string.pain_log_updated, selectedRegion))
                                 }
                                 showBottomSheet = false
                             },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text(if (existingEntryId == null) "Save Pain Log" else "Update Pain Log")
+                            Text(if (existingEntryId == null) stringResource(R.string.save_pain_log) else stringResource(R.string.update_pain_log))
                         }
 
                         if (existingEntryId != null) {
@@ -224,7 +232,7 @@ fun BodyScanScreen(
                                 onClick = {
                                     uiState.entries.find { it.id == existingEntryId }?.let {
                                         viewModel.deleteEntry(it)
-                                        viewModel.showMessage("Pain log deleted for $selectedRegion")
+                                        viewModel.showMessage(context.getString(R.string.pain_log_deleted, selectedRegion))
                                     }
                                     showBottomSheet = false
                                 },
@@ -233,7 +241,7 @@ fun BodyScanScreen(
                                     contentColor = MaterialTheme.colorScheme.error
                                 )
                             ) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete Pain Log")
+                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                             }
                         }
                     }
@@ -448,7 +456,7 @@ fun BodySilhouette(
             intensity = currentHoldIntensity.toInt(),
             maxVal = 10,
             color = Color.Red,
-            label = "INT",
+            label = stringResource(R.string.intensity_short_label),
             modifier = Modifier.background(Color.White.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
         )
     }
@@ -473,6 +481,6 @@ private fun parseSvgColor(colorStr: String?): Color? {
 private fun formatId(id: String): String {
     return id.replace("-", " ")
         .replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-        .replace(" R", " (Right)")
+        .replace(" R", " (Right)") // TODO: Localize?
         .replace(" L", " (Left)")
 }

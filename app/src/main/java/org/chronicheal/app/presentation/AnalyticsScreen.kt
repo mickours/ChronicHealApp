@@ -64,7 +64,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
@@ -81,9 +83,12 @@ import com.patrykandpatrick.vico.core.entry.FloatEntry
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 import kotlin.math.ceil
 
@@ -144,8 +149,8 @@ fun AnalyticsScreen(
     LaunchedEffect(Unit) {
         viewModel.pdfExportSuccess.collectLatest { uri ->
             val result = snackbarHostState.showSnackbar(
-                message = "PDF exported successfully",
-                actionLabel = "Open",
+                message = context.getString(R.string.pdf_exported_success),
+                actionLabel = context.getString(R.string.open),
                 duration = SnackbarDuration.Long
             )
             if (result == SnackbarResult.ActionPerformed) {
@@ -155,7 +160,7 @@ fun AnalyticsScreen(
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
-                    context.startActivity(Intent.createChooser(intent, "Open PDF"))
+                    context.startActivity(Intent.createChooser(intent, context.getString(R.string.open) + " PDF"))
                 } catch (_: Exception) {
                     snackbarHostState.showSnackbar("No app found to open PDF")
                 }
@@ -168,10 +173,10 @@ fun AnalyticsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Analytics") },
+                title = { Text(stringResource(R.string.analytics_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -179,7 +184,7 @@ fun AnalyticsScreen(
                         onClick = { createPdfLauncher.launch("chronicheal_report_${startDate}.pdf") },
                         enabled = !isLoading
                     ) {
-                        Icon(Icons.Default.PictureAsPdf, contentDescription = "Export PDF")
+                        Icon(Icons.Default.PictureAsPdf, contentDescription = stringResource(R.string.export_pdf))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -214,32 +219,32 @@ fun AnalyticsScreen(
 
             // 1. Pain Evolution
             EvolutionChart(
-                title = "Pain Evolution",
+                title = stringResource(R.string.pain_evolution),
                 data = uiState.painData,
                 selectedItems = selectedPainLocations,
                 onToggleItem = viewModel::togglePainLocation,
                 palette = palette,
                 axisLabelColor = axisLabelColor,
-                emptyMessage = "No pain data for this period."
+                emptyMessage = stringResource(R.string.no_pain_data)
             )
 
             HorizontalDivider()
 
             // 2. Symptoms Evolution
             EvolutionChart(
-                title = "Symptoms Evolution",
+                title = stringResource(R.string.symptom_evolution),
                 data = uiState.symptomEvolutionData,
                 selectedItems = selectedSymptoms,
                 onToggleItem = viewModel::toggleSymptom,
                 palette = palette,
                 axisLabelColor = axisLabelColor,
-                emptyMessage = "No symptom data for this period."
+                emptyMessage = stringResource(R.string.no_symptom_data)
             )
 
             HorizontalDivider()
 
             // 3. Correlation Analysis
-            Text(text = "Correlation Analysis", style = MaterialTheme.typography.titleLarge)
+            Text(text = stringResource(R.string.correlation_analysis), style = MaterialTheme.typography.titleLarge)
             
             CorrelationSelectors(
                 type1 = type1,
@@ -336,7 +341,7 @@ fun EvolutionChart(
             )
         } else {
             Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
-                Text("Select items from the legend to display data", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.select_items_legend), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
             }
         }
 
@@ -415,13 +420,13 @@ fun CorrelationChart(
             model = model,
             startAxis = rememberStartAxis(
                 label = textComponent(color = color1),
-                title = "${type1.emoji} Scale",
+                title = stringResource(R.string.scale_label, type1.emoji),
                 titleComponent = textComponent(color = color1),
                 itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 6)
             ),
             endAxis = rememberEndAxis(
                 label = textComponent(color = color2),
-                title = "${type2.emoji} Scale",
+                title = stringResource(R.string.scale_label, type2.emoji),
                 titleComponent = textComponent(color = color2),
                 itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 6)
             ),
@@ -441,19 +446,19 @@ fun CorrelationChart(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LegendItem(color = color1, label = "${type1.emoji} ${type1.name}")
+            LegendItem(color = color1, label = "${type1.emoji} ${stringResource(type1.displayRes)}")
             Spacer(Modifier.width(16.dp))
-            LegendItem(color = color2, label = "${type2.emoji} ${type2.name}")
+            LegendItem(color = color2, label = "${type2.emoji} ${stringResource(type2.displayRes)}")
         }
 
         // Correlation Score and Insight
         correlationData.pearsonCorrelation?.let { score ->
             val (strength, color) = when {
-                score > 0.7 -> "Strong positive correlation" to Color(0xFF2E7D32)
-                score > 0.3 -> "Moderate positive correlation" to Color(0xFF4CAF50)
-                score > -0.3 -> "No clear correlation" to Color.Gray
-                score > -0.7 -> "Moderate negative correlation" to Color(0xFFFF9800)
-                else -> "Strong negative correlation" to Color(0xFFD32F2F)
+                score > 0.7 -> stringResource(R.string.strong_pos_corr) to Color(0xFF2E7D32)
+                score > 0.3 -> stringResource(R.string.mod_pos_corr) to Color(0xFF4CAF50)
+                score > -0.3 -> stringResource(R.string.no_clear_corr) to Color.Gray
+                score > -0.7 -> stringResource(R.string.mod_neg_corr) to Color(0xFFFF9800)
+                else -> stringResource(R.string.strong_neg_corr) to Color(0xFFD32F2F)
             }
 
             Box(
@@ -465,7 +470,7 @@ fun CorrelationChart(
             ) {
                 Column {
                     Text(
-                        text = "Correlation Insight",
+                        text = stringResource(R.string.correlation_insight),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = color
@@ -475,10 +480,13 @@ fun CorrelationChart(
                         style = MaterialTheme.typography.bodyMedium
                     )
                     
+                    val name1 = stringResource(type1.displayRes).lowercase()
+                    val name2 = stringResource(type2.displayRes).lowercase()
+                    
                     val insight = when {
-                        score > 0.5 -> "When ${type1.name.lowercase()} increases, ${type2.name.lowercase()} also tends to increase."
-                        score < -0.5 -> "When ${type1.name.lowercase()} increases, ${type2.name.lowercase()} tends to decrease."
-                        else -> "No strong linear relationship found between ${type1.name.lowercase()} and ${type2.name.lowercase()} for this period."
+                        score > 0.5 -> stringResource(R.string.insight_increase_increase, name1, name2)
+                        score < -0.5 -> stringResource(R.string.insight_increase_decrease, name1, name2)
+                        else -> stringResource(R.string.insight_no_relationship, name1, name2)
                     }
                     Text(
                         text = insight,
@@ -501,7 +509,6 @@ fun LegendItem(color: Color, label: String) {
                 .background(color)
         )
         Spacer(Modifier.width(4.dp))
-        @Suppress("DEPRECATION")
         Text(text = label, style = MaterialTheme.typography.labelSmall)
     }
 }
@@ -522,14 +529,14 @@ fun CorrelationSelectors(
             selectedType = type1,
             onTypeSelected = { onTypesChange(it, type2) },
             modifier = Modifier.weight(1f),
-            label = "Metric 1"
+            label = stringResource(R.string.metric_1)
         )
         Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null)
         TypeDropdown(
             selectedType = type2,
             onTypeSelected = { onTypesChange(type1, it) },
             modifier = Modifier.weight(1f),
-            label = "Metric 2"
+            label = stringResource(R.string.metric_2)
         )
     }
 }
@@ -550,7 +557,7 @@ fun TypeDropdown(
         modifier = modifier
     ) {
         OutlinedTextField(
-            value = "${selectedType.emoji} ${selectedType.name.lowercase().replaceFirstChar { it.uppercase() }.replace("_", " ")}",
+            value = "${selectedType.emoji} ${stringResource(selectedType.displayRes)}",
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -565,7 +572,7 @@ fun TypeDropdown(
         ) {
             EntryType.entries.forEach { type ->
                 DropdownMenuItem(
-                    text = { Text("${type.emoji} ${type.name.lowercase().replaceFirstChar { it.uppercase() }.replace("_", " ")}") },
+                    text = { Text("${type.emoji} ${stringResource(type.displayRes)}") },
                     onClick = {
                         onTypeSelected(type)
                         expanded = false
@@ -590,10 +597,10 @@ fun TimeRangeSelector(
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(onClick = { onMovePeriod(-1) }) {
-                Icon(Icons.Default.ChevronLeft, contentDescription = "Previous")
+                Icon(Icons.Default.ChevronLeft, contentDescription = stringResource(R.string.previous))
             }
             
-            val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy")
+            val formatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG) }
             Text(
                 text = "${startDate.format(formatter)} - ${getEndDate(startDate, timeRange).format(formatter)}",
                 style = MaterialTheme.typography.bodyMedium,
@@ -601,7 +608,7 @@ fun TimeRangeSelector(
             )
 
             IconButton(onClick = { onMovePeriod(1) }) {
-                Icon(Icons.Default.ChevronRight, contentDescription = "Next")
+                Icon(Icons.Default.ChevronRight, contentDescription = stringResource(R.string.next))
             }
         }
 
@@ -613,7 +620,7 @@ fun TimeRangeSelector(
                 FilterChip(
                     selected = timeRange == range,
                     onClick = { onRangeChange(range) },
-                    label = { Text(range.name.lowercase().replaceFirstChar { it.uppercase() }) }
+                    label = { Text(range.name.lowercase().replaceFirstChar { it.uppercase() }) } // TODO: Localize enum names
                 )
             }
         }

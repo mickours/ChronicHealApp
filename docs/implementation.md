@@ -166,3 +166,14 @@ Goal: Interactive tools and notifications.
 - **Test Implementation**: Created `DataTransferTest.kt` to verify the JSON export/import process.
 - **Verification Logic**: Simulated a full data lifecycle by exporting complex `HealthEntry` objects to JSON and then importing them back, ensuring 1:1 field parity for timestamps, types, values, units, and notes.
 - **Infrastructure**: Added `mockk` and `kotlinx-coroutines-test` dependencies to the project to support robust unit testing of use cases.
+
+## Phase 24: Voice-to-Text Integration (Completed)
+- **Speech Recognition Infrastructure**: Implemented `VoiceToTextManager` using Android's `SpeechRecognizer` to provide a robust, state-driven speech-to-text API.
+- **Voice-Enabled Components**:
+    - **`VoiceInputIcon`**: A consistent microphone toggle icon for triggering speech recognition.
+    - **`VoiceEnabledTextField`**: A reusable `OutlinedTextField` with an integrated voice input action, supporting appending spoken text to existing content.
+- **Integration across Entry Screens**:
+    - **`AutoCompleteTextField`**: Integrated voice input into the name/location search fields to reduce typing friction.
+    - **`AddDrugScreen`**: Added voice support for medication dosages and notes.
+    - **`AddPainScreen` / `PainEntryForm`**: Enabled hands-free logging for pain descriptions and notes.
+- **Permission Management**: Implemented runtime permission handling for `RECORD_AUDIO` with clear user feedback via snackbars.

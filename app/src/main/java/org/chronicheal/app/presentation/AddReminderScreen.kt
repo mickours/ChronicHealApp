@@ -43,14 +43,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.Reminder
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -65,7 +69,8 @@ fun AddReminderScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    var title by remember { mutableStateOf(if (initialType == EntryType.PAIN) "Body Scan" else "") }
+    val bodyScanTitle = stringResource(R.string.body_scan_title)
+    var title by remember { mutableStateOf(if (initialType == EntryType.PAIN) bodyScanTitle else "") }
     var selectedTime by remember { mutableStateOf(LocalTime.now()) }
     var selectedDays by remember { mutableStateOf(setOf(1, 2, 3, 4, 5, 6, 7)) }
     var selectedType by remember { mutableStateOf<EntryType?>(initialType) }
@@ -89,10 +94,11 @@ fun AddReminderScreen(
         initialMinute = selectedTime.minute
     )
 
+    val defaultReminderTitle = stringResource(R.string.app_name) // Fallback
     val saveReminderAction = {
         val reminder = Reminder(
             id = id ?: 0,
-            title = title.ifBlank { "Health Reminder" },
+            title = title.ifBlank { defaultReminderTitle },
             time = selectedTime,
             daysOfWeek = selectedDays,
             entryType = selectedType,
@@ -113,7 +119,7 @@ fun AddReminderScreen(
             saveReminderAction()
         } else {
             scope.launch {
-                snackbarHostState.showSnackbar("Notification permission is required for reminders.")
+                snackbarHostState.showSnackbar(context.getString(R.string.notification_permission_required))
             }
         }
     }
@@ -123,10 +129,10 @@ fun AddReminderScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(if (id == null) "Add Reminder" else "Edit Reminder") },
+                title = { Text(if (id == null) stringResource(R.string.add_reminder) else stringResource(R.string.edit_appointment)) }, // Use generic edit?
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
@@ -143,7 +149,7 @@ fun AddReminderScreen(
                         },
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        Text("Save")
+                        Text(stringResource(R.string.save))
                     }
                 }
             )
@@ -160,12 +166,13 @@ fun AddReminderScreen(
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
-                label = { Text("Title (e.g., Take Medication)") },
+                label = { Text(stringResource(R.string.name_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Text("Time", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.time_label), style = MaterialTheme.typography.titleMedium)
             
+            val timeFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
             Button(
                 onClick = { showTimePicker = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -175,18 +182,26 @@ fun AddReminderScreen(
                 )
             ) {
                 Text(
-                    text = selectedTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                    text = selectedTime.format(timeFormatter),
                     style = MaterialTheme.typography.headlineMedium
                 )
             }
 
-            Text("Days of Week", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.reminders_title), style = MaterialTheme.typography.titleMedium)
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                val dayLabels = listOf("M", "T", "W", "T", "F", "S", "S")
+                val dayLabels = listOf(
+                    stringResource(R.string.day_mon).take(1),
+                    stringResource(R.string.day_tue).take(1),
+                    stringResource(R.string.day_wed).take(1),
+                    stringResource(R.string.day_thu).take(1),
+                    stringResource(R.string.day_fri).take(1),
+                    stringResource(R.string.day_sat).take(1),
+                    stringResource(R.string.day_sun).take(1)
+                )
                 for (i in 1..7) {
                     val isSelected = selectedDays.contains(i)
                     FilterChip(
@@ -203,7 +218,7 @@ fun AddReminderScreen(
                 }
             }
 
-            Text("Related Category (Optional)", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.track_selection_title), style = MaterialTheme.typography.titleMedium)
             
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -215,7 +230,7 @@ fun AddReminderScreen(
                         onClick = {
                             selectedType = if (selectedType == type) null else type
                         },
-                        label = { Text(type.name.lowercase().replaceFirstChar { it.uppercase() }.replace("_", " ")) }
+                        label = { Text(stringResource(type.displayRes)) }
                     )
                 }
             }
@@ -229,12 +244,12 @@ fun AddReminderScreen(
                         selectedTime = LocalTime.of(timeState.hour, timeState.minute)
                         showTimePicker = false
                     }) {
-                        Text("OK")
+                        Text(stringResource(R.string.ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showTimePicker = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             ) {

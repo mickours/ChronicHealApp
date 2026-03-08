@@ -13,8 +13,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.Reminder
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -32,17 +34,17 @@ fun RemindersScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Manage Reminders") },
+                title = { Text(stringResource(R.string.reminders_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddReminderClick) {
-                Icon(Icons.Default.Add, contentDescription = "Add Reminder")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_reminder))
             }
         }
     ) { innerPadding ->
@@ -53,7 +55,7 @@ fun RemindersScreen(
                     .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
-                Text("No reminders set")
+                Text(stringResource(R.string.no_reminders))
             }
         } else {
             LazyColumn(
@@ -83,7 +85,7 @@ fun ReminderItem(
     onDelete: () -> Unit,
     onClick: () -> Unit
 ) {
-    val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
     
     Card(
         modifier = Modifier
@@ -105,8 +107,7 @@ fun ReminderItem(
                             onClick = { },
                             label = { 
                                 Text(
-                                    text = reminder.entryType.name.lowercase()
-                                        .replaceFirstChar { it.titlecase(Locale.getDefault()) },
+                                    text = stringResource(reminder.entryType.displayRes),
                                     style = MaterialTheme.typography.labelSmall
                                 ) 
                             },
@@ -136,16 +137,25 @@ fun ReminderItem(
             )
             
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete")
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
             }
         }
     }
 }
 
+@Composable
 private fun getDaysOfWeekString(days: Set<Int>): String {
-    if (days.size == 7) return "Every day"
-    if (days.isEmpty()) return "Never"
+    if (days.size == 7) return stringResource(R.string.every_day)
+    if (days.isEmpty()) return stringResource(R.string.never)
     
-    val dayNames = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+    val dayNames = listOf(
+        stringResource(R.string.day_mon),
+        stringResource(R.string.day_tue),
+        stringResource(R.string.day_wed),
+        stringResource(R.string.day_thu),
+        stringResource(R.string.day_fri),
+        stringResource(R.string.day_sat),
+        stringResource(R.string.day_sun)
+    )
     return days.sorted().joinToString(", ") { dayNames[it - 1] }
 }

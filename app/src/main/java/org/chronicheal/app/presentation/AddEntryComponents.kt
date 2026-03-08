@@ -1,6 +1,10 @@
 package org.chronicheal.app.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
@@ -12,6 +16,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -20,9 +26,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.presentation.util.VoiceToTextManager
 import org.chronicheal.app.ui.theme.HeaderBlue
 import org.chronicheal.app.ui.theme.PrimaryContainerLight
 import org.chronicheal.app.ui.theme.OnPrimaryContainerLight
@@ -31,6 +42,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -67,20 +79,20 @@ fun AddEntryScaffold(
                 title = { Text(title) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     if (existingEntry != null) {
                         IconButton(onClick = { showDeleteConfirmation = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                         }
                     }
                     Button(
                         onClick = handleSave,
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        Text("Save")
+                        Text(stringResource(R.string.save))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -105,8 +117,8 @@ fun AddEntryScaffold(
         if (showDeleteConfirmation) {
             AlertDialog(
                 onDismissRequest = { showDeleteConfirmation = false },
-                title = { Text("Delete Entry") },
-                text = { Text("Are you sure you want to delete this log?") },
+                title = { Text(stringResource(R.string.delete) + " Entry") }, // Combined for now, can be improved
+                text = { Text("Are you sure you want to delete this log?") }, // TODO: String resource
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -114,12 +126,12 @@ fun AddEntryScaffold(
                             showDeleteConfirmation = false
                         }
                     ) {
-                        Text("Delete", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDeleteConfirmation = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -147,6 +159,10 @@ fun EntryDateTimePicker(
         initialSelectedDateMillis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     )
 
+    // Locale-aware formatters
+    val dateFormatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
+    val timeFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -165,9 +181,9 @@ fun EntryDateTimePicker(
                     Icon(Icons.Default.CalendarToday, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Column {
-                        Text("Date", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.date_label), style = MaterialTheme.typography.labelSmall)
                         Text(
-                            text = date.format(DateTimeFormatter.ofPattern("MMM dd, yyyy")),
+                            text = date.format(dateFormatter),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -186,9 +202,9 @@ fun EntryDateTimePicker(
                     Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Column {
-                        Text("Start Time", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.start_time_label), style = MaterialTheme.typography.labelSmall)
                         Text(
-                            text = startTime.format(DateTimeFormatter.ofPattern("HH:mm")),
+                            text = startTime.format(timeFormatter),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -204,12 +220,12 @@ fun EntryDateTimePicker(
                         onStartTimeChange(LocalTime.of(startTimeState.hour, startTimeState.minute))
                         showStartTimePicker = false
                     }) {
-                        Text("OK")
+                        Text(stringResource(R.string.ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showStartTimePicker = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             ) {
@@ -227,12 +243,12 @@ fun EntryDateTimePicker(
                         }
                         showDatePicker = false
                     }) {
-                        Text("OK")
+                        Text(stringResource(R.string.ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showDatePicker = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             ) {
@@ -258,6 +274,36 @@ fun TimePickerDialog(
     )
 }
 
+@Composable
+fun VoiceInputIcon(
+    onResult: (String) -> Unit,
+    isSpeaking: Boolean,
+    onToggleListening: () -> Unit
+) {
+    IconButton(onClick = onToggleListening) {
+        Icon(
+            imageVector = if (isSpeaking) Icons.Default.MicOff else Icons.Default.Mic,
+            contentDescription = "Voice Input", // TODO: String resource
+            tint = if (isSpeaking) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
+fun rememberVoiceToTextManager(onResult: (String) -> Unit): Pair<VoiceToTextManager, State<org.chronicheal.app.presentation.util.VoiceToTextState>> {
+    val context = LocalContext.current
+    val manager = remember { VoiceToTextManager(context) }
+    val state = manager.state.collectAsState()
+    
+    LaunchedEffect(state.value.spokenText) {
+        if (state.value.spokenText.isNotEmpty()) {
+            onResult(state.value.spokenText)
+        }
+    }
+    
+    return manager to state
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutoCompleteTextField(
@@ -267,6 +313,19 @@ fun AutoCompleteTextField(
     label: String,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val (voiceManager, voiceState) = rememberVoiceToTextManager { spokenText ->
+        onValueChange(spokenText)
+    }
+    
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            voiceManager.startListening()
+        }
+    }
+
     val filteredSuggestions = remember(value, suggestions) {
         if (value.isBlank()) {
             suggestions.take(5)
@@ -283,7 +342,23 @@ fun AutoCompleteTextField(
             onValueChange = onValueChange,
             label = { Text(label) },
             modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            singleLine = true,
+            trailingIcon = {
+                VoiceInputIcon(
+                    onResult = onValueChange,
+                    isSpeaking = voiceState.value.isSpeaking,
+                    onToggleListening = {
+                        if (voiceState.value.isSpeaking) {
+                            voiceManager.stopListening()
+                        } else {
+                            when (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)) {
+                                PackageManager.PERMISSION_GRANTED -> voiceManager.startListening()
+                                else -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                            }
+                        }
+                    }
+                )
+            }
         )
 
         if (filteredSuggestions.isNotEmpty()) {
@@ -312,6 +387,56 @@ fun AutoCompleteTextField(
             }
         }
     }
+}
+
+@Composable
+fun VoiceEnabledTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    minLines: Int = 1
+) {
+    val context = LocalContext.current
+    val (voiceManager, voiceState) = rememberVoiceToTextManager { spokenText ->
+        val newValue = if (value.isEmpty()) spokenText else "$value $spokenText"
+        onValueChange(newValue)
+    }
+    
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            voiceManager.startListening()
+        }
+    }
+
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = modifier.fillMaxWidth(),
+        minLines = minLines,
+        trailingIcon = {
+            VoiceInputIcon(
+                onResult = { spokenText ->
+                    val newValue = if (value.isEmpty()) spokenText else "$value $spokenText"
+                    onValueChange(newValue)
+                },
+                isSpeaking = voiceState.value.isSpeaking,
+                onToggleListening = {
+                    if (voiceState.value.isSpeaking) {
+                        voiceManager.stopListening()
+                    } else {
+                        when (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)) {
+                            PackageManager.PERMISSION_GRANTED -> voiceManager.startListening()
+                            else -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    }
+                }
+            )
+        }
+    )
 }
 
 @Composable
@@ -404,7 +529,7 @@ fun PainEntryForm(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Intensity: ${intensity.roundToInt()}/10",
+            text = stringResource(R.string.intensity_label, intensity.roundToInt()),
             style = MaterialTheme.typography.titleMedium
         )
         Slider(
@@ -420,16 +545,15 @@ fun PainEntryForm(
             value = location,
             onValueChange = onLocationChange,
             suggestions = locationSuggestions,
-            label = "Location (e.g. Back, Knee)"
+            label = stringResource(R.string.location_label)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        VoiceEnabledTextField(
             value = note,
             onValueChange = onNoteChange,
-            label = { Text("Notes") },
-            modifier = Modifier.fillMaxWidth(),
+            label = stringResource(R.string.notes_label),
             minLines = 3
         )
     }

@@ -12,7 +12,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -69,19 +68,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.ui.theme.HeaderBlue
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.format.TextStyle
+import java.time.temporal.WeekFields
 import java.util.Locale
 import kotlin.math.min
 
@@ -148,10 +152,10 @@ fun CalendarScreen(
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text("Calendar") },
+                    title = { Text(stringResource(R.string.calendar_title)) },
                     navigationIcon = {
                         IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                         }
                     },
                     actions = {
@@ -176,10 +180,10 @@ fun CalendarScreen(
                         ) {
                             Icon(Icons.Default.Today, contentDescription = null)
                             Spacer(Modifier.width(4.dp))
-                            Text("Today")
+                            Text(stringResource(R.string.today))
                         }
                         IconButton(onClick = onManageRemindersClick) {
-                            Icon(Icons.Default.Notifications, contentDescription = "Manage Reminders")
+                            Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.reminders_title))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -204,7 +208,7 @@ fun CalendarScreen(
                             value = uiState.searchQuery,
                             onValueChange = viewModel::setSearchQuery,
                             modifier = Modifier.fillMaxWidth(),
-                            placeholder = { Text("Search by name, location or note...") },
+                            placeholder = { Text(stringResource(R.string.search_placeholder)) },
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                             trailingIcon = {
                                 if (uiState.searchQuery.isNotEmpty()) {
@@ -240,7 +244,7 @@ fun CalendarScreen(
                                 FilterChip(
                                     selected = isSelected,
                                     onClick = { viewModel.toggleTypeFilter(type) },
-                                    label = { Text("${type.emoji} ${type.name.lowercase().replaceFirstChar { it.uppercase() }}") },
+                                    label = { Text("${type.emoji} ${stringResource(type.displayRes)}") },
                                     leadingIcon = if (isSelected) {
                                         { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
                                     } else null,
@@ -326,17 +330,26 @@ fun CalendarScreen(
                                         "${startDate!!.format(DateTimeFormatter.ofPattern("MMM dd"))} - ${endDate!!.format(DateTimeFormatter.ofPattern("MMM dd"))}"
                                     }
                                     startDate != null -> {
-                                        startDate!!.format(DateTimeFormatter.ofPattern("EEEE, MMM dd"))
+                                        startDate!!.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL))
                                     }
-                                    else -> "Select a date"
+                                    else -> ""
                                 }
                             }
                             Column {
-                                Text(
-                                    text = rangeText,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                if (rangeText.isEmpty()) {
+                                    Text(
+                                        text = stringResource(R.string.select_date),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Text(
+                                        text = rangeText,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                
                                 if (startDate != null && endDate != null) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Checkbox(
@@ -345,13 +358,13 @@ fun CalendarScreen(
                                             modifier = Modifier.size(24.dp)
                                         )
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Show Individual Entries", style = MaterialTheme.typography.labelMedium)
+                                        Text(stringResource(R.string.show_individual_entries), style = MaterialTheme.typography.labelMedium)
                                     }
                                 }
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "${selectedRangeEntries.size} entries",
+                                    text = stringResource(R.string.entries_count, selectedRangeEntries.size),
                                     style = MaterialTheme.typography.bodySmall,
                                     modifier = Modifier.padding(end = 8.dp)
                                 )
@@ -376,7 +389,7 @@ fun CalendarScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                "No entries for this period",
+                                stringResource(R.string.no_entries_period),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -430,12 +443,12 @@ fun AggregatedEntryItem(entry: AggregatedEntry) {
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = entry.mainValue ?: entry.type.name.lowercase().replaceFirstChar { it.uppercase() },
+                    text = entry.mainValue ?: stringResource(entry.type.displayRes),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Occurred ${entry.count} times",
+                    text = stringResource(R.string.occurred_count, entry.count),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -448,7 +461,7 @@ fun AggregatedEntryItem(entry: AggregatedEntry) {
                         else -> "${mins}min"
                     }
                     Text(
-                        text = "Total duration: $durationText",
+                        text = stringResource(R.string.total_duration, durationText),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -460,7 +473,7 @@ fun AggregatedEntryItem(entry: AggregatedEntry) {
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "Avg: ${String.format(Locale.getDefault(),"%.1f", entry.averageIntensity)}/10",
+                        text = stringResource(R.string.average_label, String.format(Locale.getDefault(),"%.1f", entry.averageIntensity)),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
@@ -477,8 +490,8 @@ fun DayEntryItem(
     entry: HealthEntry,
     onClick: () -> Unit
 ) {
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM dd") }
+    val timeFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
+    val dateFormatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
     val dateTime = entry.timestamp.atZone(ZoneId.systemDefault())
 
     Card(
@@ -504,12 +517,12 @@ fun DayEntryItem(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = entry.name ?: entry.type.name.lowercase().replaceFirstChar { it.uppercase() },
+                    text = entry.name ?: stringResource(entry.type.displayRes),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "${dateTime.toLocalDate().format(dateFormatter)} at ${dateTime.toLocalTime().format(timeFormatter)}",
+                    text = "${dateTime.toLocalDate().format(dateFormatter)} ${stringResource(R.string.at_time, dateTime.toLocalTime().format(timeFormatter))}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -575,10 +588,19 @@ fun CalendarGrid(
     endDate: LocalDate?,
     onDateClick: (LocalDate) -> Unit
 ) {
+    val locale = Locale.getDefault()
+    val weekFields = remember(locale) { WeekFields.of(locale) }
+    val firstDayOfWeek = weekFields.firstDayOfWeek
+    
     val daysInMonth = currentMonth.lengthOfMonth()
-    val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek.value % 7 
+    
+    // Calculate skip days to reach the first day of the month starting from the locale's first day of week
+    val firstOfMonth = currentMonth.atDay(1)
+    val firstOfMonthDayOfWeek = firstOfMonth.dayOfWeek
+    val diff = firstOfMonthDayOfWeek.value - firstDayOfWeek.value
+    val emptyDaysBefore = if (diff >= 0) diff else diff + 7
+    
     val days = (1..daysInMonth).toList()
-    val emptyDaysBefore = (0 until firstDayOfMonth).toList()
     val today = LocalDate.now()
 
     val entriesByDate = remember(entries) {
@@ -587,9 +609,15 @@ fun CalendarGrid(
         }
     }
 
+    // Localized day names starting from the locale's first day of week
+    val dayNames = remember(firstDayOfWeek) {
+        (0..6).map { i ->
+            firstDayOfWeek.plus(i.toLong()).getDisplayName(TextStyle.SHORT, locale)
+        }
+    }
+
     Column(modifier = Modifier.padding(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth()) {
-            val dayNames = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
             dayNames.forEach { day ->
                 Text(
                     text = day,
@@ -601,16 +629,16 @@ fun CalendarGrid(
             }
         }
 
-        val rows = (days.size + emptyDaysBefore.size + 6) / 7
+        val rows = (days.size + emptyDaysBefore + 6) / 7
         for (row in 0 until rows) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 for (col in 0 until 7) {
                     val index = row * 7 + col
                     Box(modifier = Modifier.weight(1f)) {
-                        if (index < emptyDaysBefore.size) {
+                        if (index < emptyDaysBefore) {
                             Box(modifier = Modifier.aspectRatio(1f))
                         } else {
-                            val dayIndex = index - emptyDaysBefore.size
+                            val dayIndex = index - emptyDaysBefore
                             if (dayIndex < days.size) {
                                 val day = days[dayIndex]
                                 val date = currentMonth.atDay(day)

@@ -32,8 +32,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.Duration
@@ -120,7 +122,7 @@ fun AddSleepScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null) "Log Sleep" else "Edit Sleep",
+        title = if (id == null) stringResource(R.string.log_sleep) else stringResource(R.string.edit_sleep),
         existingEntry = existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
@@ -137,7 +139,7 @@ fun AddSleepScreen(
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            Text("Bedtime:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+            Text(stringResource(R.string.bedtime_label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
@@ -147,7 +149,7 @@ fun AddSleepScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Wake up time:", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+            Text(stringResource(R.string.wakeup_time_label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
             EntryDateTimePicker(
                 date = endDate,
                 onDateChange = { endDate = it },
@@ -160,7 +162,7 @@ fun AddSleepScreen(
             OutlinedTextField(
                 value = durationText,
                 onValueChange = { },
-                label = { Text("Computed Duration") },
+                label = { Text(stringResource(R.string.computed_duration_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
                 leadingIcon = { Icon(Icons.Default.Timer, contentDescription = null) },
@@ -173,7 +175,7 @@ fun AddSleepScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Quality: ${quality.roundToInt()}/5",
+                text = stringResource(R.string.quality_label, quality.roundToInt()),
                 style = MaterialTheme.typography.titleMedium
             )
             Slider(
@@ -185,11 +187,10 @@ fun AddSleepScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Notes") },
-                modifier = Modifier.fillMaxWidth(),
+                label = stringResource(R.string.notes_label),
                 minLines = 3
             )
 
@@ -204,17 +205,18 @@ fun AddSleepScreen(
                     onCheckedChange = { setReminder = it }
                 )
                 Text(
-                    text = if (existingEntry?.hasReminder == true) "Update daily reminder" else "Set daily sleep reminder",
+                    text = if (existingEntry?.hasReminder == true) stringResource(R.string.update_daily_reminder) else stringResource(R.string.set_daily_reminder),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
 
             if (setReminder) {
+                val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
                 OutlinedButton(
                     onClick = { showTimePicker = true },
                     modifier = Modifier.padding(start = 32.dp)
                 ) {
-                    Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+                    Text(stringResource(R.string.time_label) + ": ${reminderTime.format(timeFormatter)}")
                 }
             }
         }
@@ -231,12 +233,12 @@ fun AddSleepScreen(
                         reminderTime = LocalTime.of(timeState.hour, timeState.minute)
                         showTimePicker = false
                     }) {
-                        Text("OK")
+                        Text(stringResource(R.string.ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showTimePicker = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             ) {

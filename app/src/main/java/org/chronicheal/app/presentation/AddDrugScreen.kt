@@ -16,7 +16,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -34,10 +33,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.launch
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
@@ -80,17 +81,15 @@ fun AddDrugScreen(
             setReminder = true
         } else {
             scope.launch {
-                snackbarHostState.showSnackbar("Notification permission is required for reminders.")
+                snackbarHostState.showSnackbar(context.getString(R.string.notification_permission_required))
             }
         }
     }
 
     LaunchedEffect(id) {
         if (id != null && existingEntry == null) {
-            // Check if ID is for an existing entry or a reminder template
             var entry = viewModel.getEntryById(id)
             if (entry == null) {
-                // Try fetching by reminder ID (template for Log Now)
                 entry = viewModel.getEntryByReminderId(id)
                 if (entry != null) {
                     isNewFromTemplate = true
@@ -102,7 +101,6 @@ fun AddDrugScreen(
                 name = entry.name ?: ""
                 dosage = entry.unit ?: ""
                 note = entry.note
-                // If it's a template, keep current time. If it's an edit, keep original time.
                 if (!isNewFromTemplate) {
                     logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                     startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
@@ -137,9 +135,9 @@ fun AddDrugScreen(
         if (setReminder) {
             val reminder = Reminder(
                 id = existingEntry?.reminderId ?: 0,
-                title = "Medication: ${entry.name}",
+                title = context.getString(R.string.type_drug) + ": ${entry.name}",
                 time = reminderTime,
-                daysOfWeek = setOf(1, 2, 3, 4, 5, 6, 7), // Every day
+                daysOfWeek = setOf(1, 2, 3, 4, 5, 6, 7),
                 isEnabled = true,
                 entryType = EntryType.DRUG
             )
@@ -155,7 +153,7 @@ fun AddDrugScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null || isNewFromTemplate) "Log Medication" else "Edit Medication",
+        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_drug) else stringResource(R.string.edit_drug),
         existingEntry = if (isNewFromTemplate) null else existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
@@ -186,25 +184,23 @@ fun AddDrugScreen(
                 value = name,
                 onValueChange = { name = it },
                 suggestions = nameSuggestions,
-                label = "Drug Name"
+                label = stringResource(R.string.name_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = dosage,
                 onValueChange = { dosage = it },
-                label = { Text("Dosage (e.g. 500mg)") },
-                modifier = Modifier.fillMaxWidth()
+                label = stringResource(R.string.dosage_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Notes") },
-                modifier = Modifier.fillMaxWidth(),
+                label = stringResource(R.string.notes_label),
                 minLines = 3
             )
 
@@ -232,17 +228,18 @@ fun AddDrugScreen(
                     }
                 )
                 Text(
-                    text = if (existingEntry?.hasReminder == true) "Update daily reminder" else "Set daily reminder for this drug",
+                    text = if (existingEntry?.hasReminder == true) stringResource(R.string.update_daily_reminder) else stringResource(R.string.set_daily_reminder),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
 
             if (setReminder) {
+                val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") } // Can be localized
                 OutlinedButton(
                     onClick = { showTimePicker = true },
                     modifier = Modifier.padding(start = 32.dp)
                 ) {
-                    Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+                    Text(stringResource(R.string.time_label) + ": ${reminderTime.format(timeFormatter)}")
                 }
             }
         }
@@ -261,12 +258,12 @@ fun AddDrugScreen(
                         reminderTime = LocalTime.of(timeState.hour, timeState.minute)
                         showTimePicker = false
                     }) {
-                        Text("OK")
+                        Text(stringResource(R.string.ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showTimePicker = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             ) {
