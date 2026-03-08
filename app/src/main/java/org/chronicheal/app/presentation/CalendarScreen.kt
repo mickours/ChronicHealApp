@@ -87,7 +87,7 @@ import kotlin.math.min
 
 data class AggregatedEntry(
     val type: EntryType,
-    val name: String?,
+    val mainValue: String?,
     val count: Int,
     val totalDurationMinutes: Int?,
     val averageIntensity: Float?,
@@ -108,7 +108,7 @@ fun CalendarScreen(
     var endDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
     var isExpanded by rememberSaveable { mutableStateOf(true) }
     var isSearchVisible by rememberSaveable { mutableStateOf(false) }
-    var showAggregated by rememberSaveable { mutableStateOf(false) }
+    var showIndividualEntries by rememberSaveable { mutableStateOf(false) }
     
     val selectedRangeEntries = remember(startDate, endDate, uiState.entries) {
         if (startDate == null) emptyList()
@@ -126,12 +126,15 @@ fun CalendarScreen(
     }
 
     val aggregatedEntries = remember(selectedRangeEntries) {
-        selectedRangeEntries.groupBy { "${it.type.name}_${it.name ?: ""}" }
+        selectedRangeEntries.groupBy { 
+            val mainVal = it.name ?: it.location ?: ""
+            "${it.type.name}_$mainVal" 
+        }
             .map { (_, group) ->
                 val first = group.first()
                 AggregatedEntry(
                     type = first.type,
-                    name = first.name,
+                    mainValue = first.name ?: first.location,
                     count = group.size,
                     totalDurationMinutes = group.sumOf { it.durationMinutes ?: 0 }.takeIf { it > 0 },
                     averageIntensity = group.mapNotNull { it.intensity }.takeIf { it.isNotEmpty() }?.average()?.toFloat(),
@@ -281,7 +284,7 @@ fun CalendarScreen(
                     startDate = startDate,
                     endDate = endDate,
                     onDateClick = { date ->
-                        if (startDate == null || (startDate != null && endDate != null)) {
+                        if (startDate == null || endDate != null) {
                             startDate = date
                             endDate = null
                         } else if (date.isBefore(startDate)) {
@@ -337,12 +340,12 @@ fun CalendarScreen(
                                 if (startDate != null && endDate != null) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Checkbox(
-                                            checked = showAggregated,
-                                            onCheckedChange = { checked -> showAggregated = checked },
+                                            checked = showIndividualEntries,
+                                            onCheckedChange = { checked -> showIndividualEntries = checked },
                                             modifier = Modifier.size(24.dp)
                                         )
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Show Aggregated View", style = MaterialTheme.typography.labelMedium)
+                                        Text("Show Individual Entries", style = MaterialTheme.typography.labelMedium)
                                     }
                                 }
                             }
@@ -379,7 +382,7 @@ fun CalendarScreen(
                             )
                         }
                     }
-                } else if (showAggregated && startDate != null && endDate != null) {
+                } else if (!showIndividualEntries && startDate != null && endDate != null) {
                     items(aggregatedEntries) { entry ->
                         Box(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
                             AggregatedEntryItem(entry = entry)
@@ -427,7 +430,7 @@ fun AggregatedEntryItem(entry: AggregatedEntry) {
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = entry.name ?: entry.type.name.lowercase().replaceFirstChar { it.uppercase() },
+                    text = entry.mainValue ?: entry.type.name.lowercase().replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -457,7 +460,7 @@ fun AggregatedEntryItem(entry: AggregatedEntry) {
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "Avg: ${String.format("%.1f", entry.averageIntensity)}/10",
+                        text = "Avg: ${String.format(Locale.getDefault(),"%.1f", entry.averageIntensity)}/10",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
