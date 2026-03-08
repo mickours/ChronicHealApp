@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -41,8 +42,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -123,7 +126,7 @@ fun AnalyticsScreen(
         uri?.let {
             scope.launch {
                 context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                    viewModel.exportPdf(outputStream)
+                    viewModel.onPdfExportRequested(outputStream, it)
                 }
             }
         }
@@ -132,6 +135,28 @@ fun AnalyticsScreen(
     LaunchedEffect(Unit) {
         viewModel.message.collectLatest {
             snackbarHostState.showSnackbar(it)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.pdfExportSuccess.collectLatest { uri ->
+            val result = snackbarHostState.showSnackbar(
+                message = "PDF exported successfully",
+                actionLabel = "Open",
+                duration = SnackbarDuration.Long
+            )
+            if (result == SnackbarResult.ActionPerformed) {
+                try {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, "application/pdf")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Open PDF"))
+                } catch (e: Exception) {
+                    snackbarHostState.showSnackbar("No app found to open PDF")
+                }
+            }
         }
     }
 
@@ -249,11 +274,23 @@ fun EvolutionChart(
         
         if (visibleKeys.isNotEmpty()) {
             val labels = data.values.first().keys.toList()
-            val model = remember(data, visibleKeys) {
-                val series = visibleKeys.map { key ->
-                    data[key]!!.values.mapIndexed { index, value -> FloatEntry(index.toFloat(), value.toFloat()) }
+            
+            // Manually calculate stacked series
+            val stackedSeries = remember(data, visibleKeys) {
+                val result = mutableListOf<List<FloatEntry>>()
+                visibleKeys.forEachIndexed { i, key ->
+                    val currentRaw = data[key]!!.values.toList()
+                    val currentStacked = currentRaw.mapIndexed { j, value ->
+                        val previousValue = if (i > 0) result[i - 1][j].y else 0f
+                        FloatEntry(j.toFloat(), previousValue + value.toFloat())
+                    }
+                    result.add(currentStacked)
                 }
-                entryModelOf(*series.toTypedArray())
+                result
+            }
+
+            val model = remember(stackedSeries) {
+                entryModelOf(*stackedSeries.reversed().toTypedArray())
             }
 
             val bottomAxisFormatter = remember(labels) {
@@ -262,23 +299,28 @@ fun EvolutionChart(
                 }
             }
 
-            val maxValue = remember(data, visibleKeys) {
-                visibleKeys.maxOf { key -> data[key]!!.values.maxOfOrNull { it } ?: 0 }.toFloat().coerceAtLeast(1f)
+            val maxTotalValue = remember(stackedSeries) {
+                (stackedSeries.lastOrNull()?.maxOfOrNull { it.y } ?: 10f).coerceAtLeast(1f)
             }
 
             Chart(
                 chart = lineChart(
-                    lines = visibleKeys.map { key ->
-                        val index = allKeys.indexOf(key)
-                        val color = palette[index % palette.size]
-                        LineChart.LineSpec(lineColor = color.toArgb())
-                    }
+                    lines = visibleKeys.mapIndexed { i, key ->
+                        val originalIndex = allKeys.indexOf(key)
+                        val color = palette[originalIndex % palette.size]
+                        LineChart.LineSpec(
+                            lineColor = color.toArgb(),
+                            lineBackgroundShader = com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient(
+                                arrayOf(color.copy(alpha = 0.8f), color.copy(alpha = 0.8f))
+                            )
+                        )
+                    }.reversed()
                 ),
                 model = model,
                 startAxis = rememberStartAxis(
                     label = textComponent(color = axisLabelColor),
                     itemPlacer = AxisItemPlacer.Vertical.default(
-                        maxItemCount = (ceil(maxValue.toDouble()).toInt() + 1).coerceAtMost(11)
+                        maxItemCount = (ceil(maxTotalValue.toDouble()).toInt() + 1).coerceAtMost(30)
                     )
                 ),
                 bottomAxis = rememberBottomAxis(

@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,6 +43,9 @@ class AnalyticsViewModel @Inject constructor(
 
     private val _message = MutableSharedFlow<String>()
     val message = _message.asSharedFlow()
+
+    private val _pdfExportSuccess = MutableSharedFlow<Uri>()
+    val pdfExportSuccess = _pdfExportSuccess.asSharedFlow()
 
     private val _correlationType1 = MutableStateFlow(EntryType.PAIN)
     val correlationType1 = _correlationType1.asStateFlow()
@@ -117,21 +121,23 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 
-    suspend fun exportPdf(outputStream: OutputStream) {
-        _isLoading.value = true
-        try {
-            val start = _startDate.value
-            val end = when (_timeRange.value) {
-                TimeRange.WEEK -> start.plusDays(6)
-                TimeRange.MONTH -> start.plusMonths(1).minusDays(1)
-                TimeRange.YEAR -> start.plusYears(1).minusDays(1)
+    fun onPdfExportRequested(outputStream: OutputStream, uri: Uri) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val start = _startDate.value
+                val end = when (_timeRange.value) {
+                    TimeRange.WEEK -> start.plusDays(6)
+                    TimeRange.MONTH -> start.plusMonths(1).minusDays(1)
+                    TimeRange.YEAR -> start.plusYears(1).minusDays(1)
+                }
+                exportPdfUseCase(outputStream, start, end)
+                _pdfExportSuccess.emit(uri)
+            } catch (e: Exception) {
+                _message.emit("Failed to export PDF: ${e.message}")
+            } finally {
+                _isLoading.value = false
             }
-            exportPdfUseCase(outputStream, start, end)
-            _message.emit("PDF exported successfully")
-        } catch (e: Exception) {
-            _message.emit("Failed to export PDF: ${e.message}")
-        } finally {
-            _isLoading.value = false
         }
     }
 
