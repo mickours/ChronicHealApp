@@ -4,7 +4,7 @@
     android:viewportWidth="512"
     android:viewportHeight="512">
 
-    <!-- Group for headneck layer with its transform -->
+    <!-- Group for layer1 (headneck) with its transform -->
     <group
         android:scaleX="2.3069968"
         android:scaleY="2.3069968"
@@ -30,18 +30,18 @@
                 android:fillColor="#ffffff"
                 android:strokeColor="#ffb77c"
                 android:strokeWidth="1"
-                android:pathData="M 70.709085,16.968723 a 15.830748,23.031557 0 1,0 31.661496,0 a 15.830748,23.031557 0 1,0 -31.661496,0 Z" />
+                android:pathData="M 86.539833,16.968723 m -15.830748,0 a 15.830748,23.031557 0 1,0 31.661496,0 a 15.830748,23.031557 0 1,0 -31.661496,0" />
 
             <!-- Forehead -->
             <path
-                android:fillColor="#00000000"
+                android:fillColor="#ffffff"
                 android:strokeColor="#ffb77c"
                 android:strokeWidth="1"
                 android:pathData="m 70.892411,20.248353 c 11.278064,-2.685242 21.085152,-2.68936 31.384239,-0.01228" />
 
             <!-- Head center line -->
             <path
-                android:fillColor="#00000000"
+                android:fillColor="#ffffff"
                 android:strokeColor="#ffb77c"
                 android:strokeWidth="1"
                 android:pathData="M 86.777946,-6.3641591 V 39.875914" />
@@ -68,11 +68,15 @@
                 <!-- Eye Left -->
                 <path
                     android:fillColor="#ffb77c"
+                    android:strokeColor="#ffb77c"
+                    android:strokeWidth="1"
                     android:pathData="m 75.77842,19.224606 c -0.03915,-2.548484 1.584432,-4.7389 3.345496,-4.742985 2.317819,-0.102089 3.563009,1.556415 4.2593,4.120143 z" />
                 
                 <!-- Eye Right -->
                 <path
                     android:fillColor="#ffb77c"
+                    android:strokeColor="#ffb77c"
+                    android:strokeWidth="1"
                     android:pathData="m 98.552171,19.224606 c 0.03915,-2.548484 -1.584432,-4.7389 -3.345496,-4.742985 -2.317819,-0.102089 -3.563009,1.556415 -4.2593,4.120143 z" />
             </group>
         </group>
