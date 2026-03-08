@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.chronicheal.app.domain.model.EntryType
+import org.chronicheal.app.domain.model.Ingredient
 import java.time.Instant
 import java.time.LocalTime
 
@@ -51,6 +52,16 @@ class Converters {
 
     @TypeConverter
     fun toIntSet(value: String?): Set<Int>? {
+        return value?.let { Json.decodeFromString(it) }
+    }
+
+    @TypeConverter
+    fun fromIngredientList(value: List<Ingredient>?): String? {
+        return value?.let { Json.encodeToString(it) }
+    }
+
+    @TypeConverter
+    fun toIngredientList(value: String?): List<Ingredient>? {
         return value?.let { Json.decodeFromString(it) }
     }
 }

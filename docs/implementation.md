@@ -116,64 +116,36 @@ Goal: Interactive tools and notifications.
 - **Removal of Swipe-to-Action**: Removed `SwipeToDismissBox` from the `TimelineScreen` as it led to unwanted deletions. Entries can still be modified by clicking on them.
 
 ## Phase 17: Calendar Search and Filtering (Completed)
-- **Integrated Search & Filters**: Replicated the search and type-filtering bar from the Timeline onto the Calendar screen.
-- **Dynamic Calendar Heatmap**: The calendar grid dots now update in real-time based on the active search query and selected filters, allowing users to see exactly when specific types of events occurred (e.g., "Show me all high-pain days where I took Ibuprofen").
+- **Integrated Search & Filters**: Replicated the search bar and type-filtering from the Timeline onto the Calendar screen.
+- **Dynamic Calendar Heatmap**: The calendar grid dots now update in real-time based on the active search query and selected filters.
 
 ## Phase 18: Enhanced Analytics and Reporting (Completed)
-- **Clickable Legends**: Legend items in Pain and Symptoms evolution charts are now clickable, allowing users to toggle line visibility dynamically.
-- **Stacked Timeline Charts**: Replaced pie charts with cumulative stacked timeline charts for both Pain and Symptoms to better visualize overall burden.
-- **Detailed PDF Reports**:
-    - Added high-fidelity stacked charts to PDF exports, matching the app's UI.
-    - Integrated grid lines, axis ticks, and explanatory text for better chart readability.
-    - Added a "Period Summary Statistics" table with min/max/avg values.
-    - **Detailed Logs**: Pain entries in logs now include the recorded location (e.g., `[Lower Back]`).
-- **Export UX**: Added an "Open" quick action to the snackbar after a successful PDF export.
-- **Test Automation**: Added unit tests for PDF generation and documented development procedures in the README.
+- **Clickable Legends**: Legend items in evolution charts are now clickable to toggle visibility.
+- **Stacked Timeline Charts**: Replaced pie charts with cumulative stacked timeline charts.
+- **Detailed PDF Reports**: Added high-fidelity stacked charts and distribution histograms to PDF exports.
 
 ## Phase 19: PDF Report Optimization (Completed)
-- **Improved Layout & Density**: Implemented a `PageState` manager to handle efficient vertical flow and pagination.
-- **Date-Grouped Logs**: Grouped health entries by day with headers, significantly reducing the vertical space required for long reports.
-- **Information Richness**: Included emojis, locations, and summarized notes while maintaining a compact format.
-- **Visual Polish**: Adjusted font sizes and chart dimensions for a more professional, medical-grade report appearance.
-- **Integrity Fixes**: Ensured the `outputStream` remains open during asynchronous PDF generation, preventing corrupted or empty files.
+- **Improved Layout**: Implemented date-grouped logs and efficient vertical flow.
 
 ## Phase 20: Notification UX and Branding (Completed)
-- **"Log Now" Action Fixed**: Resolved the issue where the "Log Now" notification action was inactive. It now correctly launches the app and navigates to the pre-filled entry screen for the specific reminder.
-- **Updated Visual Identity**:
-    - **App Icon**: Manually converted the `logo.svg` paths and nested transformations into a high-fidelity `ic_launcher_foreground.xml` Vector Drawable.
-    - **Notification Icon**: Created a monochromatic version of the logo paths (`ic_notification_logo.xml`) optimized for system status bars and notification drawers.
-    - **Branding Consistency**: Integrated the new logo into the `NotificationHelper` for a unified look and feel.
-- **Automatic Notification Dismissal**: Handled the dismissal of the reminder notification as soon as the user selects "Log Now".
-- **Vector Accuracy**: Refined the launcher icon XML to precisely match the source SVG geometry and nested transformations.
+- **Launcher Icons**: Implemented high-fidelity launcher and notification icons based on the app logo.
 
 ## Phase 21: Weekly Insights (Completed)
-- **Actionable Summary**: Added a "Last 7 Days Insights" card at the top of the `TimelineScreen` to provide immediate feedback on health trends.
-- **Key Metrics**:
-    - **Average Pain**: Calculated mean intensity for pain entries over the last week.
-    - **Medication Count**: Total number of drug entries in the last 7 days.
-    - **Average Sleep**: Mean sleep duration (prioritizing `durationMinutes`, falling back to `intensity * 60`).
-- **Trend Analysis**:
-    - Compared current week metrics against the previous week (7-14 days ago).
-    - Added visual indicators (TrendingUp, TrendingDown, TrendingFlat) with semantic coloring (Green for improvement, Red for decline).
-- **UI Integration**: Prepend the insights card to the grouped timeline list, ensuring it's the first thing users see upon opening the app.
+- **Actionable Summary**: Added a "Last 7 Days Insights" card to the Timeline.
 
-## Phase 22: PDF Graph and Analytics Enhancements (Completed)
-- **X-Axis Ticks**: Added date labels and ticks to the PDF evolution charts for better temporal context.
-- **Distribution Histograms**: Replaced the summary statistics table with a set of histograms showing the distribution of intensity levels (1-10) for each pain location and symptom.
-- **Visual Clarity**: Improved chart spacing and layout density in the PDF report.
+## Phase 22: Voice Logging and UI Polish (Completed)
+- **Multi-Entry Voice Logging**: Support for multiple entries in one voice command.
+- **Permission Transparency**: One-time rationale dialog for microphone access.
+- **Timeline UX**: Reduced Quick Add section height.
 
-## Phase 23: Data Integrity Verification (Completed)
-- **Test Implementation**: Created `DataTransferTest.kt` to verify the JSON export/import process.
-- **Verification Logic**: Simulated a full data lifecycle by exporting complex `HealthEntry` objects to JSON and then importing them back, ensuring 1:1 field parity for timestamps, types, values, units, and notes.
-- **Infrastructure**: Added `mockk` and `kotlinx-coroutines-test` dependencies to the project to support robust unit testing of use cases.
+## Phase 23: Unified Assessment and Voice Prioritization (Completed)
+- **Voice Entry Prioritization**: Moved Voice Logging to the top of entry selection.
+- **Unified Check-in**: Merged Body Scan and Full Check-in into a single scrollable assessment.
 
-## Phase 24: Voice-to-Text Integration (Completed)
-- **Speech Recognition Infrastructure**: Implemented `VoiceToTextManager` using Android's `SpeechRecognizer` to provide a robust, state-driven speech-to-text API.
-- **Voice-Enabled Components**:
-    - **`VoiceInputIcon`**: A consistent microphone toggle icon for triggering speech recognition.
-    - **`VoiceEnabledTextField`**: A reusable `OutlinedTextField` with an integrated voice input action, supporting appending spoken text to existing content.
-- **Integration across Entry Screens**:
-    - **`AutoCompleteTextField`**: Integrated voice input into the name/location search fields to reduce typing friction.
-    - **`AddDrugScreen`**: Added voice support for medication dosages and notes.
-    - **`AddPainScreen` / `PainEntryForm`**: Enabled hands-free logging for pain descriptions and notes.
-- **Permission Management**: Implemented runtime permission handling for `RECORD_AUDIO` with clear user feedback via snackbars.
+## Phase 24: Intelligent Defaults and Localization (Completed)
+- **Intelligent Sleep Defaults**: Duration defaults based on time of day.
+- **Scale Standardization**: Sleep Quality standardized to 1-10.
+- **Body Scan Localization**:
+    - **Technical IDs**: Pain entries now store the technical ID from the SVG (e.g., `shoulder_left`) instead of the localized name.
+    - **On-the-fly Translation**: The UI uses `formatId(context, id)` to translate these IDs into the current system language (English/French) for display in the Timeline and Day View.
+    - **Stability**: This ensures that changing the app's language correctly updates the displayed location for existing entries.

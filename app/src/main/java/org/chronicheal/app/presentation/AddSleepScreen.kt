@@ -54,13 +54,33 @@ fun AddSleepScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
-    var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
-    var startTime by rememberSaveable { mutableStateOf(LocalTime.of(22, 0)) }
-    
-    var endDate by rememberSaveable { mutableStateOf(logDate.plusDays(1)) }
-    var endTime by rememberSaveable { mutableStateOf(LocalTime.of(6, 0)) }
+    val now = remember { LocalTime.now() }
+    val today = remember { LocalDate.now() }
 
-    var quality by rememberSaveable { mutableFloatStateOf(3f) }
+    // Logic for default values based on time of day
+    val defaultStartDateTime = remember(now, today) {
+        when {
+            now.hour in 5..11 -> today.minusDays(1).atTime(now.minusHours(8)) // Morning: 8h before
+            now.hour in 12..17 -> today.atTime(now) // Afternoon: Now
+            else -> today.atTime(now) // Evening: Now
+        }
+    }
+
+    val defaultEndDateTime = remember(now, today) {
+        when {
+            now.hour in 5..11 -> today.atTime(now) // Morning: Now
+            now.hour in 12..17 -> today.atTime(now.plusHours(1)) // Afternoon: In 1 hour
+            else -> today.plusDays(1).atTime(now.plusHours(8)) // Evening: 8h after
+        }
+    }
+
+    var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else defaultStartDateTime.toLocalDate()) }
+    var startTime by rememberSaveable { mutableStateOf(defaultStartDateTime.toLocalTime()) }
+    
+    var endDate by rememberSaveable { mutableStateOf(if (dateString != null) logDate.plusDays(1) else defaultEndDateTime.toLocalDate()) }
+    var endTime by rememberSaveable { mutableStateOf(defaultEndDateTime.toLocalTime()) }
+
+    var quality by rememberSaveable { mutableFloatStateOf(5f) }
     var note by rememberSaveable { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
@@ -73,7 +93,7 @@ fun AddSleepScreen(
             val entry = viewModel.getEntryById(id)
             if (entry != null) {
                 existingEntry = entry
-                quality = entry.intensity?.toFloat() ?: 3f
+                quality = entry.intensity?.toFloat() ?: 5f
                 note = entry.note
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
@@ -181,8 +201,8 @@ fun AddSleepScreen(
             Slider(
                 value = quality,
                 onValueChange = { quality = it },
-                valueRange = 1f..5f,
-                steps = 3
+                valueRange = 1f..10f,
+                steps = 8
             )
 
             Spacer(modifier = Modifier.height(16.dp))

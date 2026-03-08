@@ -6,6 +6,13 @@ import kotlinx.serialization.Serializable
 import org.chronicheal.app.data.local.InstantSerializer
 import java.time.Instant
 
+@Serializable
+data class Ingredient(
+    val name: String,
+    val quantity: Double? = null,
+    val unit: String? = null
+)
+
 @Entity(tableName = "health_entries")
 @Serializable
 data class HealthEntry(
@@ -23,5 +30,6 @@ data class HealthEntry(
     val hasReminder: Boolean = false,
     val reminderId: Long? = null,
     val durationMinutes: Int? = null,
-    val isFinished: Boolean = false
+    val isFinished: Boolean = false,
+    val ingredients: List<Ingredient>? = null
 )

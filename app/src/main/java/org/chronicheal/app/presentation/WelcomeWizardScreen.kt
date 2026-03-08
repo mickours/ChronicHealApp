@@ -53,6 +53,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -60,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -117,7 +119,7 @@ fun WelcomeWizardScreen(
                 OutlinedButton(onClick = {
                     scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) }
                 }) {
-                    Text("Previous")
+                    Text(stringResource(R.string.previous))
                 }
             } else {
                 Spacer(modifier = Modifier.size(1.dp))
@@ -130,7 +132,7 @@ fun WelcomeWizardScreen(
                     viewModel.completeWizard()
                 }
             }) {
-                Text(if (pagerState.currentPage == 3) "Get Started" else "Next")
+                Text(if (pagerState.currentPage == 3) stringResource(R.string.get_started) else stringResource(R.string.next))
             }
         }
     }
@@ -147,25 +149,27 @@ fun WelcomePage() {
     ) {
         AsyncImage(
             model = "file:///android_asset/logo.svg",
-            contentDescription = "ChronicHeal Logo",
+            contentDescription = stringResource(R.string.app_name) + " Logo",
             modifier = Modifier.size(180.dp)
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Welcome to ChronicHeal",
+            text = stringResource(R.string.welcome_title),
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Take control of your health journey by tracking symptoms, medications, and lifestyle factors locally and privately.",
+            text = stringResource(R.string.welcome_subtitle),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "🏥 Privacy First: Your data stays on your device.\n📝 Easy Logging: Specialized screens for every health event.\n📊 Visual Insights: See trends and correlations over time.",
+            text = "🏥 " + stringResource(R.string.step_privacy_title) + ": " + stringResource(R.string.step_privacy_desc_short) + "\n" +
+                   "📝 " + stringResource(R.string.step_logging_title) + ": " + stringResource(R.string.step_logging_desc_short) + "\n" +
+                   "📊 " + stringResource(R.string.step_insights_title) + ": " + stringResource(R.string.step_insights_desc_short),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Start,
             lineHeight = 24.sp
@@ -194,14 +198,14 @@ fun PrivacyPage(
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Your Data, Your Control",
+            text = stringResource(R.string.data_control_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "ChronicHeal is built with privacy at its core. Your health information never leaves your phone unless you choose to export it.",
+            text = stringResource(R.string.data_control_desc),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
@@ -222,10 +226,10 @@ fun PrivacyPage(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Default.Lock, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(Modifier.height(8.dp))
-                            Text(text = "Biometric Lock", style = MaterialTheme.typography.titleMedium)
+                            Text(text = stringResource(R.string.biometric_lock), style = MaterialTheme.typography.titleMedium)
                         }
                         Text(
-                            text = "Require fingerprint or face to open the app",
+                            text = stringResource(R.string.biometric_lock_desc),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -247,14 +251,14 @@ fun PrivacyPage(
         ) {
             Column {
                 Text(
-                    text = "Backup & Portability",
+                    text = stringResource(R.string.backup_portability_title),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "You can create encrypted backups or export your data to JSON/PDF at any time from the Settings screen.",
+                    text = stringResource(R.string.backup_portability_desc),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -299,13 +303,13 @@ fun NotificationPermissionPage(
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Stay on Track",
+            text = stringResource(R.string.stay_on_track_title),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Grant notification permissions to receive high-precision reminders for medications, appointments, and daily check-ins.",
+            text = stringResource(R.string.stay_on_track_desc),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
@@ -322,8 +326,8 @@ fun NotificationPermissionPage(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Daily Body Scan Reminder", style = MaterialTheme.typography.titleMedium)
-                        Text(text = "Prompt to log your pain points every day", style = MaterialTheme.typography.bodySmall)
+                        Text(text = stringResource(R.string.body_scan_reminder_title), style = MaterialTheme.typography.titleMedium)
+                        Text(text = stringResource(R.string.body_scan_reminder_desc), style = MaterialTheme.typography.bodySmall)
                     }
                     Switch(
                         checked = isBodyScanEnabled,
@@ -348,7 +352,7 @@ fun NotificationPermissionPage(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = "Reminder Time", style = MaterialTheme.typography.bodyMedium)
+                        Text(text = stringResource(R.string.reminder_time_label), style = MaterialTheme.typography.bodyMedium)
                         TextButton(onClick = { showTimePicker = true }) {
                             Text(
                                 text = bodyScanTime.format(DateTimeFormatter.ofPattern("HH:mm")),
@@ -370,12 +374,12 @@ fun NotificationPermissionPage(
                     onBodyScanTimeChange(LocalTime.of(timeState.hour, timeState.minute))
                     showTimePicker = false
                 }) {
-                    Text("OK")
+                    Text(stringResource(R.string.ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         ) {
@@ -396,14 +400,14 @@ fun FavoriteEntryTypesPage(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Personalize Your Experience",
+            text = stringResource(R.string.personalize_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Select the entry types you'll use most often to pin them to your timeline.",
+            text = stringResource(R.string.personalize_desc),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Center
         )
@@ -425,7 +429,7 @@ fun FavoriteEntryTypesPage(
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "${type.emoji} ${type.name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }}", textAlign = TextAlign.Center)
+                            Text(text = "${type.emoji} ${stringResource(type.displayRes)}", textAlign = TextAlign.Center)
                             if (isSelected) {
                                 Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                             }

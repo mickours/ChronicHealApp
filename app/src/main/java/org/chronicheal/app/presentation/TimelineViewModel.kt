@@ -49,13 +49,26 @@ class TimelineViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     private val _selectedTypes = MutableStateFlow<Set<EntryType>>(emptySet())
 
+    private val filterState = combine(_searchQuery, _selectedTypes) { query, types ->
+        query to types
+    }
+    
+    private val settingsState = combine(
+        _message,
+        settingsRepository.favoriteEntryTypes,
+        settingsRepository.hasShownVoicePermissionRationale
+    ) { message, favorites, hasShownVoiceRationale ->
+        Triple(message, favorites, hasShownVoiceRationale)
+    }
+
     val uiState: StateFlow<TimelineUiState> = combine(
         getEntriesUseCase(),
-        _searchQuery,
-        _selectedTypes,
-        _message,
-        settingsRepository.favoriteEntryTypes
-    ) { entries, query, selectedTypes, message, favorites ->
+        filterState,
+        settingsState
+    ) { entries, filter, settings ->
+        val (query, selectedTypes) = filter
+        val (message, favorites, hasShownVoiceRationale) = settings
+        
         val filteredEntries = entries.filter { entry ->
             val matchesQuery = query.isBlank() || 
                 entry.name?.contains(query, ignoreCase = true) == true ||
@@ -75,7 +88,8 @@ class TimelineViewModel @Inject constructor(
             selectedTypes = selectedTypes,
             message = message,
             favorites = favorites,
-            weeklyStats = weeklyStats
+            weeklyStats = weeklyStats,
+            hasShownVoiceRationale = hasShownVoiceRationale
         )
     }.stateIn(
         scope = viewModelScope,
@@ -317,6 +331,12 @@ class TimelineViewModel @Inject constructor(
     fun clearMessage() {
         _message.value = null
     }
+
+    fun setHasShownVoiceRationale(shown: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setHasShownVoicePermissionRationale(shown)
+        }
+    }
 }
 
 sealed class UndoAction {
@@ -340,5 +360,6 @@ data class TimelineUiState(
     val isLoading: Boolean = false,
     val message: String? = null,
     val favorites: Set<EntryType> = emptySet(),
-    val weeklyStats: WeeklyStats? = null
+    val weeklyStats: WeeklyStats? = null,
+    val hasShownVoiceRationale: Boolean = false
 )

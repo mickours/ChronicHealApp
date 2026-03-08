@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {
                         val entryAction by pendingEntryAction.collectAsState()
                         LaunchedEffect(entryAction) {
                             entryAction?.let { (typeName, reminderId) ->
-                                val entryType = try { EntryType.valueOf(typeName) } catch(e: Exception) { null }
+                                val entryType = try { EntryType.valueOf(typeName) } catch(_: Exception) { null }
                                 if (entryType != null) {
                                     val route = when (entryType) {
                                         EntryType.PAIN -> if (reminderId == null) Screen.BodyScan.route else Screen.AddPain.createRoute(id = reminderId)
@@ -95,6 +95,7 @@ class MainActivity : AppCompatActivity() {
                                         EntryType.BEVERAGE -> Screen.AddBeverage.createRoute(id = reminderId)
                                         EntryType.STOOL -> Screen.AddStool.createRoute(id = reminderId)
                                         EntryType.MOOD -> Screen.AddMood.createRoute(id = reminderId)
+                                        EntryType.VOICE_LOGGING -> Screen.VoiceLogging.route
                                     }
                                     navController.navigate(route) {
                                         popUpTo(Screen.Timeline.route) { saveState = true }

@@ -591,24 +591,26 @@ fun TimeRangeSelector(
     onMovePeriod: (Int) -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            IconButton(onClick = { onMovePeriod(-1) }) {
-                Icon(Icons.Default.ChevronLeft, contentDescription = stringResource(R.string.previous))
-            }
-            
-            val formatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG) }
-            Text(
-                text = "${startDate.format(formatter)} - ${getEndDate(startDate, timeRange).format(formatter)}",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold
-            )
+        if (timeRange != TimeRange.ALL) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                IconButton(onClick = { onMovePeriod(-1) }) {
+                    Icon(Icons.Default.ChevronLeft, contentDescription = stringResource(R.string.previous))
+                }
+                
+                val formatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG) }
+                Text(
+                    text = "${startDate.format(formatter)} - ${getEndDate(startDate, timeRange).format(formatter)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
+                )
 
-            IconButton(onClick = { onMovePeriod(1) }) {
-                Icon(Icons.Default.ChevronRight, contentDescription = stringResource(R.string.next))
+                IconButton(onClick = { onMovePeriod(1) }) {
+                    Icon(Icons.Default.ChevronRight, contentDescription = stringResource(R.string.next))
+                }
             }
         }
 
@@ -620,7 +622,7 @@ fun TimeRangeSelector(
                 FilterChip(
                     selected = timeRange == range,
                     onClick = { onRangeChange(range) },
-                    label = { Text(range.name.lowercase().replaceFirstChar { it.uppercase() }) } // TODO: Localize enum names
+                    label = { Text(stringResource(range.labelRes)) }
                 )
             }
         }
@@ -632,5 +634,6 @@ private fun getEndDate(start: LocalDate, range: TimeRange): LocalDate {
         TimeRange.WEEK -> start.plusDays(6)
         TimeRange.MONTH -> start.plusMonths(1).minusDays(1)
         TimeRange.YEAR -> start.plusYears(1).minusDays(1)
+        TimeRange.ALL -> LocalDate.now()
     }
 }

@@ -1,23 +1,19 @@
 package org.chronicheal.app.presentation
 
-import android.Manifest
-import android.content.pm.PackageManager
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -26,14 +22,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.unit.sp
 import org.chronicheal.app.R
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
-import org.chronicheal.app.presentation.util.VoiceToTextManager
 import org.chronicheal.app.ui.theme.HeaderBlue
 import org.chronicheal.app.ui.theme.PrimaryContainerLight
 import org.chronicheal.app.ui.theme.OnPrimaryContainerLight
@@ -43,7 +38,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,8 +111,8 @@ fun AddEntryScaffold(
         if (showDeleteConfirmation) {
             AlertDialog(
                 onDismissRequest = { showDeleteConfirmation = false },
-                title = { Text(stringResource(R.string.delete) + " Entry") }, // Combined for now, can be improved
-                text = { Text("Are you sure you want to delete this log?") }, // TODO: String resource
+                title = { Text(stringResource(R.string.delete_entry_title)) },
+                text = { Text(stringResource(R.string.delete_entry_msg)) },
                 confirmButton = {
                     TextButton(
                         onClick = {
@@ -274,36 +268,6 @@ fun TimePickerDialog(
     )
 }
 
-@Composable
-fun VoiceInputIcon(
-    onResult: (String) -> Unit,
-    isSpeaking: Boolean,
-    onToggleListening: () -> Unit
-) {
-    IconButton(onClick = onToggleListening) {
-        Icon(
-            imageVector = if (isSpeaking) Icons.Default.MicOff else Icons.Default.Mic,
-            contentDescription = "Voice Input", // TODO: String resource
-            tint = if (isSpeaking) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-        )
-    }
-}
-
-@Composable
-fun rememberVoiceToTextManager(onResult: (String) -> Unit): Pair<VoiceToTextManager, State<org.chronicheal.app.presentation.util.VoiceToTextState>> {
-    val context = LocalContext.current
-    val manager = remember { VoiceToTextManager(context) }
-    val state = manager.state.collectAsState()
-    
-    LaunchedEffect(state.value.spokenText) {
-        if (state.value.spokenText.isNotEmpty()) {
-            onResult(state.value.spokenText)
-        }
-    }
-    
-    return manager to state
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutoCompleteTextField(
@@ -311,21 +275,10 @@ fun AutoCompleteTextField(
     onValueChange: (String) -> Unit,
     suggestions: List<String>,
     label: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
 ) {
-    val context = LocalContext.current
-    val (voiceManager, voiceState) = rememberVoiceToTextManager { spokenText ->
-        onValueChange(spokenText)
-    }
-    
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            voiceManager.startListening()
-        }
-    }
-
     val filteredSuggestions = remember(value, suggestions) {
         if (value.isBlank()) {
             suggestions.take(5)
@@ -343,22 +296,8 @@ fun AutoCompleteTextField(
             label = { Text(label) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            trailingIcon = {
-                VoiceInputIcon(
-                    onResult = onValueChange,
-                    isSpeaking = voiceState.value.isSpeaking,
-                    onToggleListening = {
-                        if (voiceState.value.isSpeaking) {
-                            voiceManager.stopListening()
-                        } else {
-                            when (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)) {
-                                PackageManager.PERMISSION_GRANTED -> voiceManager.startListening()
-                                else -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                            }
-                        }
-                    }
-                )
-            }
+            keyboardOptions = keyboardOptions,
+            keyboardActions = keyboardActions
         )
 
         if (filteredSuggestions.isNotEmpty()) {
@@ -395,47 +334,18 @@ fun VoiceEnabledTextField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    minLines: Int = 1
+    minLines: Int = 1,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default
 ) {
-    val context = LocalContext.current
-    val (voiceManager, voiceState) = rememberVoiceToTextManager { spokenText ->
-        val newValue = if (value.isEmpty()) spokenText else "$value $spokenText"
-        onValueChange(newValue)
-    }
-    
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            voiceManager.startListening()
-        }
-    }
-
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
         modifier = modifier.fillMaxWidth(),
         minLines = minLines,
-        trailingIcon = {
-            VoiceInputIcon(
-                onResult = { spokenText ->
-                    val newValue = if (value.isEmpty()) spokenText else "$value $spokenText"
-                    onValueChange(newValue)
-                },
-                isSpeaking = voiceState.value.isSpeaking,
-                onToggleListening = {
-                    if (voiceState.value.isSpeaking) {
-                        voiceManager.stopListening()
-                    } else {
-                        when (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)) {
-                            PackageManager.PERMISSION_GRANTED -> voiceManager.startListening()
-                            else -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                        }
-                    }
-                }
-            )
-        }
+        keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions
     )
 }
 
@@ -494,6 +404,38 @@ fun VerticalIntensityGauge(
             color = color,
             modifier = Modifier.padding(vertical = 4.dp)
         )
+    }
+}
+
+@Composable
+fun SectionHeader(type: EntryType, title: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(text = type.emoji, fontSize = 24.sp)
+        Spacer(Modifier.width(8.dp))
+        Text(text = title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
+fun MoodSection(
+    intensity: Float,
+    onIntensityChange: (Float) -> Unit,
+    note: String,
+    onNoteChange: (String) -> Unit
+) {
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            val moodLabel = when(intensity.roundToInt()) {
+                in 1..2 -> stringResource(R.string.mood_very_bad)
+                in 3..4 -> stringResource(R.string.mood_bad)
+                in 5..6 -> stringResource(R.string.mood_neutral)
+                in 7..8 -> stringResource(R.string.mood_good)
+                else -> stringResource(R.string.mood_amazing)
+            }
+            Text("${stringResource(R.string.type_mood)}: $moodLabel (${intensity.roundToInt()}/10)")
+            Slider(value = intensity, onValueChange = onIntensityChange, valueRange = 1f..10f, steps = 8)
+            VoiceEnabledTextField(value = note, onValueChange = onNoteChange, label = stringResource(R.string.section_mood))
+        }
     }
 }
 

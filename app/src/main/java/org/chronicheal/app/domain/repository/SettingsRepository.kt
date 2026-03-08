@@ -9,4 +9,7 @@ interface SettingsRepository {
 
     val favoriteEntryTypes: Flow<Set<EntryType>>
     suspend fun setFavoriteEntryTypes(types: Set<EntryType>)
+
+    val hasShownVoicePermissionRationale: Flow<Boolean>
+    suspend fun setHasShownVoicePermissionRationale(shown: Boolean)
 }

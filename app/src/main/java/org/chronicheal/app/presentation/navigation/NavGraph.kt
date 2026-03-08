@@ -89,13 +89,14 @@ fun NavGraph(
                 EntryType.BEVERAGE -> Screen.AddBeverage.createRoute(id = entry.id, date = date)
                 EntryType.STOOL -> Screen.AddStool.createRoute(id = entry.id, date = date)
                 EntryType.MOOD -> Screen.AddMood.createRoute(id = entry.id, date = date)
+                EntryType.VOICE_LOGGING -> Screen.VoiceLogging.route
             }
             navController.navigate(route)
         }
 
         val onEntryTypeClick: (EntryType) -> Unit = { type ->
             val route = when (type) {
-                EntryType.PAIN -> Screen.AddPain.createRoute()
+                EntryType.PAIN -> Screen.BodyScan.route
                 EntryType.DRUG -> Screen.AddDrug.createRoute()
                 EntryType.SYMPTOM -> Screen.AddSymptom.createRoute()
                 EntryType.DISEASE -> Screen.AddDisease.createRoute()
@@ -109,6 +110,7 @@ fun NavGraph(
                 EntryType.BEVERAGE -> Screen.AddBeverage.createRoute()
                 EntryType.STOOL -> Screen.AddStool.createRoute()
                 EntryType.MOOD -> Screen.AddMood.createRoute()
+                EntryType.VOICE_LOGGING -> Screen.VoiceLogging.route
             }
             navController.navigate(route)
         }
@@ -244,7 +246,7 @@ fun NavGraph(
             EntryTypeSelectionScreen(
                 onTypeSelected = { type ->
                     val route = when (type) {
-                        EntryType.PAIN -> Screen.AddPain.createRoute(date, location)
+                        EntryType.PAIN -> Screen.BodyScan.route
                         EntryType.DRUG -> Screen.AddDrug.createRoute(date, location)
                         EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(date, location)
                         EntryType.DISEASE -> Screen.AddDisease.createRoute(date, location)
@@ -258,11 +260,15 @@ fun NavGraph(
                         EntryType.BEVERAGE -> Screen.AddBeverage.createRoute(date, location)
                         EntryType.STOOL -> Screen.AddStool.createRoute(date, location)
                         EntryType.MOOD -> Screen.AddMood.createRoute(date, location)
+                        EntryType.VOICE_LOGGING -> Screen.VoiceLogging.route
                     }
                     navController.navigate(route)
                 },
                 onCompleteEntryClick = {
-                    navController.navigate(Screen.AddCompleteEntry.createRoute(date))
+                    navController.navigate(Screen.BodyScan.route)
+                },
+                onVoiceLoggingClick = {
+                    navController.navigate(Screen.VoiceLogging.route)
                 },
                 onBackClick = { navController.popBackStack() }
             )

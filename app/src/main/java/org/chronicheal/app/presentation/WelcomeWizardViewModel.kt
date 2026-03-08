@@ -18,7 +18,7 @@ import java.time.LocalTime
 import javax.inject.Inject
 
 data class WelcomeWizardUiState(
-    val favoriteTypes: Set<EntryType> = emptySet(),
+    val favoriteTypes: Set<EntryType> = setOf(EntryType.VOICE_LOGGING),
     val isBodyScanReminderEnabled: Boolean = false,
     val bodyScanReminderTime: LocalTime = LocalTime.of(20, 0), // Default 8 PM
     val isBiometricLockEnabled: Boolean = false,

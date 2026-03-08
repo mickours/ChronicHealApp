@@ -12,7 +12,7 @@
     <string name="confirm">Confirmer</string>
     <string name="ok">OK</string>
     <string name="today">Aujourd\'hui</string>
-    <string name="search_placeholder">Rechercher par nom, lieu ou note...</string>
+    <string name="search_placeholder">Rechercher par nom, lieu ou note…</string>
     <string name="no_matches">Aucun résultat trouvé.</string>
     <string name="no_entries_yet">Aucune entrée pour le moment. Appuyez sur + pour commencer le suivi.</string>
     <string name="delete_entry_title">Supprimer l\'entrée</string>
@@ -36,7 +36,7 @@
 
     <!-- Voice Logging -->
     <string name="voice_logging_title">Saisie Vocale</string>
-    <string name="voice_listening">Écoute en cours...</string>
+    <string name="voice_listening">Écoute en cours…</string>
     <string name="voice_tap_to_speak">Appuyez sur le micro et parlez</string>
     <string name="voice_detected_log">Log détecté</string>
     <string name="voice_save_hint">Dites \"Enregistrer\" pour confirmer ou \"Annuler\" pour ignorer</string>
@@ -44,13 +44,52 @@
     <string name="voice_saved_message">Entrée enregistrée par la voix</string>
     <string name="voice_error_no_match">Aucune correspondance vocale trouvée. Essayez de parler plus clairement.</string>
     <string name="voice_error_quiet_hint">Essayez de vous déplacer dans un endroit plus calme ou parlez plus près du microphone.</string>
+    <string name="retry">Réessayer</string>
+    <string name="change_type">Changer de type</string>
+    <string name="voice_example_hint">Exemple : \"J\'ai pris 500mg de Paracétamol pour mon mal de tête niveau 6\"</string>
+    <string name="voice_permission_rationale_title">Permission de Saisie Vocale</string>
+    <string name="voice_permission_rationale_msg">ChronicHeal utilise votre microphone pour vous permettre de noter vos entrées de santé à la voix. Votre audio est traité localement et n\'est jamais envoyé à un serveur.</string>
+
+    <!-- Voice Dictionaries -->
+    <string name="voice_keywords_pain">douleur,mal,courbature,élancement,brûlure</string>
+    <string name="voice_keywords_drug">pris,médicament,pilule,aspirine,ibuprofène,paracétamol,comprimé,dose</string>
+    <string name="voice_keywords_symptom">symptôme,nausée,vertige,toux,fièvre,éruption,démangeaison</string>
+    <string name="voice_keywords_sleep">dormi,sommeil,coucher,réveillé</string>
+    <string name="voice_keywords_mood">humeur,sens,sentiment,heureux,triste,anxieux,colère,déprimé</string>
+    <string name="voice_keywords_beverage">bu,boisson,eau,café,thé,jus,alcool,verre</string>
+    <string name="voice_keywords_meal">mangé,repas,nourriture,petit-déjeuner,déjeuner,dîner,goûter,collation</string>
+    <string name="voice_keywords_activity">activité,exercice,couru,marché,entraînement,sport,gym</string>
+    <string name="voice_keywords_disease">maladie,diagnostiqué,affection,pathologie</string>
+    <string name="voice_keywords_appointment">rendez-vous,docteur,médecin,visite,clinique,hôpital,dentiste</string>
+    <string name="voice_keywords_factor">météo,facteur,stress,pollution,humidité,froid,chaud</string>
+    <string name="voice_keywords_period">règles,menstruation,flux,saignement,cycle</string>
+    <string name="voice_keywords_stool">selle,selles,caca,constipation,diarrhée</string>
+    
+    <string name="voice_keywords_intensity">niveau,intensité,sévérité,qualité,score,flux,impact</string>
+    <string name="voice_keywords_duration_hours">heure,h</string>
+    <string name="voice_keywords_duration_mins">minute,min,m</string>
+    
+    <string name="voice_markers_drug">pris,médicament,pilule,dose,comprimé</string>
+    <string name="voice_markers_doctor">docteur,médecin,dr,dr.</string>
+    
+    <string name="voice_dosage_units">mg,ml,g,comprimés,pilules,unités,mcg</string>
+    <string name="voice_beverage_containers">ml,oz,verre,tasse,bouteille</string>
+
+    <string name="voice_locations_map">dos:Back,tête:Head,genou:Knee,épaule:Shoulder,bras:Arm,jambe:Leg,cou:Neck,estomac:Stomach,ventre:Stomach,poitrine:Chest,poignet:Wrist,cheville:Ankle,hanche:Hip</string>
+    <string name="voice_beverages_list">eau,café,thé,jus,soda,bière,vin,lait</string>
+    <string name="voice_symptoms_list">nausée,fatigue,vertige,migraine,démangeaison,éruption,fièvre,toux</string>
+    <string name="voice_diseases_list">grippe,rhume,covid,diabète,asthme,migraine,arthrite</string>
+    <string name="voice_factors_list">stress,météo,chaleur,froid,pollution,humidité</string>
+    <string name="voice_activities_list">marche,course,natation,cyclisme,yoga,gym,entraînement</string>
+    <string name="voice_aspects_list">dur,mou,liquide,normal,sanglant,mucus</string>
+    <string name="voice_meals_list">petit-déjeuner,déjeuner,dîner,goûter,collation</string>
 
     <!-- Entry Selection -->
     <string name="track_selection_title">Que souhaitez-vous suivre ?</string>
     <string name="category_occurrence">Ce qui vous arrive</string>
     <string name="category_management">Ce que vous gérez</string>
     <string name="complete_checkin">Bilan complet</string>
-    <string name="complete_checkin_desc">Notez humeur, douleur, sommeil et médicaments d\'un coup</string>
+    <string name="complete_checkin_desc">Notez humeur, douleur, symptôme, selles et règles d\'un coup</string>
 
     <!-- Entry Details Labels -->
     <string name="intensity_label">Intensité : %1$d/10</string>
@@ -72,10 +111,16 @@
     <string name="bedtime_label">Heure du coucher :</string>
     <string name="wakeup_time_label">Heure de réveil :</string>
     <string name="computed_duration_label">Durée calculée</string>
-    <string name="quality_label">Qualité : %1$d/5</string>
+    <string name="quality_label">Qualité : %1$d/10</string>
     <string name="impact_label">Impact/Intensité : %1$d/10</string>
     <string name="scale_label">Échelle %1$s</string>
     <string name="select_items_legend">Sélectionnez des éléments dans la légende pour afficher les données</string>
+    
+    <!-- Time Ranges -->
+    <string name="range_week">Semaine</string>
+    <string name="range_month">Mois</string>
+    <string name="range_year">Année</string>
+    <string name="range_all">Tout</string>
     
     <!-- Specific Entry Actions -->
     <string name="log_pain">Noter Douleur</string>
@@ -154,14 +199,16 @@
     <string name="day_sat">Sam</string>
 
     <!-- Reminders -->
-    <string name="reminders_title">Rappels</string>
+    <string name="reminders_title">Gérer les rappels</string>
     <string name="add_reminder">Ajouter un rappel</string>
     <string name="set_daily_reminder">Définir un rappel quotidien</string>
     <string name="update_daily_reminder">Modifier le rappel quotidien</string>
     <string name="notification_permission_required">La permission de notification est requise pour les rappels.</string>
     <string name="reminder_saved">Rappel enregistré</string>
     <string name="reminder_deleted">Rappel supprimé</string>
-    <string name="no_reminders">Aucun rappel défini.</string>
+    <string name="no_reminders">Aucun rappel défini</string>
+    <string name="every_day">Chaque jour</string>
+    <string name="never">Jamais</string>
 
     <!-- Analytics -->
     <string name="analytics_title">Analyses</string>
@@ -212,4 +259,79 @@
     <string name="pain_log_deleted">Douleur supprimée pour %1$s</string>
     <string name="save_pain_log">Enregistrer la douleur</string>
     <string name="update_pain_log">Modifier la douleur</string>
+
+    <!-- Body Regions (Mapping SVG IDs to Localized Strings) -->
+    <string name="body_region_foot_R">Pied (Droit)</string>
+    <string name="body_region_ankle_R">Cheville (Droite)</string>
+    <string name="body_region_tibia_R">Tibia (Droit)</string>
+    <string name="body_region_knee_R">Genou (Droit)</string>
+    <string name="body_region_thigh_R">Cuisse (Droite)</string>
+    <string name="body_region_foot_L">Pied (Gauche)</string>
+    <string name="body_region_ankle_L">Cheville (Gauche)</string>
+    <string name="body_region_tibia_L">Tibia (Gauche)</string>
+    <string name="body_region_knee_L">Genou (Gauche)</string>
+    <string name="body_region_thigh_L">Cuisse (Gauche)</string>
+    <string name="body_region_pelvis">Bassin</string>
+    <string name="body_region_torso">Torse</string>
+    <string name="body_region_helbow_R">Coude (Droit)</string>
+    <string name="body_region_wrist_R">Poignet (Droit)</string>
+    <string name="body_region_arm_R_path">Bras (Droit)</string>
+    <string name="body_region_forearm_R">Avant-bras (Droit)</string>
+    <string name="body_region_palm_R">Main (Droite)</string>
+    <string name="body_region_fingers_R">Doigts (Droits)</string>
+    <string name="body_region_shoulder_R">Épaule (Droite)</string>
+    <string name="body_region_elbow_L">Coude (Gauche)</string>
+    <string name="body_region_wrist_L">Poignet (Gauche)</string>
+    <string name="body_region_arm_L_path">Bras (Gauche)</string>
+    <string name="body_region_forearm_L">Avant-bras (Gauche)</string>
+    <string name="body_region_palm_L">Main (Gauche)</string>
+    <string name="body_region_fingers_L">Doigts (Gauches)</string>
+    <string name="body_region_shoulder_L">Épaule (Gauche)</string>
+    <string name="body_region_brest">Poitrine</string>
+    <string name="body_region_neck">Cou</string>
+    <string name="body_region_head_part">Tête</string>
+    <string name="body_region_forehead">Front</string>
+    <string name="body_region_ear_R">Oreille (Droite)</string>
+    <string name="body_region_ear_R_5">Oreille (Gauche)</string>
+    <string name="body_region_eye_R">Œil (Droit)</string>
+    <string name="body_region_eye_L">Œil (Gauche)</string>
+    
+    <!-- Welcome Wizard -->
+    <string name="welcome_title">Bienvenue sur ChronicHeal</string>
+    <string name="welcome_subtitle">Votre compagnon de santé chronique respectueux de votre vie privée.</string>
+    <string name="step_privacy_title">Priorité à la Vie Privée</string>
+    <string name="step_privacy_desc">Toutes vos données sont stockées localement sur votre appareil. Pas de cloud, pas de suivi, pas de compte nécessaire.</string>
+    <string name="step_privacy_desc_short">Vos données reste sur votre appareil.</string>
+    <string name="step_logging_title">Saisie Simplifiée</string>
+    <string name="step_logging_desc">Notez rapidement douleurs, symptômes, médicaments et plus encore avec des écrans spécialisés.</string>
+    <string name="step_logging_desc_short">Un écrans spécialisé pour chaque evenement.</string>
+    <string name="step_insights_title">Analyses Actionnables</string>
+    <string name="step_insights_desc">Visualisez les tendances et trouvez des corrélations entre votre mode de vie et vos symptômes.</string>
+    <string name="step_insights_desc_short">Voir les tendances et les corrélations dans le temps.</string>
+    <string name="get_started">Commencer</string>
+    <string name="data_control_title">Vos Données, Votre Contrôle</string>
+    <string name="data_control_desc">ChronicHeal est construit avec la vie privée au cœur. Vos informations de santé ne quittent jamais votre téléphone sauf si vous choisissez de les exporter.</string>
+    <string name="stay_on_track_title">Restez à Jour</string>
+    <string name="stay_on_track_desc">Accordez les permissions de notification pour recevoir des rappels haute précision pour vos médicaments, rendez-vous et bilans quotidiens.</string>
+    <string name="body_scan_reminder_title">Rappel Scan Corporel Quotidien</string>
+    <string name="body_scan_reminder_desc">Une invite pour noter vos points de douleur chaque jour</string>
+    <string name="reminder_time_label">Heure du Rappel</string>
+    <string name="personalize_title">Personnalisez Votre Experience</string>
+    <string name="personalize_desc">Sélectionnez les types d\'entrées que vous utiliserez le plus souvent pour les épingler sur votre journal.</string>
+    <string name="backup_portability_title">Sauvegarde &amp; Portabilité</string>
+    <string name="backup_portability_desc">Vous pouvez créer des sauvegardes chiffrées ou exporter vos données en JSON/PDF à tout moment depuis les Paramètres.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Paramètres</string>
+    <string name="settings_security">Sécurité</string>
+    <string name="biometric_lock">Verrouillage Biométrique</string>
+    <string name="biometric_lock_desc">Exiger une authentification pour ouvrir l\'application</string>
+    <string name="biometric_not_available">L\'authentification biométrique n\'est pas disponible sur cet appareil</string>
+    <string name="data_management">Gestion des Données</string>
+    <string name="onboarding">Démarrage</string>
+    <string name="reset_wizard">Réinitialiser l\'assistant de bienvenue</string>
+    <string name="export_json">Exporter les données en JSON</string>
+    <string name="import_json">Importer les données depuis JSON</string>
+    <string name="import_warning">Cela remplacera vos données actuelles. Êtes-vous sûr ?</string>
+    <string name="app_version_info">ChronicHeal v1.0 - Open Source &amp; Privacy First</string>
 </resources>

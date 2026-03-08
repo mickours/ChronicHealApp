@@ -12,38 +12,19 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,10 +39,12 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.presentation.util.VoiceCommandParser
 import org.chronicheal.app.presentation.util.VoiceToTextManager
 import org.chronicheal.app.ui.theme.HeaderBlue
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,16 +56,65 @@ fun VoiceLoggingScreen(
     val context = LocalContext.current
     val voiceManager = remember { VoiceToTextManager(context) }
     val voiceState by voiceManager.state.collectAsState()
-    val parser = remember { VoiceCommandParser() }
+    val uiState by viewModel.uiState.collectAsState()
+    val parser = remember { VoiceCommandParser(context) }
     
-    var parsedEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    var parsedEntries by remember { mutableStateOf<List<HealthEntry>>(emptyList()) }
     var lastSpokenText by remember { mutableStateOf("") }
+    var showRationale by rememberSaveable { mutableStateOf(false) }
+
+    val startListening = {
+        val permission = Manifest.permission.RECORD_AUDIO
+        if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
+            voiceManager.startListening(Locale.getDefault().toLanguageTag())
+        } else {
+            // Handled by permissionLauncher
+        }
+    }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            voiceManager.startListening()
+            startListening()
+        }
+    }
+
+    val requestPermissionWithRationale = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            startListening()
+        } else if (!uiState.hasShownVoiceRationale) {
+            showRationale = true
+        } else {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
+    if (showRationale) {
+        AlertDialog(
+            onDismissRequest = { showRationale = false },
+            title = { Text(stringResource(R.string.voice_permission_rationale_title)) },
+            text = { Text(stringResource(R.string.voice_permission_rationale_msg)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRationale = false
+                    viewModel.setHasShownVoiceRationale(true)
+                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                }) {
+                    Text(stringResource(R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRationale = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            voiceManager.destroy()
         }
     }
 
@@ -91,18 +123,18 @@ fun VoiceLoggingScreen(
             val text = voiceState.spokenText.lowercase()
             lastSpokenText = voiceState.spokenText
             
-            // These keywords might need localization too in a real app, 
-            // but for now keeping them as they are or adding localized ones.
+            // Check for voice keywords to save/cancel
             if (text.contains("save") || text.contains("confirm") || text.contains("enregistrer") || text.contains("confirmer")) {
-                parsedEntry?.let {
-                    viewModel.addEntry(it)
+                if (parsedEntries.isNotEmpty()) {
+                    parsedEntries.forEach { viewModel.addEntry(it) }
                     viewModel.showMessage(context.getString(R.string.voice_saved_message))
                     onSaveSuccess()
                 }
             } else if (text.contains("cancel") || text.contains("back") || text.contains("annuler") || text.contains("retour")) {
                 onBackClick()
             } else {
-                parsedEntry = parser.parse(voiceState.spokenText)
+                // Auto-parse the entries
+                parsedEntries = parser.parse(voiceState.spokenText)
             }
         }
     }
@@ -124,9 +156,10 @@ fun VoiceLoggingScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(24.dp),
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
             Text(
                 text = if (voiceState.isSpeaking) stringResource(R.string.voice_listening) else stringResource(R.string.voice_tap_to_speak),
@@ -135,7 +168,23 @@ fun VoiceLoggingScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // LOCALIZED EXAMPLE SECTION
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f))
+            ) {
+                Text(
+                    text = stringResource(R.string.voice_example_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(16.dp),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
 
             VoiceMicButton(
                 isListening = voiceState.isSpeaking,
@@ -143,53 +192,94 @@ fun VoiceLoggingScreen(
                     if (voiceState.isSpeaking) {
                         voiceManager.stopListening()
                     } else {
-                        when (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)) {
-                            PackageManager.PERMISSION_GRANTED -> voiceManager.startListening()
-                            else -> permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                        }
+                        // Clear old result when starting a new recording
+                        lastSpokenText = ""
+                        parsedEntries = emptyList()
+                        requestPermissionWithRationale()
                     }
                 }
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             if (voiceState.error != null) {
                 ErrorDisplay(error = voiceState.error!!)
-            } else {
-                AnimatedVisibility(visible = lastSpokenText.isNotEmpty()) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "\"$lastSpokenText\"",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                            textAlign = TextAlign.Center
-                        )
-                        
-                        Spacer(modifier = Modifier.height(24.dp))
-                        
-                        parsedEntry?.let { entry ->
-                            ParsedEntryPreview(entry)
-                            
-                            Spacer(modifier = Modifier.height(32.dp))
-                            
-                            Text(
-                                text = stringResource(R.string.voice_save_hint),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.secondary
-                            )
-                            
-                            Row(modifier = Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Button(onClick = { 
-                                    viewModel.addEntry(entry)
-                                    onSaveSuccess()
-                                }) {
-                                    Text(stringResource(R.string.voice_save_now))
-                                }
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedButton(onClick = { 
+                    lastSpokenText = ""
+                    parsedEntries = emptyList()
+                    requestPermissionWithRationale()
+                }) {
+                    Icon(Icons.Default.Refresh, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.retry))
+                }
+            } else if (parsedEntries.isNotEmpty()) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "\"$lastSpokenText\"",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    parsedEntries.forEachIndexed { index, entry ->
+                        ParsedEntryPreview(
+                            entry = entry,
+                            onTypeChange = { newType -> 
+                                val newList = parsedEntries.toMutableList()
+                                newList[index] = entry.copy(type = newType)
+                                parsedEntries = newList
                             }
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Text(
+                        text = stringResource(R.string.voice_save_hint),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally)
+                    ) {
+                        OutlinedButton(
+                            onClick = { 
+                                lastSpokenText = ""
+                                parsedEntries = emptyList()
+                                requestPermissionWithRationale()
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.retry))
+                        }
+                        
+                        Button(
+                            onClick = { 
+                                parsedEntries.forEach { viewModel.addEntry(it) }
+                                onSaveSuccess()
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(stringResource(R.string.voice_save_now))
                         }
                     }
                 }
             }
+            
+            Spacer(modifier = Modifier.height(48.dp))
         }
     }
 }
@@ -243,7 +333,7 @@ fun VoiceMicButton(isListening: Boolean, onClick: () -> Unit) {
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
-            .size(120.dp)
+            .size(100.dp)
             .scale(scale)
             .clip(CircleShape)
             .background(if (isListening) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)
@@ -252,30 +342,86 @@ fun VoiceMicButton(isListening: Boolean, onClick: () -> Unit) {
         Icon(
             imageVector = Icons.Default.Mic,
             contentDescription = "Microphone",
-            modifier = Modifier.size(60.dp),
+            modifier = Modifier.size(50.dp),
             tint = if (isListening) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ParsedEntryPreview(entry: HealthEntry) {
+fun ParsedEntryPreview(
+    entry: HealthEntry,
+    onTypeChange: (EntryType) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f))
+            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = stringResource(R.string.voice_detected_log), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(8.dp))
-        Text(text = "${entry.type.emoji} ${entry.type.name}", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = stringResource(R.string.voice_detected_log), 
+            style = MaterialTheme.typography.labelLarge, 
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSecondaryContainer
+        )
         
-        entry.intensity?.let { Text(stringResource(R.string.intensity_label, it)) }
-        entry.location?.let { Text(stringResource(R.string.location_label_format, it)) }
-        entry.name?.let { Text(stringResource(R.string.name_label_format, it)) }
-        entry.durationMinutes?.let { Text(stringResource(R.string.duration_mins_label, it)) }
-        entry.unit?.let { Text(stringResource(R.string.dosage_label_format, it)) }
+        Spacer(Modifier.height(16.dp))
+
+        // Type Selection Dropdown - Explicitly visible and interactive
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            OutlinedTextField(
+                value = "${entry.type.emoji} ${stringResource(entry.type.displayRes)}",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(R.string.change_type)) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                ),
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
+            )
+
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                EntryType.entries.filter { it != EntryType.VOICE_LOGGING }.forEach { type ->
+                    DropdownMenuItem(
+                        text = { Text("${type.emoji} ${stringResource(type.displayRes)}") },
+                        onClick = {
+                            onTypeChange(type)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            entry.intensity?.let { Text("• " + stringResource(R.string.intensity_label, it), style = MaterialTheme.typography.bodyMedium) }
+            entry.location?.let { Text("• " + stringResource(R.string.location_label_format, it), style = MaterialTheme.typography.bodyMedium) }
+            entry.name?.let { Text("• " + stringResource(R.string.name_label_format, it), style = MaterialTheme.typography.bodyMedium) }
+            entry.durationMinutes?.let { Text("• " + stringResource(R.string.duration_mins_label, it), style = MaterialTheme.typography.bodyMedium) }
+            entry.unit?.let { Text("• " + stringResource(R.string.dosage_label_format, it), style = MaterialTheme.typography.bodyMedium) }
+        }
     }
 }

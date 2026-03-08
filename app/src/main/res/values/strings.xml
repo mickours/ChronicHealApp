@@ -12,7 +12,7 @@
     <string name="confirm">Confirm</string>
     <string name="ok">OK</string>
     <string name="today">Today</string>
-    <string name="search_placeholder">Search by name, location or note...</string>
+    <string name="search_placeholder">Search by name, location or note…</string>
     <string name="no_matches">No matches found.</string>
     <string name="no_entries_yet">No entries yet. Tap + to start tracking.</string>
     <string name="delete_entry_title">Delete Entry</string>
@@ -36,7 +36,7 @@
 
     <!-- Voice Logging -->
     <string name="voice_logging_title">Voice Logging</string>
-    <string name="voice_listening">Listening...</string>
+    <string name="voice_listening">Listening…</string>
     <string name="voice_tap_to_speak">Tap the mic and speak</string>
     <string name="voice_detected_log">Detected Log</string>
     <string name="voice_save_hint">Say \"Save\" to confirm or \"Cancel\" to discard</string>
@@ -44,6 +44,45 @@
     <string name="voice_saved_message">Entry saved via voice</string>
     <string name="voice_error_no_match">No speech match found. Try speaking more clearly.</string>
     <string name="voice_error_quiet_hint">Try moving to a quieter place or speaking closer to the microphone.</string>
+    <string name="retry">Retry</string>
+    <string name="change_type">Change Type</string>
+    <string name="voice_example_hint">Try saying:\n\"I took 500mg of Paracetamol for my head pain level 6\"</string>
+    <string name="voice_permission_rationale_title">Voice Logging Permission</string>
+    <string name="voice_permission_rationale_msg">ChronicHeal uses your microphone to let you log health entries by voice. Your audio is processed locally and never sent to any server.</string>
+
+    <!-- Voice Dictionaries -->
+    <string name="voice_keywords_pain">pain,hurt,ache,sore,throbbing,stinging</string>
+    <string name="voice_keywords_drug">took,medication,drug,pill,aspirin,ibuprofen,paracetamol,dose</string>
+    <string name="voice_keywords_symptom">symptom,nausea,fatigue,dizzy,cough,fever,rash,itching</string>
+    <string name="voice_keywords_sleep">slept,sleep,bedtime,woke up</string>
+    <string name="voice_keywords_mood">mood,feel,feeling,happy,sad,anxious,angry,depressed</string>
+    <string name="voice_keywords_beverage">drank,beverage,water,coffee,tea,juice,alcohol,glass</string>
+    <string name="voice_keywords_meal">ate,meal,food,breakfast,lunch,dinner,snack</string>
+    <string name="voice_keywords_activity">activity,exercise,ran,walked,gym,workout,sport</string>
+    <string name="voice_keywords_disease">disease,condition,diagnosed,illness</string>
+    <string name="voice_keywords_appointment">appointment,doctor,visit,clinic,hospital,dentist</string>
+    <string name="voice_keywords_factor">weather,factor,stress,pollution,humidity,cold,heat</string>
+    <string name="voice_keywords_period">period,menstruation,flow,bleeding,cycle</string>
+    <string name="voice_keywords_stool">stool,bowel,poop,constipation,diarrhea</string>
+    
+    <string name="voice_keywords_intensity">level,intensity,severity,quality,score,flow,impact</string>
+    <string name="voice_keywords_duration_hours">hour,hr,h</string>
+    <string name="voice_keywords_duration_mins">minute,min,m</string>
+    
+    <string name="voice_markers_drug">took,medication,drug,pill,dose</string>
+    <string name="voice_markers_doctor">doctor,dr,dr.</string>
+    
+    <string name="voice_dosage_units">mg,ml,g,tablets,pills,units,mcg</string>
+    <string name="voice_beverage_containers">ml,oz,glass,cup,bottle</string>
+
+    <string name="voice_locations_map">back:Back,head:Head,knee:Knee,shoulder:Shoulder,arm:Arm,leg:Leg,neck:Neck,stomach:Stomach,chest:Chest,wrist:Wrist,ankle:Ankle,hip:Hip</string>
+    <string name="voice_beverages_list">water,coffee,tea,juice,soda,beer,wine,milk,shake</string>
+    <string name="voice_symptoms_list">nausea,fatigue,dizzy,headache,itchy,rash,fever,cough,congestion</string>
+    <string name="voice_diseases_list">flu,cold,covid,diabetes,asthma,migraine,arthritis</string>
+    <string name="voice_factors_list">stress,weather,heat,cold,pollution,humidity</string>
+    <string name="voice_activities_list">walking,running,swimming,cycling,yoga,gym,workout</string>
+    <string name="voice_aspects_list">hard,soft,liquid,normal,bloody,mucus</string>
+    <string name="voice_meals_list">breakfast,lunch,dinner,snack</string>
 
     <!-- Entry Selection -->
     <string name="track_selection_title">What do you want to track?</string>
@@ -81,6 +120,7 @@
     <string name="range_week">Week</string>
     <string name="range_month">Month</string>
     <string name="range_year">Year</string>
+    <string name="range_all">All</string>
     
     <!-- Specific Entry Actions -->
     <string name="log_pain">Log Pain</string>
@@ -137,7 +177,13 @@
     <string name="factor_name_label">Factor (e.g. Weather, Stress, Pollution)</string>
     <string name="beverage_name_label">Beverage Name (e.g. Water, Coffee)</string>
     <string name="stool_aspect_label">Aspect (Optional)</string>
-    
+    <string name="ingredients_label">Ingredients</string>
+    <string name="add_ingredient">Add Ingredient</string>
+    <string name="ingredient_name">Ingredient Name</string>
+    <string name="quantity">Qty</string>
+    <string name="unit">Unit</string>
+    <string name="advanced_options">Advanced Options</string>
+
     <!-- Calendar Screen -->
     <string name="calendar_title">Calendar</string>
     <string name="select_date">Select a date</string>
@@ -219,16 +265,55 @@
     <string name="pain_log_deleted">Pain log deleted for %1$s</string>
     <string name="save_pain_log">Save Pain Log</string>
     <string name="update_pain_log">Update Pain Log</string>
+
+    <!-- Body Regions (Mapping SVG IDs to Localized Strings) -->
+    <string name="body_region_foot_R">Foot (Right)</string>
+    <string name="body_region_ankle_R">Ankle (Right)</string>
+    <string name="body_region_tibia_R">Shin (Right)</string>
+    <string name="body_region_knee_R">Knee (Right)</string>
+    <string name="body_region_thigh_R">Thigh (Right)</string>
+    <string name="body_region_foot_L">Foot (Left)</string>
+    <string name="body_region_ankle_L">Ankle (Left)</string>
+    <string name="body_region_tibia_L">Shin (Left)</string>
+    <string name="body_region_knee_L">Knee (Left)</string>
+    <string name="body_region_thigh_L">Thigh (Left)</string>
+    <string name="body_region_pelvis">Pelvis</string>
+    <string name="body_region_torso">Torso</string>
+    <string name="body_region_helbow_R">Elbow (Right)</string>
+    <string name="body_region_wrist_R">Wrist (Right)</string>
+    <string name="body_region_arm_R_path">Upper Arm (Right)</string>
+    <string name="body_region_forearm_R">Forearm (Right)</string>
+    <string name="body_region_palm_R">Hand (Right)</string>
+    <string name="body_region_fingers_R">Fingers (Right)</string>
+    <string name="body_region_shoulder_R">Shoulder (Right)</string>
+    <string name="body_region_elbow_L">Elbow (Left)</string>
+    <string name="body_region_wrist_L">Wrist (Left)</string>
+    <string name="body_region_arm_L_path">Upper Arm (Left)</string>
+    <string name="body_region_forearm_L">Forearm (Left)</string>
+    <string name="body_region_palm_L">Hand (Left)</string>
+    <string name="body_region_fingers_L">Fingers (Left)</string>
+    <string name="body_region_shoulder_L">Shoulder (Left)</string>
+    <string name="body_region_brest">Chest</string>
+    <string name="body_region_neck">Neck</string>
+    <string name="body_region_head_part">Head</string>
+    <string name="body_region_forehead">Forehead</string>
+    <string name="body_region_ear_R">Ear (Right)</string>
+    <string name="body_region_ear_R_5">Ear (Left)</string>
+    <string name="body_region_eye_R">Eye (Right)</string>
+    <string name="body_region_eye_L">Eye (Left)</string>
     
     <!-- Welcome Wizard -->
     <string name="welcome_title">Welcome to ChronicHeal</string>
     <string name="welcome_subtitle">Your privacy-first chronic health companion.</string>
     <string name="step_privacy_title">Privacy First</string>
     <string name="step_privacy_desc">All your data is stored locally on your device. No cloud, no tracking, no account needed.</string>
+    <string name="step_privacy_desc_short">Your data stays on your device.</string>
     <string name="step_logging_title">Easy Logging</string>
     <string name="step_logging_desc">Quickly log pain, symptoms, medication, and more with specialized screens.</string>
+    <string name="step_logging_desc_short">Specialized screens for every health event.</string>
     <string name="step_insights_title">Actionable Insights</string>
     <string name="step_insights_desc">Visualize trends and find correlations between your lifestyle and symptoms.</string>
+    <string name="step_insights_desc_short">See trends and correlations over time.</string>
     <string name="get_started">Get Started</string>
     <string name="data_control_title">Your Data, Your Control</string>
     <string name="data_control_desc">ChronicHeal is built with privacy at its core. Your health information never leaves your phone unless you choose to export it.</string>

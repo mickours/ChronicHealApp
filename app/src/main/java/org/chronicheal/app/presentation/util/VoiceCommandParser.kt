@@ -1,35 +1,53 @@
 package org.chronicheal.app.presentation.util
 
+import android.content.Context
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.Instant
 import java.util.Locale
 
-class VoiceCommandParser {
+class VoiceCommandParser(private val context: Context) {
 
-    fun parse(text: String): HealthEntry? {
+    fun parse(text: String): List<HealthEntry> {
         val lowerText = text.lowercase(Locale.getDefault())
         
-        // 1. Determine Entry Type
+        // Split by common conjunctions to handle multiple entries
+        val parts = lowerText.split(Regex("\\b(and|with|et|avec|,)\\b"))
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+
+        if (parts.size <= 1) {
+            return listOf(parseSingle(lowerText, text))
+        }
+
+        return parts.map { part -> 
+            parseSingle(part, part)
+        }
+    }
+
+    private fun parseSingle(lowerText: String, originalText: String): HealthEntry {
+        // 1. Determine Entry Type using localized keywords
         val type = when {
-            lowerText.contains("pain") || lowerText.contains("hurt") || lowerText.contains("ache") -> EntryType.PAIN
-            lowerText.contains("took") || lowerText.contains("medication") || lowerText.contains("drug") || lowerText.contains("pill") -> EntryType.DRUG
-            lowerText.contains("symptom") || (lowerText.contains("feeling") && (lowerText.contains("nausea") || lowerText.contains("fatigue") || lowerText.contains("dizzy"))) -> EntryType.SYMPTOM
-            lowerText.contains("slept") || lowerText.contains("sleep") -> EntryType.SLEEP
-            lowerText.contains("mood") || lowerText.contains("feel") || lowerText.contains("feeling") -> EntryType.MOOD
-            lowerText.contains("drank") || lowerText.contains("beverage") || lowerText.contains("water") || lowerText.contains("coffee") -> EntryType.BEVERAGE
-            lowerText.contains("ate") || lowerText.contains("meal") || lowerText.contains("food") -> EntryType.MEAL
-            lowerText.contains("activity") || lowerText.contains("exercise") || lowerText.contains("ran") || lowerText.contains("walked") -> EntryType.ACTIVITY
-            lowerText.contains("disease") || lowerText.contains("condition") || lowerText.contains("diagnosed") -> EntryType.DISEASE
-            lowerText.contains("appointment") || lowerText.contains("doctor") || lowerText.contains("visit") -> EntryType.MEDICAL_APPOINTMENT
-            lowerText.contains("weather") || lowerText.contains("factor") || lowerText.contains("stress") || lowerText.contains("pollution") -> EntryType.EXTERNAL_FACTOR
-            lowerText.contains("period") || lowerText.contains("menstruation") || lowerText.contains("flow") -> EntryType.PERIOD
-            lowerText.contains("stool") || lowerText.contains("bowel") || lowerText.contains("poop") -> EntryType.STOOL
+            containsAny(lowerText, R.string.voice_keywords_pain) -> EntryType.PAIN
+            containsAny(lowerText, R.string.voice_keywords_drug) -> EntryType.DRUG
+            containsAny(lowerText, R.string.voice_keywords_symptom) -> EntryType.SYMPTOM
+            containsAny(lowerText, R.string.voice_keywords_sleep) -> EntryType.SLEEP
+            containsAny(lowerText, R.string.voice_keywords_mood) -> EntryType.MOOD
+            containsAny(lowerText, R.string.voice_keywords_beverage) -> EntryType.BEVERAGE
+            containsAny(lowerText, R.string.voice_keywords_meal) -> EntryType.MEAL
+            containsAny(lowerText, R.string.voice_keywords_activity) -> EntryType.ACTIVITY
+            containsAny(lowerText, R.string.voice_keywords_disease) -> EntryType.DISEASE
+            containsAny(lowerText, R.string.voice_keywords_appointment) -> EntryType.MEDICAL_APPOINTMENT
+            containsAny(lowerText, R.string.voice_keywords_factor) -> EntryType.EXTERNAL_FACTOR
+            containsAny(lowerText, R.string.voice_keywords_period) -> EntryType.PERIOD
+            containsAny(lowerText, R.string.voice_keywords_stool) -> EntryType.STOOL
             else -> EntryType.JOURNAL // Fallback
         }
 
         // 2. Extract Intensity (1-10)
-        val intensity = extractNumber(lowerText, "level|intensity|severity|quality|score|flow|impact") ?: extractSimpleNumber(lowerText)
+        val intensity = extractNumber(lowerText, context.getString(R.string.voice_keywords_intensity).replace(",", "|")) 
+            ?: extractSimpleNumber(lowerText)
 
         // 3. Extract Duration (for sleep/activity)
         val duration = if (type == EntryType.SLEEP || type == EntryType.ACTIVITY) {
@@ -46,31 +64,34 @@ class VoiceCommandParser {
             EntryType.PAIN, EntryType.SYMPTOM -> {
                 location = extractLocation(lowerText)
                 if (type == EntryType.SYMPTOM) {
-                    name = extractSymptomName(lowerText)
+                    name = extractFromList(lowerText, R.string.voice_symptoms_list)
                 }
             }
             EntryType.DRUG -> {
-                name = extractDrugName(lowerText)
+                name = extractEntityName(lowerText, R.string.voice_markers_drug)
                 unit = extractDosage(lowerText)
             }
             EntryType.BEVERAGE -> {
-                name = extractBeverageName(lowerText)
+                name = extractFromList(lowerText, R.string.voice_beverages_list)
                 value = extractQuantity(lowerText)
             }
             EntryType.DISEASE -> {
-                name = extractDiseaseName(lowerText)
+                name = extractFromList(lowerText, R.string.voice_diseases_list)
             }
             EntryType.MEDICAL_APPOINTMENT -> {
-                name = extractDoctorName(lowerText)
+                name = extractEntityName(lowerText, R.string.voice_markers_doctor)
             }
             EntryType.EXTERNAL_FACTOR -> {
-                name = extractFactorName(lowerText)
+                name = extractFromList(lowerText, R.string.voice_factors_list)
             }
             EntryType.ACTIVITY -> {
-                name = extractActivityName(lowerText)
+                name = extractFromList(lowerText, R.string.voice_activities_list)
             }
             EntryType.STOOL -> {
-                name = extractStoolAspect(lowerText)
+                name = extractFromList(lowerText, R.string.voice_aspects_list)
+            }
+            EntryType.MEAL -> {
+                name = extractFromList(lowerText, R.string.voice_meals_list)
             }
             else -> {}
         }
@@ -84,8 +105,13 @@ class VoiceCommandParser {
             durationMinutes = duration,
             unit = unit,
             value = value,
-            note = text
+            note = originalText
         )
+    }
+
+    private fun containsAny(text: String, resId: Int): Boolean {
+        val keywords = context.getString(resId).split(",")
+        return keywords.any { text.contains(it.trim()) }
     }
 
     private fun extractNumber(text: String, keywords: String): Int? {
@@ -99,8 +125,11 @@ class VoiceCommandParser {
     }
 
     private fun extractDurationMinutes(text: String): Int? {
-        val hoursRegex = Regex("(\\d+)\\s*(hour|hr|h)")
-        val minsRegex = Regex("(\\d+)\\s*(minute|min|m)")
+        val hoursKeywords = context.getString(R.string.voice_keywords_duration_hours).replace(",", "|")
+        val minsKeywords = context.getString(R.string.voice_keywords_duration_mins).replace(",", "|")
+        
+        val hoursRegex = Regex("(\\d+)\\s*($hoursKeywords)")
+        val minsRegex = Regex("(\\d+)\\s*($minsKeywords)")
         
         val hours = hoursRegex.find(text)?.groupValues?.get(1)?.toIntOrNull() ?: 0
         val mins = minsRegex.find(text)?.groupValues?.get(1)?.toIntOrNull() ?: 0
@@ -109,18 +138,27 @@ class VoiceCommandParser {
     }
 
     private fun extractLocation(text: String): String? {
-        val locations = listOf("back", "head", "knee", "shoulder", "arm", "leg", "neck", "stomach", "chest", "wrist", "ankle", "hip")
-        return locations.find { text.contains(it) }?.replaceFirstChar { it.uppercase() }
+        val mappingStr = context.getString(R.string.voice_locations_map)
+        val locationsMap = mappingStr.split(",").associate {
+            val parts = it.split(":")
+            if (parts.size == 2) {
+                parts[0].trim() to parts[1].trim()
+            } else {
+                it.trim() to it.trim()
+            }
+        }
+        return locationsMap.keys.find { text.contains(it) }?.let { locationsMap[it] }
     }
 
-    private fun extractDrugName(text: String): String? {
-        val markers = listOf("took", "medication", "drug", "pill")
+    private fun extractEntityName(text: String, markersResId: Int): String? {
+        val markers = context.getString(markersResId).split(",")
         for (marker in markers) {
-            val index = text.indexOf(marker)
+            val markerTrimmed = marker.trim()
+            val index = text.indexOf(markerTrimmed)
             if (index != -1) {
-                val remaining = text.substring(index + marker.length).trim()
+                val remaining = text.substring(index + markerTrimmed.length).trim()
                 val firstWord = remaining.split(" ").firstOrNull()
-                if (firstWord != null && !firstWord[0].isDigit()) {
+                if (firstWord != null && firstWord.isNotEmpty() && !firstWord[0].isDigit()) {
                     return firstWord.replaceFirstChar { it.uppercase() }
                 }
             }
@@ -129,47 +167,19 @@ class VoiceCommandParser {
     }
 
     private fun extractDosage(text: String): String? {
-        val regex = Regex("(\\d+)\\s*(mg|ml|g|tablets|pills|units|mcg)")
+        val units = context.getString(R.string.voice_dosage_units).replace(",", "|")
+        val regex = Regex("(\\d+)\\s*($units)")
         return regex.find(text)?.value
     }
 
-    private fun extractBeverageName(text: String): String? {
-        val names = listOf("water", "coffee", "tea", "juice", "soda", "beer", "wine", "milk", "shake")
-        return names.find { text.contains(it) }?.replaceFirstChar { it.uppercase() }
+    private fun extractFromList(text: String, listResId: Int): String? {
+        val items = context.getString(listResId).split(",")
+        return items.find { text.contains(it.trim()) }?.trim()?.replaceFirstChar { it.uppercase() }
     }
 
     private fun extractQuantity(text: String): Double? {
-        val regex = Regex("(\\d+)\\s*(ml|oz|glass|cup|bottle)")
+        val containers = context.getString(R.string.voice_beverage_containers).replace(",", "|")
+        val regex = Regex("(\\d+)\\s*($containers)")
         return regex.find(text)?.groupValues?.get(1)?.toDoubleOrNull()
-    }
-
-    private fun extractSymptomName(text: String): String? {
-        val symptoms = listOf("nausea", "fatigue", "dizzy", "headache", "itchy", "rash", "fever", "cough", "congestion")
-        return symptoms.find { text.contains(it) }?.replaceFirstChar { it.uppercase() }
-    }
-
-    private fun extractDiseaseName(text: String): String? {
-        val diseases = listOf("flu", "cold", "covid", "diabetes", "asthma", "migraine", "arthritis")
-        return diseases.find { text.contains(it) }?.replaceFirstChar { it.uppercase() }
-    }
-
-    private fun extractDoctorName(text: String): String? {
-        val regex = Regex("(doctor|dr|dr\\.)\\s*([a-z]+)")
-        return regex.find(text)?.groupValues?.get(2)?.replaceFirstChar { it.uppercase() }
-    }
-
-    private fun extractFactorName(text: String): String? {
-        val factors = listOf("stress", "weather", "heat", "cold", "pollution", "humidity")
-        return factors.find { text.contains(it) }?.replaceFirstChar { it.uppercase() }
-    }
-
-    private fun extractActivityName(text: String): String? {
-        val activities = listOf("walking", "running", "swimming", "cycling", "yoga", "gym", "workout")
-        return activities.find { text.contains(it) }?.replaceFirstChar { it.uppercase() }
-    }
-
-    private fun extractStoolAspect(text: String): String? {
-        val aspects = listOf("hard", "soft", "liquid", "normal", "bloody", "mucus")
-        return aspects.find { text.contains(it) }?.replaceFirstChar { it.uppercase() }
     }
 }

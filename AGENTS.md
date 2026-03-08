@@ -1,5 +1,5 @@
-We are implementing the Android app describe in the [README.md]().
-We follow the design described in [docs/design.md]().
+We are implementing the Android app describe in the [./README.md]().
+We follow the design described in [./docs/design.md]().
 The implementation details are explained in [./docs/implementation.md]().
 Read these files carefully.
 Scan the code structure and propose the next step.

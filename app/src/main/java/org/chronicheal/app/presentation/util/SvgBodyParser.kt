@@ -13,7 +13,8 @@ data class SvgPath(
     val path: Path,
     val fill: String? = null,
     val stroke: String? = null,
-    val strokeWidth: Float? = null
+    val strokeWidth: Float? = null,
+    val label: String? = null
 )
 
 class SvgBodyParser(private val context: Context) {
@@ -22,7 +23,7 @@ class SvgBodyParser(private val context: Context) {
         try {
             val inputStream = context.assets.open(fileName)
             val parser = Xml.newPullParser()
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, true) // Enable namespaces for inkscape:label
             parser.setInput(inputStream, null)
 
             val matrixStack = Stack<Matrix>()
@@ -31,6 +32,9 @@ class SvgBodyParser(private val context: Context) {
             val idStack = Stack<String?>()
             idStack.push(null)
             
+            val labelStack = Stack<String?>()
+            labelStack.push(null)
+
             val fillStack = Stack<String?>()
             fillStack.push(null)
             
@@ -40,12 +44,15 @@ class SvgBodyParser(private val context: Context) {
             val strokeWidthStack = Stack<Float?>()
             strokeWidthStack.push(null)
 
+            val inkscapeNs = "http://www.inkscape.org/namespaces/inkscape"
+
             var eventType = parser.eventType
             while (eventType != XmlPullParser.END_DOCUMENT) {
                 when (eventType) {
                     XmlPullParser.START_TAG -> {
                         val tagName = parser.name
                         val id = parser.getAttributeValue(null, "id")
+                        val label = parser.getAttributeValue(inkscapeNs, "label")
                         val transform = parser.getAttributeValue(null, "transform")
                         val fill = parser.getAttributeValue(null, "fill")
                         val stroke = parser.getAttributeValue(null, "stroke")
@@ -59,6 +66,7 @@ class SvgBodyParser(private val context: Context) {
                             }
                             matrixStack.push(currentMatrix)
                             idStack.push(id ?: idStack.peek())
+                            labelStack.push(label ?: labelStack.peek())
                             fillStack.push(fill ?: fillStack.peek())
                             strokeStack.push(stroke ?: strokeStack.peek())
                             strokeWidthStack.push(strokeWidth ?: strokeWidthStack.peek())
@@ -70,6 +78,7 @@ class SvgBodyParser(private val context: Context) {
                             }
                             
                             val partId = id ?: idStack.peek() ?: "unknown"
+                            val partLabel = label ?: labelStack.peek()
                             val partFill = fill ?: fillStack.peek()
                             val partStroke = stroke ?: strokeStack.peek()
                             val partStrokeWidth = strokeWidth ?: strokeWidthStack.peek()
@@ -80,7 +89,7 @@ class SvgBodyParser(private val context: Context) {
                                     try {
                                         val path = PathParser.createPathFromPathData(d)
                                         path.transform(currentMatrix)
-                                        result.add(SvgPath(partId, path, partFill, partStroke, partStrokeWidth))
+                                        result.add(SvgPath(partId, path, partFill, partStroke, partStrokeWidth, partLabel))
                                     } catch (_: Exception) {
                                         // Ignore malformed paths
                                     }
@@ -93,7 +102,7 @@ class SvgBodyParser(private val context: Context) {
                                 val path = Path()
                                 path.addOval(cx - rx, cy - ry, cx + rx, cy + ry, Path.Direction.CW)
                                 path.transform(currentMatrix)
-                                result.add(SvgPath(partId, path, partFill, partStroke, partStrokeWidth))
+                                result.add(SvgPath(partId, path, partFill, partStroke, partStrokeWidth, partLabel))
                             }
                         }
                     }
@@ -103,6 +112,7 @@ class SvgBodyParser(private val context: Context) {
                             if (matrixStack.size > 1) {
                                 matrixStack.pop()
                                 idStack.pop()
+                                labelStack.pop()
                                 fillStack.pop()
                                 strokeStack.pop()
                                 strokeWidthStack.pop()

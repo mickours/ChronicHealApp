@@ -1,5 +1,8 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,8 +10,24 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -20,18 +39,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.model.Ingredient
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -52,11 +80,17 @@ fun AddMealScreen(
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
 
+    val ingredients = remember { mutableStateListOf<Ingredient>() }
+
     var setReminder by rememberSaveable { mutableStateOf(false) }
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    var advancedOptionsExpanded by rememberSaveable { mutableStateOf(false) }
 
     val nameSuggestions by viewModel.mealSuggestions.collectAsState()
+    val focusManager = LocalFocusManager.current
+    val lastItemFocusRequester = remember { FocusRequester() }
+    var shouldFocusNewIngredient by remember { mutableStateOf(false) }
 
     LaunchedEffect(id) {
         if (id != null && existingEntry == null) {
@@ -69,6 +103,9 @@ fun AddMealScreen(
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
                 setReminder = entry.hasReminder
                 
+                ingredients.clear()
+                entry.ingredients?.let { ingredients.addAll(it) }
+
                 if (entry.hasReminder && entry.reminderId != null) {
                     viewModel.getReminderById(entry.reminderId)?.let { reminder ->
                         reminderTime = reminder.time
@@ -76,6 +113,22 @@ fun AddMealScreen(
                 }
             }
         }
+    }
+
+    LaunchedEffect(ingredients.size) {
+        if (shouldFocusNewIngredient && ingredients.isNotEmpty()) {
+            try {
+                lastItemFocusRequester.requestFocus()
+            } catch (e: Exception) {
+                // Focus request might fail if not attached yet
+            }
+            shouldFocusNewIngredient = false
+        }
+    }
+
+    val addNewIngredient = {
+        ingredients.add(Ingredient("", unit = "g"))
+        shouldFocusNewIngredient = true
     }
 
     val createEntry = {
@@ -87,7 +140,8 @@ fun AddMealScreen(
             note = note,
             hasReminder = setReminder,
             reminderId = existingEntry?.reminderId,
-            durationMinutes = existingEntry?.durationMinutes
+            durationMinutes = existingEntry?.durationMinutes,
+            ingredients = if (ingredients.isEmpty()) null else ingredients.toList()
         )
     }
 
@@ -103,62 +157,137 @@ fun AddMealScreen(
         },
         viewModel = viewModel
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            EntryDateTimePicker(
-                date = logDate,
-                onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AutoCompleteTextField(
-                value = name,
-                onValueChange = { name = it },
-                suggestions = nameSuggestions,
-                label = stringResource(R.string.name_label)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                label = { Text(stringResource(R.string.notes_label)) },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked = setReminder,
-                    onCheckedChange = { setReminder = it }
+            item {
+                EntryDateTimePicker(
+                    date = logDate,
+                    onDateChange = { logDate = it },
+                    startTime = startTime,
+                    onStartTimeChange = { startTime = it }
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                AutoCompleteTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    suggestions = nameSuggestions,
+                    label = stringResource(R.string.meal_name_label),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
                 Text(
-                    text = if (existingEntry?.hasReminder == true) stringResource(R.string.update_daily_reminder) else stringResource(R.string.set_daily_reminder),
-                    style = MaterialTheme.typography.bodyLarge
+                    text = stringResource(R.string.ingredients_label),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            if (setReminder) {
-                val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+            itemsIndexed(ingredients) { index, ingredient ->
+                IngredientItem(
+                    ingredient = ingredient,
+                    onIngredientChange = { updated -> ingredients[index] = updated },
+                    onRemove = { ingredients.removeAt(index) },
+                    isLast = index == ingredients.size - 1,
+                    onAddNew = { addNewIngredient() },
+                    nameFocusRequester = if (index == ingredients.size - 1 && shouldFocusNewIngredient) lastItemFocusRequester else null
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            item {
                 OutlinedButton(
-                    onClick = { showTimePicker = true },
-                    modifier = Modifier.padding(start = 32.dp)
+                    onClick = { addNewIngredient() },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(stringResource(R.string.time_label) + ": ${reminderTime.format(timeFormatter)}")
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.add_ingredient))
                 }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Advanced Options Card (Moved to bottom)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { advancedOptionsExpanded = !advancedOptionsExpanded }
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.advanced_options),
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Icon(
+                                imageVector = if (advancedOptionsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        AnimatedVisibility(visible = advancedOptionsExpanded) {
+                            Column(modifier = Modifier.padding(8.dp)) {
+                                OutlinedTextField(
+                                    value = note,
+                                    onValueChange = { note = it },
+                                    label = { Text(stringResource(R.string.notes_label)) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    minLines = 3,
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
+                                )
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Checkbox(
+                                        checked = setReminder,
+                                        onCheckedChange = { setReminder = it }
+                                    )
+                                    Text(
+                                        text = if (existingEntry?.hasReminder == true) stringResource(R.string.update_daily_reminder) else stringResource(R.string.set_daily_reminder),
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                }
+
+                                if (setReminder) {
+                                    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
+                                    OutlinedButton(
+                                        onClick = { showTimePicker = true },
+                                        modifier = Modifier.padding(start = 32.dp)
+                                    ) {
+                                        Text(stringResource(R.string.time_label) + ": ${reminderTime.format(timeFormatter)}")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
             }
         }
 
@@ -186,5 +315,78 @@ fun AddMealScreen(
                 TimePicker(state = timeState)
             }
         }
+    }
+}
+
+@Composable
+fun IngredientItem(
+    ingredient: Ingredient,
+    onIngredientChange: (Ingredient) -> Unit,
+    onRemove: () -> Unit,
+    isLast: Boolean,
+    onAddNew: () -> Unit,
+    nameFocusRequester: FocusRequester? = null
+) {
+    val focusManager = LocalFocusManager.current
+    
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            val nameModifier = if (nameFocusRequester != null) {
+                Modifier.weight(2f).focusRequester(nameFocusRequester)
+            } else {
+                Modifier.weight(2f)
+            }
+
+            OutlinedTextField(
+                value = ingredient.name,
+                onValueChange = { onIngredientChange(ingredient.copy(name = it)) },
+                label = { Text(stringResource(R.string.ingredient_name)) },
+                modifier = nameModifier,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) })
+            )
+
+            OutlinedTextField(
+                value = ingredient.quantity?.let { if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString() } ?: "",
+                onValueChange = { 
+                    val qty = it.toDoubleOrNull()
+                    onIngredientChange(ingredient.copy(quantity = qty))
+                },
+                label = { Text(stringResource(R.string.quantity)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
+                modifier = Modifier.weight(1f)
+            )
+
+            OutlinedTextField(
+                value = ingredient.unit ?: "",
+                onValueChange = { onIngredientChange(ingredient.copy(unit = it.ifBlank { null })) },
+                label = { Text(stringResource(R.string.unit)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(imeAction = if (isLast) ImeAction.Done else ImeAction.Next),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Next) },
+                    onDone = {
+                        if (isLast) {
+                            onAddNew()
+                        } else {
+                            focusManager.moveFocus(FocusDirection.Next)
+                        }
+                    }
+                )
+            )
+
+            IconButton(
+                onClick = onRemove,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+            }
+        }
+        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
     }
 }

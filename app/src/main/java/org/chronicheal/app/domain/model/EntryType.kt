@@ -18,7 +18,8 @@ enum class EntryType(val emoji: String, val displayRes: Int) {
     PERIOD("🩸", R.string.type_period),
     BEVERAGE("☕", R.string.type_beverage),
     STOOL("💩", R.string.type_stool),
-    MOOD("😊", R.string.type_mood);
+    MOOD("😊", R.string.type_mood),
+    VOICE_LOGGING("🎙️", R.string.voice_logging_title);
 
     enum class Category(val titleRes: Int) {
         OCCURRENCE(R.string.category_occurrence), // "What occurs to you"
@@ -28,6 +29,6 @@ enum class EntryType(val emoji: String, val displayRes: Int) {
     val category: Category
         get() = when (this) {
             PAIN, SYMPTOM, DISEASE, EXTERNAL_FACTOR, PERIOD, STOOL, MOOD -> Category.OCCURRENCE
-            DRUG, MEAL, SLEEP, MEDICAL_APPOINTMENT, ACTIVITY, JOURNAL, BEVERAGE -> Category.MANAGEMENT
+            DRUG, MEAL, SLEEP, MEDICAL_APPOINTMENT, ACTIVITY, JOURNAL, BEVERAGE, VOICE_LOGGING -> Category.MANAGEMENT
         }
 }

@@ -3,7 +3,6 @@ package org.chronicheal.app.presentation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -111,7 +110,7 @@ fun AddSymptomScreen(
                 value = name,
                 onValueChange = { name = it },
                 suggestions = nameSuggestions,
-                label = stringResource(R.string.name_label)
+                label = stringResource(R.string.symptom_name_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))

@@ -489,7 +489,6 @@ fun QuickAddChip(
     type: EntryType,
     onClick: () -> Unit
 ) {
-    @Suppress("DEPRECATION")
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -497,6 +496,7 @@ fun QuickAddChip(
             .clickable { onClick() }
             .padding(4.dp)
     ) {
+        @Suppress("DEPRECATION")
         Surface(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.primaryContainer,
@@ -656,6 +656,7 @@ fun EntryItem(
     entry: HealthEntry,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val formatter = remember {
         DateTimeFormatter
             .ofLocalizedTime(FormatStyle.SHORT)
@@ -669,7 +670,16 @@ fun EntryItem(
         }
     }
 
-    val mainParameter = entry.name ?: entry.location ?: ""
+    // Localize pain location if applicable
+    val displayedLocation = remember(entry.location) {
+        if (entry.type == EntryType.PAIN && entry.location != null) {
+            formatId(context, entry.location)
+        } else {
+            entry.location
+        }
+    }
+
+    val mainParameter = entry.name ?: displayedLocation ?: ""
 
     Card(
         modifier = modifier
@@ -759,8 +769,8 @@ fun EntryItem(
 
                 // If both name and location exist, we already showed one. 
                 // Show the other one here if it wasn't the one highlighted.
-                if (entry.name != null && entry.location != null) {
-                    Text(text = stringResource(R.string.location_label_format, entry.location), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                if (entry.name != null && displayedLocation != null) {
+                    Text(text = stringResource(R.string.location_label_format, displayedLocation), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                 }
                 
                 entry.value?.let {
@@ -788,7 +798,7 @@ fun EntryItem(
 
             // Vertical intensity gauge on the right
             entry.intensity?.let { intensity ->
-                val maxVal = if (entry.type == EntryType.SLEEP) 5 else 10
+                val maxVal = 10
                 VerticalIntensityGauge(
                     intensity = intensity,
                     maxVal = maxVal,

@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.usecase.ExportPdfUseCase
@@ -20,7 +20,6 @@ import org.chronicheal.app.domain.usecase.GetEntriesUseCase
 import java.io.OutputStream
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 import java.time.temporal.WeekFields
 import java.util.Locale
 import javax.inject.Inject
@@ -28,7 +27,7 @@ import kotlin.math.sqrt
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
-    private val getEntriesUseCase: GetEntriesUseCase,
+    getEntriesUseCase: GetEntriesUseCase,
     private val exportPdfUseCase: ExportPdfUseCase
 ) : ViewModel() {
 
@@ -109,6 +108,7 @@ class AnalyticsViewModel @Inject constructor(
             TimeRange.WEEK -> LocalDate.now().minusDays(6)
             TimeRange.MONTH -> LocalDate.now().minusMonths(1)
             TimeRange.YEAR -> LocalDate.now().minusYears(1)
+            TimeRange.ALL -> LocalDate.of(2000, 1, 1)
         }
     }
 
@@ -118,6 +118,7 @@ class AnalyticsViewModel @Inject constructor(
             TimeRange.WEEK -> current.plusWeeks(direction.toLong())
             TimeRange.MONTH -> current.plusMonths(direction.toLong())
             TimeRange.YEAR -> current.plusYears(direction.toLong())
+            TimeRange.ALL -> current
         }
     }
 
@@ -129,6 +130,7 @@ class AnalyticsViewModel @Inject constructor(
                 TimeRange.WEEK -> start.plusDays(6)
                 TimeRange.MONTH -> start.plusMonths(1).minusDays(1)
                 TimeRange.YEAR -> start.plusYears(1).minusDays(1)
+                TimeRange.ALL -> LocalDate.now()
             }
             exportPdfUseCase(outputStream, start, end)
             _pdfExportSuccess.emit(uri)
@@ -140,10 +142,13 @@ class AnalyticsViewModel @Inject constructor(
     }
 
     private fun filterEntries(entries: List<HealthEntry>, range: TimeRange, start: LocalDate): List<HealthEntry> {
+        if (range == TimeRange.ALL) return entries
+        
         val end = when (range) {
             TimeRange.WEEK -> start.plusDays(7)
             TimeRange.MONTH -> start.plusMonths(1)
             TimeRange.YEAR -> start.plusYears(1)
+            else -> start.plusDays(1)
         }
         return entries.filter {
             val entryDate = it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
@@ -194,11 +199,7 @@ class AnalyticsViewModel @Inject constructor(
                 }
             }
             TimeRange.MONTH -> {
-                // Group by week of month
                 val weekFields = WeekFields.of(Locale.getDefault())
-                val dataByWeek = entries.groupBy { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate().get(weekFields.weekOfMonth()) }
-                
-                // Usually 4-6 weeks in a month
                 val result = mutableMapOf<String, Int>()
                 val firstDay = start
                 val lastDay = start.plusMonths(1).minusDays(1)
@@ -214,13 +215,20 @@ class AnalyticsViewModel @Inject constructor(
                 result
             }
             TimeRange.YEAR -> {
-                // Group by month
                 (1..12).associate { i ->
-                    val monthDate = start.withMonth(i) // This might be wrong if start is not Jan 1st
-                    // Better: start is some date, we want 12 months from start
                     val targetMonth = start.plusMonths(i.toLong() - 1).month
                     val monthEntries = entries.filter { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate().month == targetMonth }
                     targetMonth.getDisplayName(java.time.format.TextStyle.SHORT, Locale.getDefault()) to if (monthEntries.isEmpty()) 0 else aggregator(monthEntries)
+                }
+            }
+            TimeRange.ALL -> {
+                if (entries.isEmpty()) return emptyMap()
+                val sortedEntries = entries.sortedBy { it.timestamp }
+                val firstYear = sortedEntries.first().timestamp.atZone(ZoneId.systemDefault()).year
+                val lastYear = sortedEntries.last().timestamp.atZone(ZoneId.systemDefault()).year
+                (firstYear..lastYear).associate { year ->
+                    val yearEntries = entries.filter { it.timestamp.atZone(ZoneId.systemDefault()).year == year }
+                    year.toString() to if (yearEntries.isEmpty()) 0 else aggregator(yearEntries)
                 }
             }
         }
@@ -247,7 +255,7 @@ class AnalyticsViewModel @Inject constructor(
                     EntryType.BEVERAGE -> {
                         dayEntries.sumOf { it.value ?: 0.0 }.toInt()
                     }
-                    EntryType.DRUG, EntryType.MEAL, EntryType.ACTIVITY, EntryType.MEDICAL_APPOINTMENT, EntryType.JOURNAL, EntryType.STOOL -> {
+                    EntryType.DRUG, EntryType.MEAL, EntryType.ACTIVITY, EntryType.MEDICAL_APPOINTMENT, EntryType.JOURNAL, EntryType.STOOL, EntryType.VOICE_LOGGING -> {
                         if (type == EntryType.ACTIVITY) dayEntries.sumOf { it.durationMinutes ?: 0 } / 60
                         else dayEntries.size
                     }
@@ -273,38 +281,27 @@ class AnalyticsViewModel @Inject constructor(
 
     private fun calculatePearsonCorrelation(x: List<Float>, y: List<Float>): Double? {
         if (x.size != y.size || x.size < 2) return null
-        
-        // Filter out pairs where at least one value is 0 (assuming 0 means no data for that period)
         val pairs = x.zip(y).filter { it.first != 0f || it.second != 0f }
         if (pairs.size < 2) return null
-
         val filteredX = pairs.map { it.first }
         val filteredY = pairs.map { it.second }
-
         val n = filteredX.size
         val sumX = filteredX.sum()
         val sumY = filteredY.sum()
         val sumX2 = filteredX.sumOf { (it * it).toDouble() }
         val sumY2 = filteredY.sumOf { (it * it).toDouble() }
         val sumXY = filteredX.zip(filteredY).sumOf { (it.first * it.second).toDouble() }
-
         val numerator = n * sumXY - sumX * sumY
         val denominator = sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY))
-
         return if (denominator == 0.0) null else numerator / denominator
-    }
-
-    private fun getDaysCount(range: TimeRange, start: LocalDate): Long {
-        return when (range) {
-            TimeRange.WEEK -> 7L
-            TimeRange.MONTH -> ChronoUnit.DAYS.between(start, start.plusMonths(1))
-            TimeRange.YEAR -> ChronoUnit.DAYS.between(start, start.plusYears(1))
-        }
     }
 }
 
-enum class TimeRange {
-    WEEK, MONTH, YEAR
+enum class TimeRange(val labelRes: Int) {
+    WEEK(R.string.range_week), 
+    MONTH(R.string.range_month), 
+    YEAR(R.string.range_year),
+    ALL(R.string.range_all)
 }
 
 data class AnalyticsUiState(

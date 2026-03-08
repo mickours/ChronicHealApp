@@ -36,8 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -93,10 +95,10 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -112,10 +114,11 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
+                .padding(16.dp)
+            ,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(text = "Privacy & Security", style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.settings_security), style = MaterialTheme.typography.titleMedium)
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -124,14 +127,14 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Biometric Lock",
+                        text = stringResource(R.string.biometric_lock),
                         style = MaterialTheme.typography.bodyLarge,
                         color = if (isBiometricAvailable) Color.Unspecified else MaterialTheme.colorScheme.outline
                     )
                     Text(
                         text = if (isBiometricAvailable) 
-                            "Require biometric authentication to open the app" 
-                            else "Biometric authentication is not available on this device",
+                            stringResource(R.string.biometric_lock_desc)
+                            else stringResource(R.string.biometric_not_available),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline
                     )
@@ -145,26 +148,26 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
-            Text(text = "Onboarding", style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.onboarding), style = MaterialTheme.typography.titleMedium)
             
             Button(
                 onClick = { viewModel.resetWelcomeWizard() },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer)
             ) {
-                Text("Reset Welcome Wizard")
+                Text(stringResource(R.string.reset_wizard))
             }
 
             HorizontalDivider()
 
-            Text(text = "Data Management", style = MaterialTheme.typography.titleMedium)
+            Text(text = stringResource(R.string.data_management), style = MaterialTheme.typography.titleMedium)
             
             Button(
                 onClick = { createJsonLauncher.launch("chronicheal_backup.json") },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             ) {
-                Text("Export Data to JSON")
+                Text(stringResource(R.string.export_json))
             }
 
             Button(
@@ -172,7 +175,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             ) {
-                Text("Import Data from JSON")
+                Text(stringResource(R.string.import_json))
             }
             
             if (uiState.isLoading) {
@@ -182,7 +185,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.weight(1f))
             
             Text(
-                text = "ChronicHeal v1.0 - Open Source & Privacy First",
+                text = stringResource(R.string.app_version_info),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline
             )

@@ -2,13 +2,12 @@ package org.chronicheal.app.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ElevatedCard
@@ -23,13 +22,10 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
@@ -62,7 +58,7 @@ fun AddCompleteEntryScreen(
 
     // Sleep State
     var sleepDurationHours by rememberSaveable { mutableStateOf("") }
-    var sleepQuality by rememberSaveable { mutableFloatStateOf(3f) }
+    var sleepQuality by rememberSaveable { mutableFloatStateOf(5f) }
 
     // Medication State
     var medicationName by rememberSaveable { mutableStateOf("") }
@@ -100,7 +96,7 @@ fun AddCompleteEntryScreen(
 
         // Add Sleep if recorded
         val sleepMins = sleepDurationHours.toIntOrNull()?.let { it * 60 }
-        if (sleepMins != null || sleepQuality != 3f) {
+        if (sleepMins != null || sleepQuality != 5f) {
             entries.add(
                 HealthEntry(
                     timestamp = timestamp,
@@ -137,7 +133,7 @@ fun AddCompleteEntryScreen(
 
         // Save all
         entries.forEach { viewModel.addEntry(it) }
-        viewModel.showMessage(context.getString(R.string.complete_checkin) + " " + context.getString(R.string.save).lowercase()) // Combined for simplicity
+        viewModel.showMessage(context.getString(R.string.entry_saved))
         onSaveSuccess()
     }
 
@@ -216,38 +212,6 @@ fun AddCompleteEntryScreen(
 }
 
 @Composable
-fun SectionHeader(type: EntryType, title: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text = type.emoji, fontSize = 24.sp)
-        Spacer(Modifier.width(8.dp))
-        Text(text = title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-    }
-}
-
-@Composable
-fun MoodSection(
-    intensity: Float,
-    onIntensityChange: (Float) -> Unit,
-    note: String,
-    onNoteChange: (String) -> Unit
-) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            val moodLabel = when(intensity.roundToInt()) {
-                in 1..2 -> stringResource(R.string.mood_very_bad)
-                in 3..4 -> stringResource(R.string.mood_bad)
-                in 5..6 -> stringResource(R.string.mood_neutral)
-                in 7..8 -> stringResource(R.string.mood_good)
-                else -> stringResource(R.string.mood_amazing)
-            }
-            Text("${stringResource(R.string.type_mood)}: $moodLabel (${intensity.roundToInt()}/10)")
-            Slider(value = intensity, onValueChange = onIntensityChange, valueRange = 1f..10f, steps = 8)
-            VoiceEnabledTextField(value = note, onValueChange = onNoteChange, label = stringResource(R.string.section_mood))
-        }
-    }
-}
-
-@Composable
 fun PainSection(
     intensity: Float,
     onIntensityChange: (Float) -> Unit,
@@ -283,7 +247,7 @@ fun SleepSection(
             VoiceEnabledTextField(value = durationHours, onValueChange = onDurationChange, label = stringResource(R.string.duration_hours_label))
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.quality_label, quality.roundToInt()))
-            Slider(value = quality, onValueChange = onQualityChange, valueRange = 1f..5f, steps = 3)
+            Slider(value = quality, onValueChange = onQualityChange, valueRange = 1f..10f, steps = 9)
         }
     }
 }
