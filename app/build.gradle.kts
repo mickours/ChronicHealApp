@@ -87,6 +87,10 @@ dependencies {
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.datastore.preferences)
 
+    // Coil (Image Loading & SVG support)
+    implementation(libs.coil.compose)
+    implementation(libs.coil.svg)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
