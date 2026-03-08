@@ -141,7 +141,7 @@ Goal: Interactive tools and notifications.
 - **"Log Now" Action Fixed**: Resolved the issue where the "Log Now" notification action was inactive. It now correctly launches the app and navigates to the pre-filled entry screen for the specific reminder.
 - **Updated Visual Identity**:
     - **App Icon**: Manually converted the `logo.svg` paths and nested transformations into a high-fidelity `ic_launcher_foreground.xml` Vector Drawable.
-    - **Notification Icon**: Implemented a new, system-compliant monochrome white notification icon (`ic_notification_logo`).
+    - **Notification Icon**: Created a monochromatic version of the logo paths (`ic_notification_logo.xml`) optimized for system status bars and notification drawers.
     - **Branding Consistency**: Integrated the new logo into the `NotificationHelper` for a unified look and feel.
 - **Automatic Notification Dismissal**: Handled the dismissal of the reminder notification as soon as the user selects "Log Now".
 - **Vector Accuracy**: Refined the launcher icon XML to precisely match the source SVG geometry and nested transformations.

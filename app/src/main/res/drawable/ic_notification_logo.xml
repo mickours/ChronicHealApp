@@ -3,8 +3,64 @@
     android:height="24dp"
     android:viewportWidth="512"
     android:viewportHeight="512">
-    <!-- Simplified version of the logo for notifications (white/monochrome) -->
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M256,0C114.6,0 0,114.6 0,256s114.6,256 256,256s256,-114.6 256,-256S397.4,0 256,0zM368,352L144,352L144,320L368,320L368,352zM256,288c-44.2,0 -80,-35.8 -80,-80s35.8,-80 80,-80s80,35.8 80,80S300.2,288 256,288z" />
+
+    <!-- Group for layer1 (headneck) with its transform -->
+    <group
+        android:scaleX="2.3069968"
+        android:scaleY="2.3069968"
+        android:translateX="-203.33707"
+        android:translateY="-307.22486">
+
+        <!-- Neck path -->
+        <path
+            android:fillColor="#ffffff"
+            android:strokeColor="#ffffff"
+            android:strokeWidth="3.77953"
+            android:pathData="m 233.56514,297.73743 16.90169,51.93528 c -36.84248,-5.88567 -61.98501,-6.92117 -101.50487,-0.70574 l 15.22926,-50.59793 c 22.36391,12.99922 43.81012,21.56806 69.37392,-0.63152 z" />
+
+        <!-- Head group with its nested transform -->
+        <group
+            android:scaleX="3.7795276"
+            android:scaleY="3.7795276"
+            android:translateX="-128.18634"
+            android:translateY="161.05351">
+
+            <!-- Head part -->
+            <path
+                android:fillColor="#ffffff"
+                android:strokeColor="#ffffff"
+                android:strokeWidth="1"
+                android:pathData="M 86.539833,16.968723 m -15.830748,0 a 15.830748,23.031557 0 1,0 31.661496,0 a 15.830748,23.031557 0 1,0 -31.661496,0" />
+
+            <!-- Forehead -->
+            <path
+                android:fillColor="#ffffff"
+                android:strokeColor="#ffffff"
+                android:strokeWidth="1"
+                android:pathData="m 70.892411,20.248353 c 11.278064,-2.685242 21.085152,-2.68936 31.384239,-0.01228" />
+
+            <!-- Head center line -->
+            <path
+                android:fillColor="#ffffff"
+                android:strokeColor="#ffffff"
+                android:strokeWidth="1"
+                android:pathData="M 86.777946,-6.3641591 V 39.875914" />
+
+            <!-- Ear Right -->
+            <path
+                android:fillColor="#ffffff"
+                android:strokeColor="#ffffff"
+                android:strokeWidth="1"
+                android:pathData="m 70.118043,15.628999 c -2.00469,-0.535674 -2.659598,1.40132 -2.581328,2.642137 0.49113,3.614215 2.09754,6.465968 3.55693,9.815905 0.42015,0.475018 0.83241,0.31615 1.03292,0.129114 z" />
+
+            <!-- Ear Left -->
+            <path
+                android:fillColor="#ffffff"
+                android:strokeColor="#ffffff"
+                android:strokeWidth="1"
+                android:pathData="m 103.07419,15.628999 c 2.00469,-0.535674 2.6596,1.401319 2.58133,2.642136 -0.49113,3.614215 -2.09754,6.465968 -3.55693,9.815905 -0.42015,0.475018 -0.83241,0.31615 -1.03292,0.129114 z" />
+
+            <!-- Eyes group (Omitted for notification silhouette compatibility) -->
+        </group>
+    </group>
 </vector>
