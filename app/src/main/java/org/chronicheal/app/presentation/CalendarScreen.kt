@@ -43,6 +43,7 @@ import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -84,6 +85,15 @@ import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.min
 
+data class AggregatedEntry(
+    val type: EntryType,
+    val name: String?,
+    val count: Int,
+    val totalDurationMinutes: Int?,
+    val averageIntensity: Float?,
+    val latestTimestamp: java.time.Instant
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
@@ -98,6 +108,7 @@ fun CalendarScreen(
     var endDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
     var isExpanded by rememberSaveable { mutableStateOf(true) }
     var isSearchVisible by rememberSaveable { mutableStateOf(false) }
+    var showAggregated by rememberSaveable { mutableStateOf(false) }
     
     val selectedRangeEntries = remember(startDate, endDate, uiState.entries) {
         if (startDate == null) emptyList()
@@ -112,6 +123,21 @@ fun CalendarScreen(
                 (entryDate == actualStart || entryDate == actualEnd || (entryDate.isAfter(actualStart) && entryDate.isBefore(actualEnd)))
             }.sortedByDescending { it.timestamp }
         }
+    }
+
+    val aggregatedEntries = remember(selectedRangeEntries) {
+        selectedRangeEntries.groupBy { "${it.type.name}_${it.name ?: ""}" }
+            .map { (_, group) ->
+                val first = group.first()
+                AggregatedEntry(
+                    type = first.type,
+                    name = first.name,
+                    count = group.size,
+                    totalDurationMinutes = group.sumOf { it.durationMinutes ?: 0 }.takeIf { it > 0 },
+                    averageIntensity = group.mapNotNull { it.intensity }.takeIf { it.isNotEmpty() }?.average()?.toFloat(),
+                    latestTimestamp = group.maxOf { it.timestamp }
+                )
+            }.sortedByDescending { it.latestTimestamp }
     }
 
     Scaffold(
@@ -302,11 +328,24 @@ fun CalendarScreen(
                                     else -> "Select a date"
                                 }
                             }
-                            Text(
-                                text = rangeText,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Column {
+                                Text(
+                                    text = rangeText,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                if (startDate != null && endDate != null) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Checkbox(
+                                            checked = showAggregated,
+                                            onCheckedChange = { checked -> showAggregated = checked },
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Spacer(Modifier.width(8.dp))
+                                        Text("Show Aggregated View", style = MaterialTheme.typography.labelMedium)
+                                    }
+                                }
+                            }
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = "${selectedRangeEntries.size} entries",
@@ -340,6 +379,12 @@ fun CalendarScreen(
                             )
                         }
                     }
+                } else if (showAggregated && startDate != null && endDate != null) {
+                    items(aggregatedEntries) { entry ->
+                        Box(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
+                            AggregatedEntryItem(entry = entry)
+                        }
+                    }
                 } else {
                     items(selectedRangeEntries) { entry ->
                         Box(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
@@ -352,6 +397,72 @@ fun CalendarScreen(
                     item {
                         Spacer(modifier = Modifier.height(16.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)))
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AggregatedEntryItem(entry: AggregatedEntry) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = entry.type.emoji,
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(end = 12.dp)
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = entry.name ?: entry.type.name.lowercase().replaceFirstChar { it.uppercase() },
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Occurred ${entry.count} times",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                entry.totalDurationMinutes?.let { duration ->
+                    val hours = duration / 60
+                    val mins = duration % 60
+                    val durationText = when {
+                        hours > 0 && mins > 0 -> "${hours}h ${mins}min"
+                        hours > 0 -> "${hours}h"
+                        else -> "${mins}min"
+                    }
+                    Text(
+                        text = "Total duration: $durationText",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (entry.averageIntensity != null) {
+                Surface(
+                    color = getIntensityColor(entry.averageIntensity.toInt()).copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "Avg: ${String.format("%.1f", entry.averageIntensity)}/10",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = getIntensityColor(entry.averageIntensity.toInt())
+                    )
                 }
             }
         }
