@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -15,10 +16,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -132,22 +131,9 @@ fun DayViewScreen(
                     .padding(innerPadding)
             ) {
                 items(dayEntries, key = { it.id }) { entry ->
-                    SwipeableEntryItem(
+                    EntryItem(
                         entry = entry,
-                        onDelete = {
-                            viewModel.deleteEntry(entry)
-                            scope.launch {
-                                val result = snackbarHostState.showSnackbar(
-                                    message = "Entry deleted",
-                                    actionLabel = "Undo",
-                                    duration = SnackbarDuration.Short
-                                )
-                                if (result == SnackbarResult.ActionPerformed) {
-                                    viewModel.restoreDeletedEntry()
-                                }
-                            }
-                        },
-                        onClick = { onEntryClick(entry) }
+                        modifier = Modifier.clickable { onEntryClick(entry) }
                     )
                 }
             }

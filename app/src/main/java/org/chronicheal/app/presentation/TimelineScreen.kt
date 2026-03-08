@@ -1,7 +1,6 @@
 package org.chronicheal.app.presentation
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -40,7 +39,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
@@ -57,24 +55,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -90,7 +82,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import kotlinx.coroutines.launch
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
@@ -119,7 +110,6 @@ fun TimelineScreen(
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     
     var isSearchVisible by rememberSaveable { mutableStateOf(false) }
     var hasPerformedInitialScroll by rememberSaveable { mutableStateOf(false) }
@@ -353,22 +343,9 @@ fun TimelineScreen(
                         }
                         is TimelineItem.Entry -> {
                             item(key = "entry_${item.entry.id}") {
-                                SwipeableEntryItem(
+                                EntryItem(
                                     entry = item.entry,
-                                    onDelete = {
-                                        viewModel.deleteEntry(item.entry)
-                                        scope.launch {
-                                            val result = snackbarHostState.showSnackbar(
-                                                message = "Entry deleted",
-                                                actionLabel = "Undo",
-                                                duration = SnackbarDuration.Short
-                                            )
-                                            if (result == SnackbarResult.ActionPerformed) {
-                                                viewModel.restoreDeletedEntry()
-                                            }
-                                        }
-                                    },
-                                    onClick = { onEntryClick(item.entry) }
+                                    modifier = Modifier.clickable { onEntryClick(item.entry) }
                                 )
                             }
                         }
@@ -384,6 +361,7 @@ fun QuickAddChip(
     type: EntryType,
     onClick: () -> Unit
 ) {
+    @Suppress("DEPRECATION")
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -401,7 +379,6 @@ fun QuickAddChip(
             }
         }
         Spacer(modifier = Modifier.height(4.dp))
-        @Suppress("DEPRECATION")
         Text(
             text = type.name.lowercase().replaceFirstChar { it.uppercase() },
             style = MaterialTheme.typography.labelSmall,
@@ -409,61 +386,6 @@ fun QuickAddChip(
             overflow = TextOverflow.Ellipsis
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SwipeableEntryItem(
-    entry: HealthEntry,
-    onDelete: () -> Unit,
-    onClick: () -> Unit
-) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
-            } else {
-                false
-            }
-        },
-        positionalThreshold = { distance -> distance * 0.6f }
-    )
-
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        backgroundContent = {
-            val color by animateColorAsState(
-                if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
-                    MaterialTheme.colorScheme.errorContainer
-                } else {
-                    Color.Transparent
-                }, label = "swipe_color"
-            )
-            val icon = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) Icons.Default.Delete else null
-
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 1.dp)
-                    .clip(RectangleShape)
-                    .background(color)
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                if (icon != null) {
-                    Icon(icon, contentDescription = null)
-                }
-            }
-        },
-        content = {
-            EntryItem(
-                entry = entry,
-                modifier = Modifier.clickable { onClick() }
-            )
-        }
-    )
 }
 
 sealed class TimelineItem {

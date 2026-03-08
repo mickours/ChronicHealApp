@@ -47,7 +47,6 @@ Goal: Interactive tools and notifications.
 
 ## Phase 5: Polish and Privacy (Completed)
 - **Enhanced Entry Model**: Added `durationMinutes` and `isFinished` properties.
-- **Swipe-to-Action**: Implemented `SwipeToDismissBox` for deletion and completion.
 - **UI/UX Refinements**:
     - **Factorized Add Screens**: Introduced `AddEntryScaffold` to share common logic.
     - **Custom Theme**: Implemented a Soft Blue (`#a7c7d4`) and complementary Peach/Orange palette.
@@ -111,3 +110,6 @@ Goal: Interactive tools and notifications.
     - The screen is pre-filled using the previous entry associated with that reminder as a template.
     - ID and Timestamp are reset to ensure it's saved as a new record, while preserving dosage, name, and notes.
 - **Smart Navigation Routing**: Updated `MainActivity` and `ReminderReceiver` to pass and handle `EXTRA_REMINDER_ID` for contextual screen initialization.
+
+## Phase 16: Swipe-to-Delete Removal (Completed)
+- **Removal of Swipe-to-Action**: Removed `SwipeToDismissBox` from the `TimelineScreen` as it led to unwanted deletions. Entries can still be modified by clicking on them.
