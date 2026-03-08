@@ -49,6 +49,12 @@ class AnalyticsViewModel @Inject constructor(
     private val _correlationType2 = MutableStateFlow(EntryType.SLEEP)
     val correlationType2 = _correlationType2.asStateFlow()
 
+    private val _selectedPainLocations = MutableStateFlow<Set<String>>(emptySet())
+    val selectedPainLocations = _selectedPainLocations.asStateFlow()
+
+    private val _selectedSymptoms = MutableStateFlow<Set<String>>(emptySet())
+    val selectedSymptoms = _selectedSymptoms.asStateFlow()
+
     val uiState: StateFlow<AnalyticsUiState> = combine(
         getEntriesUseCase(),
         _timeRange,
@@ -57,9 +63,15 @@ class AnalyticsViewModel @Inject constructor(
         _correlationType2
     ) { entries, range, start, type1, type2 ->
         val filteredEntries = filterEntries(entries, range, start)
+        val painData = getPainData(filteredEntries, range, start)
+        val symptomData = getSymptomData(filteredEntries, range, start)
+
+        _selectedPainLocations.value = painData.keys
+        _selectedSymptoms.value = symptomData.keys
+
         AnalyticsUiState(
-            painData = getPainData(filteredEntries, range, start),
-            symptomSeveritySum = getSymptomSeveritySum(filteredEntries),
+            painData = painData,
+            symptomEvolutionData = symptomData,
             correlationData = getCorrelationData(filteredEntries, range, start, type1, type2)
         )
     }.stateIn(
@@ -76,6 +88,16 @@ class AnalyticsViewModel @Inject constructor(
     fun setCorrelationTypes(type1: EntryType, type2: EntryType) {
         _correlationType1.value = type1
         _correlationType2.value = type2
+    }
+
+    fun togglePainLocation(location: String) {
+        val current = _selectedPainLocations.value
+        _selectedPainLocations.value = if (location in current) current - location else current + location
+    }
+
+    fun toggleSymptom(symptom: String) {
+        val current = _selectedSymptoms.value
+        _selectedSymptoms.value = if (symptom in current) current - symptom else current + symptom
     }
 
     private fun resetStartDate() {
@@ -143,6 +165,16 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 
+    private fun getSymptomData(entries: List<HealthEntry>, range: TimeRange, start: LocalDate): Map<String, Map<String, Int>> {
+        val symptomEntries = entries.filter { it.type == EntryType.SYMPTOM && it.intensity != null && !it.name.isNullOrBlank() }
+        val symptoms = symptomEntries.map { it.name!! }.distinct()
+
+        return symptoms.associateWith { symptom ->
+            val symptomEntriesFiltered = symptomEntries.filter { it.name == symptom }
+            aggregateData(symptomEntriesFiltered, range, start) { it.mapNotNull { e -> e.intensity }.average().toInt() }
+        }
+    }
+
     private fun aggregateData(
         entries: List<HealthEntry>,
         range: TimeRange,
@@ -188,21 +220,6 @@ class AnalyticsViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    private fun getSymptomSeveritySum(entries: List<HealthEntry>): Map<String, Int> {
-        return entries
-            .filter { it.type == EntryType.SYMPTOM && !it.name.isNullOrBlank() }
-            .groupBy { 
-                it.name!!.trim().lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-            }
-            .mapValues { entry -> 
-                entry.value.sumOf { it.intensity ?: 0 }
-            }
-            .toList()
-            .sortedByDescending { it.second }
-            .take(5)
-            .toMap()
     }
 
     private fun getCorrelationData(
@@ -288,7 +305,7 @@ enum class TimeRange {
 
 data class AnalyticsUiState(
     val painData: Map<String, Map<String, Int>> = emptyMap(),
-    val symptomSeveritySum: Map<String, Int> = emptyMap(),
+    val symptomEvolutionData: Map<String, Map<String, Int>> = emptyMap(),
     val correlationData: CorrelationData = CorrelationData()
 )
 

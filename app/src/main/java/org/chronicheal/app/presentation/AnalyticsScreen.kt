@@ -2,7 +2,6 @@ package org.chronicheal.app.presentation
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +43,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -96,6 +96,9 @@ fun AnalyticsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val type1 by viewModel.correlationType1.collectAsState()
     val type2 by viewModel.correlationType2.collectAsState()
+    val selectedPainLocations by viewModel.selectedPainLocations.collectAsState()
+    val selectedSymptoms by viewModel.selectedSymptoms.collectAsState()
+
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -182,113 +185,32 @@ fun AnalyticsScreen(
             HorizontalDivider()
 
             // 1. Pain Evolution
-            Text(text = "Pain Evolution", style = MaterialTheme.typography.titleLarge)
-            if (uiState.painData.isNotEmpty()) {
-                val locations = uiState.painData.keys.toList()
-                val labels = uiState.painData.values.first().keys.toList()
-                
-                // Manually calculate stacked series for LineChart area stacking
-                val rawSeries = uiState.painData.values.toList()
-                val stackedSeries = remember(uiState.painData) {
-                    val result = mutableListOf<List<FloatEntry>>()
-                    for (i in rawSeries.indices) {
-                        val currentRaw = rawSeries[i].values.toList()
-                        val currentStacked = currentRaw.mapIndexed { j, value ->
-                            val previousValue = if (i > 0) result[i - 1][j].y else 0f
-                            FloatEntry(j.toFloat(), previousValue + value.toFloat())
-                        }
-                        result.add(currentStacked)
-                    }
-                    result
-                }
-
-                val model = remember(stackedSeries) {
-                    entryModelOf(*stackedSeries.reversed().toTypedArray())
-                }
-                
-                val bottomAxisFormatter = remember(labels) {
-                    AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-                        labels.getOrNull(value.toInt()) ?: ""
-                    }
-                }
-
-                val maxTotalPain = remember(stackedSeries) {
-                    (stackedSeries.lastOrNull()?.maxOfOrNull { it.y } ?: 10f).coerceAtLeast(1f)
-                }
-
-                Chart(
-                    chart = lineChart(
-                        lines = locations.mapIndexed { index, _ ->
-                            val color = palette[index % palette.size]
-                            LineChart.LineSpec(
-                                lineColor = color.toArgb(),
-                                lineBackgroundShader = com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient(
-                                    arrayOf(color.copy(alpha = 0.8f), color.copy(alpha = 0.8f))
-                                )
-                            )
-                        }.reversed()
-                    ),
-                    model = model,
-                    startAxis = rememberStartAxis(
-                        label = textComponent(color = axisLabelColor),
-                        itemPlacer = AxisItemPlacer.Vertical.default(
-                            maxItemCount = (ceil(maxTotalPain.toDouble()).toInt() + 1).coerceAtMost(30)
-                        )
-                    ),
-                    bottomAxis = rememberBottomAxis(
-                        label = textComponent(color = axisLabelColor, lineCount = 1),
-                        valueFormatter = bottomAxisFormatter,
-                        labelRotationDegrees = 45f,
-                        itemPlacer = AxisItemPlacer.Horizontal.default(
-                            spacing = 1,
-                            offset = 0,
-                        )
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                )
-
-                // Legend
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    locations.forEachIndexed { index, location ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = Modifier
-                                    .size(12.dp)
-                                    .clip(CircleShape)
-                                    .background(palette[index % palette.size])
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            @Suppress("DEPRECATION")
-                            Text(text = location, style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                }
-            } else {
-                Text("No pain data for this period.", style = MaterialTheme.typography.bodyMedium)
-            }
+            EvolutionChart(
+                title = "Pain Evolution",
+                data = uiState.painData,
+                selectedItems = selectedPainLocations,
+                onToggleItem = viewModel::togglePainLocation,
+                palette = palette,
+                axisLabelColor = axisLabelColor,
+                emptyMessage = "No pain data for this period."
+            )
 
             HorizontalDivider()
 
-            // 2. Symptoms Impact (Reduced size and moved up)
-            Text(text = "Symptoms Impact (Severity Sum)", style = MaterialTheme.typography.titleLarge)
-            if (uiState.symptomSeveritySum.isNotEmpty()) {
-                SymptomImpactPieChart(
-                    symptomSeveritySum = uiState.symptomSeveritySum,
-                    palette = palette
-                )
-            } else {
-                Text("No symptoms recorded for this period.", style = MaterialTheme.typography.bodyMedium)
-            }
+            // 2. Symptoms Evolution
+            EvolutionChart(
+                title = "Symptoms Evolution",
+                data = uiState.symptomEvolutionData,
+                selectedItems = selectedSymptoms,
+                onToggleItem = viewModel::toggleSymptom,
+                palette = palette,
+                axisLabelColor = axisLabelColor,
+                emptyMessage = "No symptom data for this period."
+            )
 
             HorizontalDivider()
 
-            // 3. Correlation Analysis (Moved to end)
+            // 3. Correlation Analysis
             Text(text = "Correlation Analysis", style = MaterialTheme.typography.titleLarge)
             
             CorrelationSelectors(
@@ -311,60 +233,107 @@ fun AnalyticsScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SymptomImpactPieChart(
-    symptomSeveritySum: Map<String, Int>,
-    palette: List<Color>
+fun EvolutionChart(
+    title: String,
+    data: Map<String, Map<String, Int>>,
+    selectedItems: Set<String>,
+    onToggleItem: (String) -> Unit,
+    palette: List<Color>,
+    axisLabelColor: Color,
+    emptyMessage: String
 ) {
-    val totalSeverity = symptomSeveritySum.values.sum().toFloat()
-    val symptomList = symptomSeveritySum.entries.toList()
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        Box(
-            modifier = Modifier.size(160.dp), // Reduced size from 200.dp
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(modifier = Modifier.fillMaxSize()) {
-                var startAngle = -90f
-                symptomList.forEachIndexed { index, entry ->
-                    val sweepAngle = (entry.value / totalSeverity) * 360f
-                    drawArc(
-                        color = palette[index % palette.size],
-                        startAngle = startAngle,
-                        sweepAngle = sweepAngle,
-                        useCenter = true
-                    )
-                    startAngle += sweepAngle
+    Text(text = title, style = MaterialTheme.typography.titleLarge)
+    if (data.isNotEmpty()) {
+        val allKeys = data.keys.toList()
+        val visibleKeys = allKeys.filter { it in selectedItems }
+        
+        if (visibleKeys.isNotEmpty()) {
+            val labels = data.values.first().keys.toList()
+            val model = remember(data, visibleKeys) {
+                val series = visibleKeys.map { key ->
+                    data[key]!!.values.mapIndexed { index, value -> FloatEntry(index.toFloat(), value.toFloat()) }
                 }
+                entryModelOf(*series.toTypedArray())
+            }
+
+            val bottomAxisFormatter = remember(labels) {
+                AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
+                    labels.getOrNull(value.toInt()) ?: ""
+                }
+            }
+
+            val maxValue = remember(data, visibleKeys) {
+                visibleKeys.maxOf { key -> data[key]!!.values.maxOfOrNull { it } ?: 0 }.toFloat().coerceAtLeast(1f)
+            }
+
+            Chart(
+                chart = lineChart(
+                    lines = visibleKeys.map { key ->
+                        val index = allKeys.indexOf(key)
+                        val color = palette[index % palette.size]
+                        LineChart.LineSpec(lineColor = color.toArgb())
+                    }
+                ),
+                model = model,
+                startAxis = rememberStartAxis(
+                    label = textComponent(color = axisLabelColor),
+                    itemPlacer = AxisItemPlacer.Vertical.default(
+                        maxItemCount = (ceil(maxValue.toDouble()).toInt() + 1).coerceAtMost(11)
+                    )
+                ),
+                bottomAxis = rememberBottomAxis(
+                    label = textComponent(color = axisLabelColor, lineCount = 1),
+                    valueFormatter = bottomAxisFormatter,
+                    labelRotationDegrees = 45f,
+                    itemPlacer = AxisItemPlacer.Horizontal.default(spacing = 1, offset = 0)
+                ),
+                modifier = Modifier.fillMaxWidth().height(200.dp)
+            )
+        } else {
+            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                Text("Select items from the legend to display data", style = MaterialTheme.typography.bodyMedium)
             }
         }
 
-        // Legend for Pie Chart
+        // Clickable Legend
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            symptomList.forEachIndexed { index, entry ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .clip(CircleShape)
-                            .background(palette[index % palette.size])
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    @Suppress("DEPRECATION")
-                    Text(
-                        text = "${entry.key} (${entry.value})",
-                        style = MaterialTheme.typography.labelSmall
-                    )
+            allKeys.forEachIndexed { index, key ->
+                val isSelected = key in selectedItems
+                val color = palette[index % palette.size]
+                
+                Surface(
+                    onClick = { onToggleItem(key) },
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isSelected) color.copy(alpha = 0.1f) else Color.Transparent,
+                    border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .clip(CircleShape)
+                                .background(if (isSelected) color else Color.Gray)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = key,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isSelected) MaterialTheme.colorScheme.onSurface else Color.Gray,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
+                    }
                 }
             }
         }
+    } else {
+        Text(emptyMessage, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
