@@ -153,7 +153,7 @@ fun AnalyticsScreen(
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
                     context.startActivity(Intent.createChooser(intent, "Open PDF"))
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     snackbarHostState.showSnackbar("No app found to open PDF")
                 }
             }
@@ -305,7 +305,7 @@ fun EvolutionChart(
 
             Chart(
                 chart = lineChart(
-                    lines = visibleKeys.mapIndexed { i, key ->
+                    lines = visibleKeys.map { key ->
                         val originalIndex = allKeys.indexOf(key)
                         val color = palette[originalIndex % palette.size]
                         LineChart.LineSpec(
