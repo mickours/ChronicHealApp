@@ -9,22 +9,61 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Today
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,141 +94,263 @@ fun CalendarScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentMonth = remember { mutableStateOf(YearMonth.now()) }
-    var selectedDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
+    var startDate by rememberSaveable { mutableStateOf<LocalDate?>(LocalDate.now()) }
+    var endDate by rememberSaveable { mutableStateOf<LocalDate?>(null) }
     var isExpanded by rememberSaveable { mutableStateOf(true) }
+    var isSearchVisible by rememberSaveable { mutableStateOf(false) }
     
-    val entriesByDate = remember(uiState.entries) {
-        uiState.entries.groupBy {
-            it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+    val selectedRangeEntries = remember(startDate, endDate, uiState.entries) {
+        if (startDate == null) emptyList()
+        else {
+            val start = startDate!!
+            val end = endDate ?: start
+            val actualStart = if (start.isBefore(end)) start else end
+            val actualEnd = if (start.isBefore(end)) end else start
+            
+            uiState.entries.filter {
+                val entryDate = it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                (entryDate == actualStart || entryDate == actualEnd || (entryDate.isAfter(actualStart) && entryDate.isBefore(actualEnd)))
+            }.sortedByDescending { it.timestamp }
         }
-    }
-
-    val selectedDayEntries = remember(selectedDate, entriesByDate) {
-        entriesByDate[selectedDate]?.sortedByDescending { it.intensity ?: 0 } ?: emptyList()
     }
 
     Scaffold(
         modifier = Modifier.systemBarsPadding(),
         topBar = {
-            TopAppBar(
-                title = { Text("Calendar") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    TextButton(
-                        onClick = { 
-                            currentMonth.value = YearMonth.now()
-                            selectedDate = LocalDate.now()
-                        },
-                        colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
-                    ) {
-                        Icon(Icons.Default.Today, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("Today")
-                    }
-                    IconButton(onClick = onManageRemindersClick) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Manage Reminders")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = HeaderBlue,
-                    titleContentColor = Color.Black,
-                    navigationIconContentColor = Color.Black,
-                    actionIconContentColor = Color.Black
+            Column {
+                TopAppBar(
+                    title = { Text("Calendar") },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { 
+                            isSearchVisible = !isSearchVisible 
+                            if (!isSearchVisible) {
+                                viewModel.setSearchQuery("")
+                            }
+                        }) {
+                            Icon(
+                                imageVector = if (isSearchVisible) Icons.Default.SearchOff else Icons.Default.Search, 
+                                contentDescription = "Toggle Search"
+                            )
+                        }
+                        TextButton(
+                            onClick = { 
+                                currentMonth.value = YearMonth.now()
+                                startDate = LocalDate.now()
+                                endDate = null
+                            },
+                            colors = ButtonDefaults.textButtonColors(contentColor = Color.Black)
+                        ) {
+                            Icon(Icons.Default.Today, contentDescription = null)
+                            Spacer(Modifier.width(4.dp))
+                            Text("Today")
+                        }
+                        IconButton(onClick = onManageRemindersClick) {
+                            Icon(Icons.Default.Notifications, contentDescription = "Manage Reminders")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = HeaderBlue,
+                        titleContentColor = Color.Black,
+                        navigationIconContentColor = Color.Black,
+                        actionIconContentColor = Color.Black
+                    )
                 )
-            )
+                AnimatedVisibility(
+                    visible = isSearchVisible,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(HeaderBlue)
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = uiState.searchQuery,
+                            onValueChange = viewModel::setSearchQuery,
+                            modifier = Modifier.fillMaxWidth(),
+                            placeholder = { Text("Search by name, location or note...") },
+                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                            trailingIcon = {
+                                if (uiState.searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(24.dp),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White,
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                focusedPlaceholderColor = Color.Gray,
+                                unfocusedPlaceholderColor = Color.Gray,
+                                focusedLeadingIconColor = Color.Black,
+                                unfocusedLeadingIconColor = Color.Black,
+                                focusedTrailingIconColor = Color.Black,
+                                unfocusedTrailingIconColor = Color.Black
+                            )
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            items(EntryType.entries) { type ->
+                                val isSelected = type in uiState.selectedTypes
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { viewModel.toggleTypeFilter(type) },
+                                    label = { Text("${type.emoji} ${type.name.lowercase().replaceFirstChar { it.uppercase() }}") },
+                                    leadingIcon = if (isSelected) {
+                                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                    } else null,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        containerColor = Color.White.copy(alpha = 0.7f),
+                                        labelColor = Color.Black,
+                                        selectedContainerColor = Color.White,
+                                        selectedLabelColor = Color.Black,
+                                        selectedLeadingIconColor = Color.Black
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        enabled = true,
+                                        selected = isSelected,
+                                        borderColor = Color.Transparent,
+                                        selectedBorderColor = MaterialTheme.colorScheme.primary
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            CalendarHeader(
-                currentMonth = currentMonth.value,
-                onMonthChange = { currentMonth.value = it }
-            )
+            item {
+                CalendarHeader(
+                    currentMonth = currentMonth.value,
+                    onMonthChange = { currentMonth.value = it }
+                )
+            }
             
-            CalendarGrid(
-                currentMonth = currentMonth.value,
-                entries = uiState.entries,
-                selectedDate = selectedDate,
-                onDateClick = { 
-                    selectedDate = it
-                    isExpanded = true
-                }
-            )
+            item {
+                CalendarGrid(
+                    currentMonth = currentMonth.value,
+                    entries = uiState.entries,
+                    startDate = startDate,
+                    endDate = endDate,
+                    onDateClick = { date ->
+                        if (startDate == null || (startDate != null && endDate != null)) {
+                            startDate = date
+                            endDate = null
+                        } else if (date.isBefore(startDate)) {
+                            endDate = startDate
+                            startDate = date
+                        } else if (date.isAfter(startDate)) {
+                            endDate = date
+                        } else {
+                            // Clicking the same date as startDate when endDate is null
+                            startDate = null
+                        }
+                        isExpanded = true
+                    }
+                )
+            }
 
-            Spacer(Modifier.height(16.dp))
+            item {
+                Spacer(Modifier.height(16.dp))
+            }
 
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { isExpanded = !isExpanded }
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = selectedDate.format(DateTimeFormatter.ofPattern("EEEE, MMM dd")),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { isExpanded = !isExpanded }
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            val rangeText = remember(startDate, endDate) {
+                                when {
+                                    startDate != null && endDate != null -> {
+                                        "${startDate!!.format(DateTimeFormatter.ofPattern("MMM dd"))} - ${endDate!!.format(DateTimeFormatter.ofPattern("MMM dd"))}"
+                                    }
+                                    startDate != null -> {
+                                        startDate!!.format(DateTimeFormatter.ofPattern("EEEE, MMM dd"))
+                                    }
+                                    else -> "Select a date"
+                                }
+                            }
                             Text(
-                                text = "${selectedDayEntries.size} entries",
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(end = 8.dp)
+                                text = rangeText,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
-                            Icon(
-                                if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = if (isExpanded) "Collapse" else "Expand"
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "${selectedRangeEntries.size} entries",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                Icon(
+                                    if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = if (isExpanded) "Collapse" else "Expand"
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (isExpanded) {
+                if (selectedRangeEntries.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                "No entries for this period",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-
-                    AnimatedVisibility(
-                        visible = isExpanded,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
-                    ) {
-                        if (selectedDayEntries.isEmpty()) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    "No entries for this day",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(max = 400.dp),
-                                contentPadding = PaddingValues(bottom = 16.dp)
-                            ) {
-                                items(selectedDayEntries) { entry ->
-                                    DayEntryItem(
-                                        entry = entry,
-                                        onClick = { onDateClick(selectedDate) }
-                                    )
-                                }
-                            }
+                } else {
+                    items(selectedRangeEntries) { entry ->
+                        Box(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))) {
+                            DayEntryItem(
+                                entry = entry,
+                                onClick = { onDateClick(entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()) }
+                            )
                         }
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp).background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)))
                     }
                 }
             }
@@ -203,7 +364,8 @@ fun DayEntryItem(
     onClick: () -> Unit
 ) {
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
-    val time = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM dd") }
+    val dateTime = entry.timestamp.atZone(ZoneId.systemDefault())
 
     Card(
         modifier = Modifier
@@ -228,12 +390,12 @@ fun DayEntryItem(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = entry.name ?: entry.type.name.lowercase().capitalize(Locale.getDefault()),
+                    text = entry.name ?: entry.type.name.lowercase().replaceFirstChar { it.uppercase() },
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = time.format(timeFormatter),
+                    text = "${dateTime.toLocalDate().format(dateFormatter)} at ${dateTime.toLocalTime().format(timeFormatter)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -295,7 +457,8 @@ fun CalendarHeader(
 fun CalendarGrid(
     currentMonth: YearMonth,
     entries: List<HealthEntry>,
-    selectedDate: LocalDate,
+    startDate: LocalDate?,
+    endDate: LocalDate?,
     onDateClick: (LocalDate) -> Unit
 ) {
     val daysInMonth = currentMonth.lengthOfMonth()
@@ -345,12 +508,22 @@ fun CalendarGrid(
                                 
                                 val hasManagement = dayEntries.any { it.type.category == EntryType.Category.MANAGEMENT }
                                 
+                                val isSelected = when {
+                                    startDate != null && endDate != null -> {
+                                        date == startDate || date == endDate || (date.isAfter(startDate) && date.isBefore(endDate))
+                                    }
+                                    startDate != null -> date == startDate
+                                    else -> false
+                                }
+
                                 DayCell(
                                     day = day, 
                                     occurrenceIntensity = occurrenceIntensitySum,
                                     hasManagement = hasManagement,
                                     isToday = date == today,
-                                    isSelected = date == selectedDate,
+                                    isSelected = isSelected,
+                                    isStart = date == startDate,
+                                    isEnd = date == endDate,
                                     onClick = { onDateClick(date) }
                                 )
                             } else {
@@ -371,27 +544,36 @@ fun DayCell(
     hasManagement: Boolean,
     isToday: Boolean,
     isSelected: Boolean,
+    isStart: Boolean,
+    isEnd: Boolean,
     onClick: () -> Unit
 ) {
     val isDark = isSystemInDarkTheme()
     val occColor = if (isDark) Color(0xFFFF5722) else Color(0xFFBF360C) 
     val mangColor = if (isDark) Color(0xFF00BCD4) else Color(0xFF006064) 
 
+    val backgroundColor = when {
+        isStart || isEnd -> MaterialTheme.colorScheme.primary
+        isSelected -> MaterialTheme.colorScheme.primaryContainer
+        isToday -> MaterialTheme.colorScheme.surfaceVariant
+        else -> Color.Transparent
+    }
+
+    val contentColor = when {
+        isStart || isEnd -> MaterialTheme.colorScheme.onPrimary
+        isSelected -> MaterialTheme.colorScheme.onPrimaryContainer
+        else -> MaterialTheme.colorScheme.onSurface
+    }
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
             .padding(2.dp)
             .clip(CircleShape)
-            .background(
-                when {
-                    isSelected -> MaterialTheme.colorScheme.primaryContainer
-                    isToday -> MaterialTheme.colorScheme.surfaceVariant
-                    else -> Color.Transparent
-                }
-            )
+            .background(backgroundColor)
             .border(
-                width = if (isSelected) 2.dp else if (isToday) 1.dp else 0.dp,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else if (isToday) MaterialTheme.colorScheme.outline else Color.Transparent,
+                width = if (isToday && !isSelected) 1.dp else 0.dp,
+                color = if (isToday && !isSelected) MaterialTheme.colorScheme.outline else Color.Transparent,
                 shape = CircleShape
             )
             .clickable(onClick = onClick),
@@ -406,7 +588,7 @@ fun DayCell(
                 text = day.toString(),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = if (isSelected || isToday) FontWeight.ExtraBold else FontWeight.Bold,
-                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                color = contentColor
             )
             Row(
                 horizontalArrangement = Arrangement.Center,
@@ -415,10 +597,10 @@ fun DayCell(
             ) {
                 if (occurrenceIntensity > 0) {
                     val dotSize = min(20f, 10f + (occurrenceIntensity / 2f)).dp
-                    CategoryDot(color = occColor, size = dotSize)
+                    CategoryDot(color = if (isStart || isEnd) Color.White else occColor, size = dotSize)
                 }
                 if (hasManagement) {
-                    CategoryDot(color = mangColor, size = 10.dp)
+                    CategoryDot(color = if (isStart || isEnd) Color.White else mangColor, size = 10.dp)
                 }
             }
         }

@@ -113,3 +113,7 @@ Goal: Interactive tools and notifications.
 
 ## Phase 16: Swipe-to-Delete Removal (Completed)
 - **Removal of Swipe-to-Action**: Removed `SwipeToDismissBox` from the `TimelineScreen` as it led to unwanted deletions. Entries can still be modified by clicking on them.
+
+## Phase 17: Calendar Search and Filtering (Completed)
+- **Integrated Search & Filters**: Replicated the search and type-filtering bar from the Timeline onto the Calendar screen.
+- **Dynamic Calendar Heatmap**: The calendar grid dots now update in real-time based on the active search query and selected filters, allowing users to see exactly when specific types of events occurred (e.g., "Show me all high-pain days where I took Ibuprofen").
