@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <!-- Simplified version of the logo for notifications (white/monochrome) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M256,0C114.6,0 0,114.6 0,256s114.6,256 256,256s256,-114.6 256,-256S397.4,0 256,0zM368,352L144,352L144,320L368,320L368,352zM256,288c-44.2,0 -80,-35.8 -80,-80s35.8,-80 80,-80s80,35.8 80,80S300.2,288 256,288z" />
+</vector>

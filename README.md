@@ -72,6 +72,25 @@ ChronicHeal follows **Clean Architecture** principles combined with the **MVVM/M
 
 ---
 
+## 👨‍💻 Development
+
+### Running Tests
+To ensure the reliability of business logic, such as PDF generation and data processing, we use unit tests.
+
+**Via Android Studio:**
+1. Open the `Project` tool window.
+2. Navigate to `app/src/test/java/org/chronicheal/app`.
+3. Right-click the folder or a specific test file (e.g., `ExportPdfUseCaseTest`).
+4. Select `Run 'Tests in org.chronicheal.app'`.
+
+**Via Command Line:**
+Run the following command in the project root:
+```bash
+./gradlew test
+```
+
+---
+
 ## 🗺️ Roadmap
 
 - [ ] Find correlation between symptoms and management events (e.g., Pain vs. Sleep).

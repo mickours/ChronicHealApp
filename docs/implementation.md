@@ -47,6 +47,7 @@ Goal: Interactive tools and notifications.
 
 ## Phase 5: Polish and Privacy (Completed)
 - **Enhanced Entry Model**: Added `durationMinutes` and `isFinished` properties.
+- **Swipe-to-Action**: Implemented `SwipeToDismissBox` for deletion and completion.
 - **UI/UX Refinements**:
     - **Factorized Add Screens**: Introduced `AddEntryScaffold` to share common logic.
     - **Custom Theme**: Implemented a Soft Blue (`#a7c7d4`) and complementary Peach/Orange palette.
@@ -117,3 +118,29 @@ Goal: Interactive tools and notifications.
 ## Phase 17: Calendar Search and Filtering (Completed)
 - **Integrated Search & Filters**: Replicated the search and type-filtering bar from the Timeline onto the Calendar screen.
 - **Dynamic Calendar Heatmap**: The calendar grid dots now update in real-time based on the active search query and selected filters, allowing users to see exactly when specific types of events occurred (e.g., "Show me all high-pain days where I took Ibuprofen").
+
+## Phase 18: Enhanced Analytics and Reporting (Completed)
+- **Clickable Legends**: Legend items in Pain and Symptoms evolution charts are now clickable, allowing users to toggle line visibility dynamically.
+- **Stacked Timeline Charts**: Replaced pie charts with cumulative stacked timeline charts for both Pain and Symptoms to better visualize overall burden.
+- **Detailed PDF Reports**:
+    - Added high-fidelity stacked charts to PDF exports, matching the app's UI.
+    - Integrated grid lines, axis ticks, and explanatory text for better chart readability.
+    - Added a "Period Summary Statistics" table with min/max/avg values.
+    - **Detailed Logs**: Pain entries in logs now include the recorded location (e.g., `[Lower Back]`).
+- **Export UX**: Added an "Open" quick action to the snackbar after a successful PDF export.
+- **Test Automation**: Added unit tests for PDF generation and documented development procedures in the README.
+
+## Phase 19: PDF Report Optimization (Completed)
+- **Improved Layout & Density**: Implemented a `PageState` manager to handle efficient vertical flow and pagination.
+- **Date-Grouped Logs**: Grouped health entries by day with headers, significantly reducing the vertical space required for long reports.
+- **Information Richness**: Included emojis, locations, and summarized notes while maintaining a compact format.
+- **Visual Polish**: Adjusted font sizes and chart dimensions for a more professional, medical-grade report appearance.
+- **Integrity Fixes**: Ensured the `outputStream` remains open during asynchronous PDF generation, preventing corrupted or empty files.
+
+## Phase 20: Notification UX and Branding (Completed)
+- **"Log Now" Action Fixed**: Resolved the issue where the "Log Now" notification action was inactive. It now correctly launches the app and navigates to the pre-filled entry screen for the specific reminder.
+- **Updated Visual Identity**:
+    - **App Icon**: Manually converted the `logo.svg` paths and nested transformations into a high-fidelity `ic_launcher_foreground.xml` Vector Drawable.
+    - **Notification Icon**: Implemented a system-compliant monochrome white notification icon (`ic_notification_logo`).
+    - **Branding Consistency**: Integrated the new logo into the `NotificationHelper` for a unified look and feel.
+- **Automatic Notification Dismissal**: Handled the dismissal of the reminder notification as soon as the user selects "Log Now".

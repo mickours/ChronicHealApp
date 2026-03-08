@@ -7,6 +7,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.chronicheal.app.MainActivity
 import org.chronicheal.app.domain.repository.ReminderRepository
 import java.time.LocalDate
 import javax.inject.Inject
@@ -28,6 +29,23 @@ class ReminderReceiver : BroadcastReceiver() {
         if (reminderId == -1L) return
 
         when (intent.action) {
+            NotificationHelper.ACTION_LOG_NOW -> {
+                notificationHelper.cancelNotification(reminderId.toInt())
+                val entryType = intent.getStringExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
+                
+                // Launch MainActivity to handle navigation to the entry screen
+                val launchIntent = Intent(context, MainActivity::class.java).apply {
+                    action = Intent.ACTION_MAIN
+                    addCategory(Intent.CATEGORY_LAUNCHER)
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                    putExtra(NotificationHelper.EXTRA_REMINDER_ID, reminderId)
+                    if (entryType != null) {
+                        putExtra(NotificationHelper.EXTRA_ENTRY_TYPE, entryType)
+                    }
+                }
+                context.startActivity(launchIntent)
+                return
+            }
             NotificationHelper.ACTION_SKIP -> {
                 notificationHelper.cancelNotification(reminderId.toInt())
                 return

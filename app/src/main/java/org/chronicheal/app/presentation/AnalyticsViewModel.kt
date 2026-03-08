@@ -121,23 +121,21 @@ class AnalyticsViewModel @Inject constructor(
         }
     }
 
-    fun onPdfExportRequested(outputStream: OutputStream, uri: Uri) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val start = _startDate.value
-                val end = when (_timeRange.value) {
-                    TimeRange.WEEK -> start.plusDays(6)
-                    TimeRange.MONTH -> start.plusMonths(1).minusDays(1)
-                    TimeRange.YEAR -> start.plusYears(1).minusDays(1)
-                }
-                exportPdfUseCase(outputStream, start, end)
-                _pdfExportSuccess.emit(uri)
-            } catch (e: Exception) {
-                _message.emit("Failed to export PDF: ${e.message}")
-            } finally {
-                _isLoading.value = false
+    suspend fun onPdfExportRequested(outputStream: OutputStream, uri: Uri) {
+        _isLoading.value = true
+        try {
+            val start = _startDate.value
+            val end = when (_timeRange.value) {
+                TimeRange.WEEK -> start.plusDays(6)
+                TimeRange.MONTH -> start.plusMonths(1).minusDays(1)
+                TimeRange.YEAR -> start.plusYears(1).minusDays(1)
             }
+            exportPdfUseCase(outputStream, start, end)
+            _pdfExportSuccess.emit(uri)
+        } catch (e: Exception) {
+            _message.emit("Failed to export PDF: ${e.message}")
+        } finally {
+            _isLoading.value = false
         }
     }
 

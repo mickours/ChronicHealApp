@@ -63,6 +63,7 @@ class NotificationHelper @Inject constructor(
             if (entryType != null) {
                 putExtra(EXTRA_ENTRY_TYPE, entryType.name)
             }
+            putExtra(EXTRA_REMINDER_ID, reminderId)
         }
         
         val openPendingIntent = PendingIntent.getActivity(
@@ -109,6 +110,9 @@ class NotificationHelper @Inject constructor(
         val logNowIntent = Intent(context, ReminderReceiver::class.java).apply {
             action = ACTION_LOG_NOW
             putExtra("reminder_id", reminderId)
+            if (entryType != null) {
+                putExtra(EXTRA_ENTRY_TYPE, entryType.name)
+            }
         }
         val logNowPendingIntent = PendingIntent.getBroadcast(
             context,
@@ -118,7 +122,7 @@ class NotificationHelper @Inject constructor(
         )
 
         val builder = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification_logo)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

@@ -125,8 +125,11 @@ fun AnalyticsScreen(
     ) { uri ->
         uri?.let {
             scope.launch {
-                context.contentResolver.openOutputStream(it)?.use { outputStream ->
-                    viewModel.onPdfExportRequested(outputStream, it)
+                // Ensure outputStream is closed AFTER the async operation completes
+                context.contentResolver.openOutputStream(it).use { outputStream ->
+                    if (outputStream != null) {
+                        viewModel.onPdfExportRequested(outputStream, it)
+                    }
                 }
             }
         }

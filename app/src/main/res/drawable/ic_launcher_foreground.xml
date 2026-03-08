@@ -1,46 +1,79 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    
-    <!-- Centered and scaled version of the "head" from body-shape.svg -->
-    <group
-        android:translateX="54"
-        android:translateY="54"
-        android:scaleX="1.2"
-        android:scaleY="1.2">
-        <group
-            android:translateX="-86.5"
-            android:translateY="-17">
-            
-            <!-- Head shape -->
-            <path
-                android:fillColor="#FFFFFF"
-                android:strokeColor="@color/primary_dark"
-                android:strokeWidth="1"
-                android:pathData="m 86.539833,-6.062834 c -8.74299,0 -15.830748,10.31151 -15.830748,23.031557 0,12.720047 7.087758,23.031557 15.830748,23.031557 8.74299,0 15.830748,-10.31151 15.830748,-23.031557 0,-12.720047 -7.087758,-23.031557 -15.830748,-23.031557 z" />
-            
-            <!-- Forehead line -->
-            <path
-                android:strokeColor="@color/primary_dark"
-                android:strokeWidth="1.5"
-                android:pathData="m 70.410271,16.99755 c 11.278064,2.685242 21.911677,2.792676 31.900819,0.322231" />
-            
-            <!-- Center vertical line -->
-            <path
-                android:strokeColor="@color/primary_dark"
-                android:strokeWidth="1"
-                android:pathData="M 86.682908,-6.3641591 V 39.875914" />
+    android:viewportWidth="512"
+    android:viewportHeight="512">
 
-            <!-- Eyes -->
-            <group android:translateX="-0.5">
+    <!-- Group for headneck layer with its transform -->
+    <group
+        android:scaleX="2.3069968"
+        android:scaleY="2.3069968"
+        android:translateX="-203.33707"
+        android:translateY="-307.22486">
+
+        <!-- Neck path -->
+        <path
+            android:fillColor="#ffffff"
+            android:strokeColor="#ffb77c"
+            android:strokeWidth="3.77953"
+            android:pathData="m 233.56514,297.73743 16.90169,51.93528 c -36.84248,-5.88567 -61.98501,-6.92117 -101.50487,-0.70574 l 15.22926,-50.59793 c 22.36391,12.99922 43.81012,21.56806 69.37392,-0.63152 z" />
+
+        <!-- Head group with its nested transform -->
+        <group
+            android:scaleX="3.7795276"
+            android:scaleY="3.7795276"
+            android:translateX="-128.18634"
+            android:translateY="161.05351">
+
+            <!-- Head part (ellipse converted to path) -->
+            <path
+                android:fillColor="#ffffff"
+                android:strokeColor="#ffb77c"
+                android:strokeWidth="1"
+                android:pathData="M 70.709085,16.968723 a 15.830748,23.031557 0 1,0 31.661496,0 a 15.830748,23.031557 0 1,0 -31.661496,0 Z" />
+
+            <!-- Forehead -->
+            <path
+                android:fillColor="#00000000"
+                android:strokeColor="#ffb77c"
+                android:strokeWidth="1"
+                android:pathData="m 70.892411,20.248353 c 11.278064,-2.685242 21.085152,-2.68936 31.384239,-0.01228" />
+
+            <!-- Head center line -->
+            <path
+                android:fillColor="#00000000"
+                android:strokeColor="#ffb77c"
+                android:strokeWidth="1"
+                android:pathData="M 86.777946,-6.3641591 V 39.875914" />
+
+            <!-- Ear Right -->
+            <path
+                android:fillColor="#ffffff"
+                android:strokeColor="#ffb77c"
+                android:strokeWidth="1"
+                android:pathData="m 70.118043,15.628999 c -2.00469,-0.535674 -2.659598,1.40132 -2.581328,2.642137 0.49113,3.614215 2.09754,6.465968 3.55693,9.815905 0.42015,0.475018 0.83241,0.31615 1.03292,0.129114 z" />
+
+            <!-- Ear Left (mirrored in SVG) -->
+            <path
+                android:fillColor="#ffffff"
+                android:strokeColor="#ffb77c"
+                android:strokeWidth="1"
+                android:pathData="m 103.07419,15.628999 c 2.00469,-0.535674 2.6596,1.401319 2.58133,2.642136 -0.49113,3.614215 -2.09754,6.465968 -3.55693,9.815905 -0.42015,0.475018 -0.83241,0.31615 -1.03292,0.129114 z" />
+
+            <!-- Eyes group with its transform -->
+            <group
+                android:translateX="-0.38734993"
+                android:translateY="-0.52916664">
+                
+                <!-- Eye Left -->
                 <path
-                    android:fillColor="@color/primary_dark"
-                    android:pathData="m 75.101357,17.735131 c 0.455012,-1.504624 0.409604,-3.562842 3.617965,-3.617965 3.295628,0.210564 4.048716,2.328033 4.740783,4.491267 z" />
+                    android:fillColor="#ffb77c"
+                    android:pathData="m 75.77842,19.224606 c -0.03915,-2.548484 1.584432,-4.7389 3.345496,-4.742985 2.317819,-0.102089 3.563009,1.556415 4.2593,4.120143 z" />
+                
+                <!-- Eye Right -->
                 <path
-                    android:fillColor="@color/primary_dark"
-                    android:pathData="m 99.031434,17.591773 c -0.455012,-1.504624 -0.409604,-3.562842 -3.617965,-3.617965 -3.295628,0.210564 -4.048716,2.328033 -4.740783,4.491267 z" />
+                    android:fillColor="#ffb77c"
+                    android:pathData="m 98.552171,19.224606 c 0.03915,-2.548484 -1.584432,-4.7389 -3.345496,-4.742985 -2.317819,-0.102089 -3.563009,1.556415 -4.2593,4.120143 z" />
             </group>
         </group>
     </group>

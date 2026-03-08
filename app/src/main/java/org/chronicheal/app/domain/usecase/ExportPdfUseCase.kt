@@ -1,12 +1,9 @@
 package org.chronicheal.app.domain.usecase
 
-import android.content.Context
-import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.pdf.PdfDocument
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -22,8 +19,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 class ExportPdfUseCase @Inject constructor(
-    private val repository: EntryRepository,
-    @ApplicationContext private val context: Context
+    private val repository: EntryRepository
 ) {
     private val palette = listOf(
         0xFF0072B2.toInt(), // Blue
@@ -34,6 +30,39 @@ class ExportPdfUseCase @Inject constructor(
         0xFF56B4E9.toInt(), // Sky Blue
         0xFFE69F00.toInt(), // Orange
     )
+
+    private class PageState(
+        val document: PdfDocument,
+        val pageWidth: Int,
+        val pageHeight: Int,
+        val margin: Float
+    ) {
+        var pageNum = 1
+        var pageInfo: PdfDocument.PageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum).create()
+        var page: PdfDocument.Page = document.startPage(pageInfo)
+        var canvas: android.graphics.Canvas = page.canvas
+        var y = margin + 20f
+
+        fun checkNewPage(neededHeight: Float) {
+            if (y + neededHeight > pageHeight - margin) {
+                document.finishPage(page)
+                pageNum++
+                pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNum).create()
+                page = document.startPage(pageInfo)
+                canvas = page.canvas
+                canvas.drawColor(Color.WHITE)
+                y = margin + 20f
+            }
+        }
+
+        fun drawText(text: String, x: Float, paint: Paint) {
+            canvas.drawText(text, x, y, paint)
+        }
+
+        fun advance(height: Float) {
+            y += height
+        }
+    }
 
     suspend operator fun invoke(outputStream: OutputStream, startDate: LocalDate? = null, endDate: LocalDate? = null) {
         withContext(Dispatchers.IO) {
@@ -49,132 +78,84 @@ class ExportPdfUseCase @Inject constructor(
 
             val document = PdfDocument()
             try {
-                val pageWidth = 595
-                val pageHeight = 842
-                val margin = 40f
-                val chartWidth = pageWidth - (margin * 2)
-                val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, 1).create()
-                var page = document.startPage(pageInfo)
-                var canvas = page.canvas
-                
-                canvas.drawColor(Color.WHITE)
+                val state = PageState(document, 595, 842, 40f)
+                state.canvas.drawColor(Color.WHITE)
 
-                val titlePaint = Paint().apply {
-                    color = Color.BLACK
-                    textSize = 20f
-                    isFakeBoldText = true
-                }
-                val headerPaint = Paint().apply {
-                    color = Color.BLACK
-                    textSize = 14f
-                    isFakeBoldText = true
-                }
-                val textPaint = Paint().apply {
-                    color = Color.BLACK
-                    textSize = 10f
-                }
-                val axisPaint = Paint().apply {
-                    color = Color.LTGRAY
-                    strokeWidth = 1f
-                }
+                val titlePaint = Paint().apply { color = Color.BLACK; textSize = 18f; isFakeBoldText = true }
+                val headerPaint = Paint().apply { color = Color.BLACK; textSize = 12f; isFakeBoldText = true }
+                val textPaint = Paint().apply { color = Color.BLACK; textSize = 9f }
+                val axisPaint = Paint().apply { color = Color.LTGRAY; strokeWidth = 0.8f }
 
-                var y = margin + 20f
-                canvas.drawText("ChronicHeal Health Report", margin, y, titlePaint)
-                y += 25f
-                
-                val rangeStr = "Period: $actualStart to $actualEnd"
-                canvas.drawText(rangeStr, margin, y, textPaint)
-                y += 40f
+                // Title
+                state.drawText("ChronicHeal Health Report", state.margin, titlePaint)
+                state.advance(20f)
+                state.drawText("Period: $actualStart to $actualEnd", state.margin, textPaint)
+                state.advance(30f)
 
-                // --- 1. Pain Evolution (Stacked) ---
+                // --- 1. Pain Evolution ---
                 val painData = getEvolutionData(entries, EntryType.PAIN, actualStart, actualEnd)
-                canvas.drawText("Pain Evolution (Stacked Intensity)", margin, y, headerPaint)
-                y += 15f
-                canvas.drawText("This graph shows the cumulative intensity of pain across different locations over time.", margin, y, textPaint)
-                y += 20f
-                y = drawEvolutionChart(canvas, painData, margin, y, chartWidth, axisPaint, textPaint)
-                y += 40f
+                state.checkNewPage(180f)
+                state.drawText("Pain Evolution (Stacked Intensity)", state.margin, headerPaint)
+                state.advance(15f)
+                state.drawText("Cumulative intensity of pain across different locations over time.", state.margin, textPaint)
+                state.advance(15f)
+                drawEvolutionChart(state, painData, axisPaint, textPaint)
+                state.advance(35f)
 
-                // --- 2. Symptoms Evolution (Stacked) ---
+                // --- 2. Symptoms Evolution ---
                 val symptomData = getEvolutionData(entries, EntryType.SYMPTOM, actualStart, actualEnd)
-                if (y > pageHeight - 200f) {
-                    document.finishPage(page)
-                    page = document.startPage(pageInfo)
-                    canvas = page.canvas
-                    canvas.drawColor(Color.WHITE)
-                    y = margin + 20f
-                }
-                canvas.drawText("Symptoms Evolution (Stacked Intensity)", margin, y, headerPaint)
-                y += 15f
-                canvas.drawText("This graph visualizes the daily impact of various symptoms, stacked to show overall burden.", margin, y, textPaint)
-                y += 20f
-                y = drawEvolutionChart(canvas, symptomData, margin, y, chartWidth, axisPaint, textPaint)
-                y += 40f
+                state.checkNewPage(180f)
+                state.drawText("Symptoms Evolution (Stacked Intensity)", state.margin, headerPaint)
+                state.advance(15f)
+                state.drawText("Daily impact of various symptoms, stacked to show overall burden.", state.margin, textPaint)
+                state.advance(15f)
+                drawEvolutionChart(state, symptomData, axisPaint, textPaint)
+                state.advance(35f)
 
                 // --- 3. Summary Table ---
-                if (y > pageHeight - 200f) {
-                    document.finishPage(page)
-                    page = document.startPage(pageInfo)
-                    canvas = page.canvas
-                    canvas.drawColor(Color.WHITE)
-                    y = margin + 20f
-                }
-                y = drawSummaryTable(canvas, entries, margin, y, chartWidth, headerPaint, textPaint)
-                y += 40f
+                state.checkNewPage(100f)
+                drawSummaryTable(state, entries, headerPaint, textPaint)
+                state.advance(35f)
 
-                // --- 4. Detailed Logs ---
-                if (y > pageHeight - 100f) {
-                    document.finishPage(page)
-                    page = document.startPage(pageInfo)
-                    canvas = page.canvas
-                    canvas.drawColor(Color.WHITE)
-                    y = margin + 20f
-                }
-                canvas.drawText("Detailed Logs", margin, y, headerPaint)
-                y += 20f
+                // --- 4. Detailed Logs (Optimized) ---
+                state.checkNewPage(50f)
+                state.drawText("Detailed Logs", state.margin, headerPaint)
+                state.advance(15f)
 
-                val dateFormater = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault())
+                val logDateFormatter = DateTimeFormatter.ofPattern("HH:mm")
+                val dayGroupFormatter = DateTimeFormatter.ofPattern("EEEE, MMM dd, yyyy")
+                
+                val entriesByDay = entries.groupBy { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() }
+                    .toSortedMap(compareByDescending { it })
 
-                entries.forEach { entry ->
-                    if (y > pageHeight - margin) {
-                        document.finishPage(page)
-                        page = document.startPage(pageInfo)
-                        canvas = page.canvas
-                        canvas.drawColor(Color.WHITE)
-                        y = margin + 20f
-                    }
+                entriesByDay.forEach { (date, dayEntries) ->
+                    state.checkNewPage(20f)
+                    val dayHeaderPaint = Paint(textPaint).apply { isFakeBoldText = true; textSize = 10f }
+                    state.drawText(date.format(dayGroupFormatter), state.margin, dayHeaderPaint)
+                    state.advance(14f)
 
-                    val dateStr = dateFormater.format(entry.timestamp)
-                    val typeStr = entry.type.name.lowercase().replaceFirstChar { it.uppercase() }
-                    val nameStr = if (entry.name != null) "(${entry.name}) " else ""
-                    val valueStr = if (entry.intensity != null) "Level: ${entry.intensity} " else ""
-                    val noteStr = if (entry.note.isNotBlank()) "- ${entry.note}" else ""
-                    
-                    val fullLine = "$dateStr - $typeStr: $nameStr$valueStr$noteStr"
-                    
-                    val words = fullLine.split(" ")
-                    var line = ""
-                    words.forEach { word ->
-                        if (textPaint.measureText(line + word) < chartWidth) {
-                            line += "$word "
-                        } else {
-                            canvas.drawText(line, margin, y, textPaint)
-                            y += 15f
-                            line = "  $word "
-                            if (y > pageHeight - margin) {
-                                document.finishPage(page)
-                                page = document.startPage(pageInfo)
-                                canvas = page.canvas
-                                canvas.drawColor(Color.WHITE)
-                                y = margin + 20f
-                            }
+                    dayEntries.sortedByDescending { it.timestamp }.forEach { entry ->
+                        state.checkNewPage(12f)
+                        
+                        val timeStr = entry.timestamp.atZone(ZoneId.systemDefault()).format(logDateFormatter)
+                        val typeEmoji = entry.type.emoji
+                        
+                        val content = buildString {
+                            append("$timeStr $typeEmoji ")
+                            if (entry.type == EntryType.PAIN && entry.location != null) append("[${entry.location}] ")
+                            if (entry.name != null) append("${entry.name} ")
+                            if (entry.intensity != null) append("Int: ${entry.intensity}/10 ")
+                            if (entry.value != null) append("${entry.value}${entry.unit ?: ""} ")
+                            if (entry.note.isNotBlank()) append("| ${entry.note.take(100)}") // Cap notes length
                         }
+
+                        state.drawText(content, state.margin + 10f, textPaint)
+                        state.advance(12f)
                     }
-                    canvas.drawText(line, margin, y, textPaint)
-                    y += 18f
+                    state.advance(5f)
                 }
 
-                document.finishPage(page)
+                document.finishPage(state.page)
                 document.writeTo(outputStream)
                 outputStream.flush()
             } finally {
@@ -204,19 +185,18 @@ class ExportPdfUseCase @Inject constructor(
     }
 
     private fun drawEvolutionChart(
-        canvas: Canvas,
+        state: PageState,
         data: Map<String, Map<LocalDate, Int>>,
-        margin: Float,
-        startY: Float,
-        chartWidth: Float,
         axisPaint: Paint,
         textPaint: Paint
-    ): Float {
-        var y = startY
-        val chartHeight = 120f
+    ) {
+        val chartHeight = 100f
+        val chartWidth = state.pageWidth - (state.margin * 2)
+        
         if (data.isEmpty()) {
-            canvas.drawText("No data available for this period.", margin, y + 20f, textPaint)
-            return y + 40f
+            state.drawText("No data available for this period.", state.margin, textPaint)
+            state.advance(20f)
+            return
         }
 
         val allKeys = data.keys.toList()
@@ -224,7 +204,6 @@ class ExportPdfUseCase @Inject constructor(
         val daysBetween = allDates.size - 1
         val stepX = chartWidth / daysBetween.coerceAtLeast(1)
 
-        // Calculate stacked values
         val stackedValues = mutableListOf<Map<LocalDate, Float>>()
         allKeys.forEachIndexed { i, key ->
             val currentRaw = data[key]!!
@@ -237,112 +216,55 @@ class ExportPdfUseCase @Inject constructor(
 
         val maxTotal = (stackedValues.lastOrNull()?.values?.maxOrNull() ?: 10f).coerceAtLeast(1f)
 
-        // Grid and Ticks
-        val gridPaint = Paint(axisPaint).apply { 
-            color = Color.LTGRAY
-            alpha = 100
-            strokeWidth = 0.5f 
-        }
-        val tickPaint = Paint(axisPaint)
-        
-        // Horizontal Grid and Y-Ticks
-        val horizontalSteps = 5
-        for (i in 0..horizontalSteps) {
-            val gridY = y + chartHeight - (i * (chartHeight / horizontalSteps))
-            canvas.drawLine(margin, gridY, margin + chartWidth, gridY, gridPaint)
-            canvas.drawLine(margin - 5f, gridY, margin, gridY, tickPaint)
-            val label = (i * (maxTotal / horizontalSteps)).toInt().toString()
-            canvas.drawText(label, margin - 25f, gridY + 4f, textPaint)
+        // Horizontal Grid
+        val gridPaint = Paint(axisPaint).apply { alpha = 60; strokeWidth = 0.5f }
+        for (i in 0..4) {
+            val gridY = state.y + chartHeight - (i * (chartHeight / 4))
+            state.canvas.drawLine(state.margin, gridY, state.margin + chartWidth, gridY, gridPaint)
+            state.canvas.drawText((i * (maxTotal / 4)).toInt().toString(), state.margin - 18f, gridY + 3f, textPaint)
         }
 
-        // Vertical Grid and X-Ticks (Date markers)
-        val verticalSteps = if (daysBetween < 10) daysBetween else 7
-        for (i in 0..verticalSteps) {
-            val dayIndex = i * (daysBetween / verticalSteps)
-            val gridX = margin + (dayIndex * stepX)
-            canvas.drawLine(gridX, y, gridX, y + chartHeight, gridPaint)
-            canvas.drawLine(gridX, y + chartHeight, gridX, y + chartHeight + 5f, tickPaint)
-            
-            val dateLabel = allDates.getOrNull(dayIndex)?.format(DateTimeFormatter.ofPattern("MM/dd")) ?: ""
-            canvas.drawText(dateLabel, gridX - 10f, y + chartHeight + 15f, textPaint)
-        }
-
-        // Draw stacked areas
+        // Draw Areas
         for (i in allKeys.indices.reversed()) {
             val color = palette[i % palette.size]
-            val areaPaint = Paint().apply {
-                this.color = color
-                style = Paint.Style.FILL
-                alpha = 180
-            }
-            val linePaint = Paint().apply {
-                this.color = color
-                style = Paint.Style.STROKE
-                strokeWidth = 1.5f
-                isAntiAlias = true
-            }
-
+            val areaPaint = Paint().apply { this.color = color; style = Paint.Style.FILL; alpha = 140 }
             val path = Path()
-            path.moveTo(margin, y + chartHeight)
-            
+            path.moveTo(state.margin, state.y + chartHeight)
             allDates.forEachIndexed { index, date ->
                 val valY = stackedValues[i][date] ?: 0f
-                val px = margin + (index * stepX)
-                val py = y + chartHeight - (valY * (chartHeight / maxTotal))
-                path.lineTo(px, py)
+                path.lineTo(state.margin + (index * stepX), state.y + chartHeight - (valY * (chartHeight / maxTotal)))
             }
-            
-            path.lineTo(margin + chartWidth, y + chartHeight)
+            path.lineTo(state.margin + chartWidth, state.y + chartHeight)
             path.close()
-            canvas.drawPath(path, areaPaint)
-            
-            val linePath = Path()
-            allDates.forEachIndexed { index, date ->
-                val valY = stackedValues[i][date] ?: 0f
-                val px = margin + (index * stepX)
-                val py = y + chartHeight - (valY * (chartHeight / maxTotal))
-                if (index == 0) linePath.moveTo(px, py) else linePath.lineTo(px, py)
-            }
-            canvas.drawPath(linePath, linePaint)
+            state.canvas.drawPath(path, areaPaint)
         }
 
-        // Axes
-        canvas.drawLine(margin, y, margin, y + chartHeight, tickPaint)
-        canvas.drawLine(margin, y + chartHeight, margin + chartWidth, y + chartHeight, tickPaint)
-
-        y += chartHeight + 35f
+        state.advance(chartHeight + 10f)
         
-        // Legend
-        var currentX = margin
+        // Compact Legend
+        var curX = state.margin
         allKeys.forEachIndexed { index, key ->
             val color = palette[index % palette.size]
-            val legPaint = Paint().apply { this.color = color; style = Paint.Style.FILL }
-            
-            if (currentX + textPaint.measureText(key) + 20f > margin + chartWidth) {
-                currentX = margin
-                y += 15f
+            val p = Paint().apply { this.color = color; style = Paint.Style.FILL }
+            if (curX + textPaint.measureText(key) + 20f > state.margin + chartWidth) {
+                curX = state.margin
+                state.advance(12f)
             }
-            
-            canvas.drawRect(currentX, y - 8f, currentX + 10f, y, legPaint)
-            canvas.drawText(key, currentX + 15f, y, textPaint)
-            currentX += textPaint.measureText(key) + 30f
+            state.canvas.drawRect(curX, state.y - 7f, curX + 8f, state.y, p)
+            state.canvas.drawText(key, curX + 12f, state.y, textPaint)
+            curX += textPaint.measureText(key) + 25f
         }
-
-        return y + 20f
+        state.advance(10f)
     }
 
     private fun drawSummaryTable(
-        canvas: Canvas,
+        state: PageState,
         entries: List<HealthEntry>,
-        margin: Float,
-        startY: Float,
-        tableWidth: Float,
         headerPaint: Paint,
         textPaint: Paint
-    ): Float {
-        var y = startY
-        canvas.drawText("Period Summary Statistics", margin, y, headerPaint)
-        y += 25f
+    ) {
+        state.drawText("Period Summary Statistics", state.margin, headerPaint)
+        state.advance(18f)
 
         val metrics = entries.filter { (it.type == EntryType.PAIN || it.type == EntryType.SYMPTOM) && it.intensity != null }
             .groupBy { it.name ?: it.location ?: "General" }
@@ -352,36 +274,33 @@ class ExportPdfUseCase @Inject constructor(
             }
 
         if (metrics.isEmpty()) {
-            canvas.drawText("No pain or symptom data for statistics.", margin, y, textPaint)
-            return y + 20f
+            state.drawText("No data for statistics.", state.margin, textPaint)
+            state.advance(12f)
+            return
         }
 
-        // Table Header
-        val col1 = margin
-        val col2 = margin + (tableWidth * 0.4f)
-        val col3 = margin + (tableWidth * 0.6f)
-        val col4 = margin + (tableWidth * 0.8f)
+        val tableWidth = state.pageWidth - (state.margin * 2)
+        val col1 = state.margin
+        val col2 = state.margin + (tableWidth * 0.5f)
+        val col3 = state.margin + (tableWidth * 0.65f)
+        val col4 = state.margin + (tableWidth * 0.8f)
 
-        val tableHeaderPaint = Paint(textPaint).apply { isFakeBoldText = true }
-        canvas.drawText("Metric", col1, y, tableHeaderPaint)
-        canvas.drawText("Min", col2, y, tableHeaderPaint)
-        canvas.drawText("Max", col3, y, tableHeaderPaint)
-        canvas.drawText("Avg", col4, y, tableHeaderPaint)
-        y += 5f
-        canvas.drawLine(margin, y, margin + tableWidth, y, Paint().apply { color = Color.BLACK; strokeWidth = 1f })
-        y += 15f
+        val boldSmall = Paint(textPaint).apply { isFakeBoldText = true }
+        state.drawText("Metric", col1, boldSmall)
+        state.drawText("Min", col2, boldSmall)
+        state.drawText("Max", col3, boldSmall)
+        state.drawText("Avg", col4, boldSmall)
+        state.advance(4f)
+        state.canvas.drawLine(state.margin, state.y, state.margin + tableWidth, state.y, Paint().apply { color = Color.BLACK; strokeWidth = 0.5f })
+        state.advance(12f)
 
         metrics.forEach { (name, stats) ->
-            canvas.drawText(name, col1, y, textPaint)
-            canvas.drawText(stats.first.toString(), col2, y, textPaint)
-            canvas.drawText(stats.second.toString(), col3, y, textPaint)
-            canvas.drawText(String.format(Locale.getDefault(), "%.1f", stats.third), col4, y, textPaint)
-            y += 15f
-            
-            canvas.drawLine(margin, y - 2f, margin + tableWidth, y - 2f, Paint().apply { color = Color.LTGRAY; strokeWidth = 0.5f })
-            y += 5f
+            state.checkNewPage(12f)
+            state.drawText(name, col1, textPaint)
+            state.drawText(stats.first.toString(), col2, textPaint)
+            state.drawText(stats.second.toString(), col3, textPaint)
+            state.drawText(String.format(Locale.getDefault(), "%.1f", stats.third), col4, textPaint)
+            state.advance(12f)
         }
-
-        return y
     }
 }
