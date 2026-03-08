@@ -33,6 +33,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -42,6 +44,7 @@ import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.TrendingFlat
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -112,8 +115,8 @@ fun TimelineScreen(
     var isSearchVisible by rememberSaveable { mutableStateOf(false) }
     var hasPerformedInitialScroll by rememberSaveable { mutableStateOf(false) }
 
-    val timelineItems = remember(uiState.entries) {
-        buildTimelineItems(uiState.entries)
+    val timelineItems = remember(uiState.entries, uiState.weeklyStats) {
+        buildTimelineItems(uiState.entries, uiState.weeklyStats)
     }
 
     val todayIndex = remember(timelineItems) {
@@ -324,6 +327,11 @@ fun TimelineScreen(
             ) {
                 timelineItems.forEachIndexed { index, item ->
                     when (item) {
+                        is TimelineItem.WeeklyInsights -> {
+                            item(key = "weekly_insights") {
+                                WeeklyInsightsCard(item.stats)
+                            }
+                        }
                         is TimelineItem.YearHeader -> {
                             item(key = "year_${item.year}_$index") {
                                 YearHeader(item.year)
@@ -349,6 +357,102 @@ fun TimelineScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun WeeklyInsightsCard(stats: WeeklyStats) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(24.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Last 7 Days Insights",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                InsightItem(
+                    label = "Avg Pain",
+                    value = stats.avgPain?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "-",
+                    trend = stats.painTrend,
+                    isPositiveBetter = false,
+                    modifier = Modifier.weight(1f)
+                )
+                InsightItem(
+                    label = "Medications",
+                    value = stats.drugCount.toString(),
+                    trend = stats.drugTrend,
+                    isPositiveBetter = null, // Neutral
+                    modifier = Modifier.weight(1f)
+                )
+                InsightItem(
+                    label = "Avg Sleep",
+                    value = stats.avgSleepMinutes?.let { "${it / 60}h" } ?: "-",
+                    trend = stats.sleepTrend,
+                    isPositiveBetter = true,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun InsightItem(
+    label: String,
+    value: String,
+    trend: Int?,
+    isPositiveBetter: Boolean?,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Black)
+        
+        if (trend != null && trend != 0) {
+            val isTrendPositive = trend > 0
+            val color = when {
+                isPositiveBetter == null -> MaterialTheme.colorScheme.onSurfaceVariant
+                isPositiveBetter && isTrendPositive -> Color(0xFF388E3C) // Green
+                !isPositiveBetter && !isTrendPositive -> Color(0xFF388E3C) // Green
+                else -> Color(0xFFD32F2F) // Red
+            }
+            
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = when {
+                        trend > 0 -> Icons.AutoMirrored.Filled.TrendingUp
+                        trend < 0 -> Icons.AutoMirrored.Filled.TrendingDown
+                        else -> Icons.Default.TrendingFlat
+                    },
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(12.dp)
+                )
+                Spacer(modifier = Modifier.width(2.dp))
+                Text(
+                    text = "${if (trend > 0) "+" else ""}$trend${if (label.contains("Avg")) "%" else ""}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = color,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -387,16 +491,21 @@ fun QuickAddChip(
 }
 
 sealed class TimelineItem {
+    data class WeeklyInsights(val stats: WeeklyStats) : TimelineItem()
     data class YearHeader(val year: Int) : TimelineItem()
     data class MonthHeader(val month: String) : TimelineItem()
     data class DayHeader(val day: String, val isToday: Boolean = false) : TimelineItem()
     data class Entry(val entry: HealthEntry) : TimelineItem()
 }
 
-fun buildTimelineItems(entries: List<HealthEntry>): List<TimelineItem> {
+fun buildTimelineItems(entries: List<HealthEntry>, stats: WeeklyStats?): List<TimelineItem> {
     val items = mutableListOf<TimelineItem>()
     val zoneId = ZoneId.systemDefault()
     val today = LocalDate.now()
+
+    if (stats != null) {
+        items.add(TimelineItem.WeeklyInsights(stats))
+    }
 
     // Group entries by date
     val entriesByDate = entries.groupBy {

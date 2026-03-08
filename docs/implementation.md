@@ -145,3 +145,24 @@ Goal: Interactive tools and notifications.
     - **Branding Consistency**: Integrated the new logo into the `NotificationHelper` for a unified look and feel.
 - **Automatic Notification Dismissal**: Handled the dismissal of the reminder notification as soon as the user selects "Log Now".
 - **Vector Accuracy**: Refined the launcher icon XML to precisely match the source SVG geometry and nested transformations.
+
+## Phase 21: Weekly Insights (Completed)
+- **Actionable Summary**: Added a "Last 7 Days Insights" card at the top of the `TimelineScreen` to provide immediate feedback on health trends.
+- **Key Metrics**:
+    - **Average Pain**: Calculated mean intensity for pain entries over the last week.
+    - **Medication Count**: Total number of drug entries in the last 7 days.
+    - **Average Sleep**: Mean sleep duration (prioritizing `durationMinutes`, falling back to `intensity * 60`).
+- **Trend Analysis**:
+    - Compared current week metrics against the previous week (7-14 days ago).
+    - Added visual indicators (TrendingUp, TrendingDown, TrendingFlat) with semantic coloring (Green for improvement, Red for decline).
+- **UI Integration**: Prepend the insights card to the grouped timeline list, ensuring it's the first thing users see upon opening the app.
+
+## Phase 22: PDF Graph and Analytics Enhancements (Completed)
+- **X-Axis Ticks**: Added date labels and ticks to the PDF evolution charts for better temporal context.
+- **Distribution Histograms**: Replaced the summary statistics table with a set of histograms showing the distribution of intensity levels (1-10) for each pain location and symptom.
+- **Visual Clarity**: Improved chart spacing and layout density in the PDF report.
+
+## Phase 23: Data Integrity Verification (Completed)
+- **Test Implementation**: Created `DataTransferTest.kt` to verify the JSON export/import process.
+- **Verification Logic**: Simulated a full data lifecycle by exporting complex `HealthEntry` objects to JSON and then importing them back, ensuring 1:1 field parity for timestamps, types, values, units, and notes.
+- **Infrastructure**: Added `mockk` and `kotlinx-coroutines-test` dependencies to the project to support robust unit testing of use cases.

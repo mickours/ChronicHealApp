@@ -1,6 +1,5 @@
 package org.chronicheal.app
 
-import android.content.Context
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
@@ -19,14 +18,12 @@ import java.time.LocalDate
 class ExportPdfUseCaseTest {
 
     private lateinit var repository: EntryRepository
-    private lateinit var context: Context
     private lateinit var exportPdfUseCase: ExportPdfUseCase
 
     @Before
     fun setup() {
         repository = mockk()
-        context = mockk()
-        exportPdfUseCase = ExportPdfUseCase(repository, context)
+        exportPdfUseCase = ExportPdfUseCase(repository)
     }
 
     @Test

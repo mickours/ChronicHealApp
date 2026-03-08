@@ -3,6 +3,7 @@ package org.chronicheal.app.domain.usecase
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -100,7 +101,7 @@ class ExportPdfUseCase @Inject constructor(
                 state.drawText("Cumulative intensity of pain across different locations over time.", state.margin, textPaint)
                 state.advance(15f)
                 drawEvolutionChart(state, painData, axisPaint, textPaint)
-                state.advance(35f)
+                state.advance(45f)
 
                 // --- 2. Symptoms Evolution ---
                 val symptomData = getEvolutionData(entries, EntryType.SYMPTOM, actualStart, actualEnd)
@@ -110,11 +111,11 @@ class ExportPdfUseCase @Inject constructor(
                 state.drawText("Daily impact of various symptoms, stacked to show overall burden.", state.margin, textPaint)
                 state.advance(15f)
                 drawEvolutionChart(state, symptomData, axisPaint, textPaint)
-                state.advance(35f)
+                state.advance(45f)
 
-                // --- 3. Summary Table ---
-                state.checkNewPage(100f)
-                drawSummaryTable(state, entries, headerPaint, textPaint)
+                // --- 3. Intensity Distribution ---
+                state.checkNewPage(200f)
+                drawDistributionHistograms(state, entries, headerPaint, textPaint)
                 state.advance(35f)
 
                 // --- 4. Detailed Logs (Optimized) ---
@@ -224,6 +225,24 @@ class ExportPdfUseCase @Inject constructor(
             state.canvas.drawText((i * (maxTotal / 4)).toInt().toString(), state.margin - 18f, gridY + 3f, textPaint)
         }
 
+        // X-axis and Ticks
+        state.canvas.drawLine(state.margin, state.y + chartHeight, state.margin + chartWidth, state.y + chartHeight, axisPaint)
+        
+        val maxLabels = 7
+        val labelStep = (allDates.size / maxLabels).coerceAtLeast(1)
+        val dateFormatter = DateTimeFormatter.ofPattern("MMM dd", Locale.getDefault())
+        
+        allDates.forEachIndexed { index, date ->
+            if (index % labelStep == 0 || index == allDates.size - 1) {
+                val tickX = state.margin + (index * stepX)
+                state.canvas.drawLine(tickX, state.y + chartHeight, tickX, state.y + chartHeight + 4f, axisPaint)
+                
+                val label = date.format(dateFormatter)
+                val labelWidth = textPaint.measureText(label)
+                state.canvas.drawText(label, tickX - (labelWidth / 2), state.y + chartHeight + 14f, textPaint)
+            }
+        }
+
         // Draw Areas
         for (i in allKeys.indices.reversed()) {
             val color = palette[i % palette.size]
@@ -239,7 +258,7 @@ class ExportPdfUseCase @Inject constructor(
             state.canvas.drawPath(path, areaPaint)
         }
 
-        state.advance(chartHeight + 10f)
+        state.advance(chartHeight + 25f)
         
         // Compact Legend
         var curX = state.margin
@@ -257,50 +276,82 @@ class ExportPdfUseCase @Inject constructor(
         state.advance(10f)
     }
 
-    private fun drawSummaryTable(
+    private fun drawDistributionHistograms(
         state: PageState,
         entries: List<HealthEntry>,
         headerPaint: Paint,
         textPaint: Paint
     ) {
-        state.drawText("Period Summary Statistics", state.margin, headerPaint)
-        state.advance(18f)
+        state.drawText("Intensity Distribution (1-10)", state.margin, headerPaint)
+        state.advance(15f)
+        state.drawText("Frequency of each intensity level for recorded metrics.", state.margin, textPaint)
+        state.advance(20f)
 
         val metrics = entries.filter { (it.type == EntryType.PAIN || it.type == EntryType.SYMPTOM) && it.intensity != null }
             .groupBy { it.name ?: it.location ?: "General" }
-            .mapValues { (_, group) ->
-                val intensities = group.mapNotNull { it.intensity }
-                Triple(intensities.minOrNull() ?: 0, intensities.maxOrNull() ?: 0, intensities.average())
-            }
+            .toList()
+            .sortedBy { it.first }
 
         if (metrics.isEmpty()) {
-            state.drawText("No data for statistics.", state.margin, textPaint)
+            state.drawText("No data for distribution.", state.margin, textPaint)
             state.advance(12f)
             return
         }
 
-        val tableWidth = state.pageWidth - (state.margin * 2)
-        val col1 = state.margin
-        val col2 = state.margin + (tableWidth * 0.5f)
-        val col3 = state.margin + (tableWidth * 0.65f)
-        val col4 = state.margin + (tableWidth * 0.8f)
+        val histoHeight = 40f
+        val histoWidth = 140f
+        val spacing = 20f
+        var curX = state.margin
+        val axisPaint = Paint().apply { color = Color.LTGRAY; strokeWidth = 0.5f }
 
-        val boldSmall = Paint(textPaint).apply { isFakeBoldText = true }
-        state.drawText("Metric", col1, boldSmall)
-        state.drawText("Min", col2, boldSmall)
-        state.drawText("Max", col3, boldSmall)
-        state.drawText("Avg", col4, boldSmall)
-        state.advance(4f)
-        state.canvas.drawLine(state.margin, state.y, state.margin + tableWidth, state.y, Paint().apply { color = Color.BLACK; strokeWidth = 0.5f })
-        state.advance(12f)
+        metrics.forEachIndexed { index, (name, group) ->
+            state.checkNewPage(histoHeight + 40f)
+            
+            // Layout: 3 histograms per row
+            if (curX + histoWidth > state.pageWidth - state.margin) {
+                curX = state.margin
+                state.advance(histoHeight + 50f)
+                state.checkNewPage(histoHeight + 40f)
+            }
 
-        metrics.forEach { (name, stats) ->
-            state.checkNewPage(12f)
-            state.drawText(name, col1, textPaint)
-            state.drawText(stats.first.toString(), col2, textPaint)
-            state.drawText(stats.second.toString(), col3, textPaint)
-            state.drawText(String.format(Locale.getDefault(), "%.1f", stats.third), col4, textPaint)
-            state.advance(12f)
+            // Calculate Distribution
+            val counts = (1..10).associateWith { level -> group.count { it.intensity == level } }
+            val maxCount = (counts.values.maxOrNull() ?: 1).coerceAtLeast(1)
+
+            // Draw Metric Name
+            val namePaint = Paint(textPaint).apply { isFakeBoldText = true }
+            state.canvas.drawText(name.take(25), curX, state.y - 5f, namePaint)
+
+            // Draw Axes
+            state.canvas.drawLine(curX, state.y, curX, state.y + histoHeight, axisPaint)
+            state.canvas.drawLine(curX, state.y + histoHeight, curX + histoWidth, state.y + histoHeight, axisPaint)
+
+            // Draw Bars
+            val barWidth = histoWidth / 10f
+            val color = palette[index % palette.size]
+            val barPaint = Paint().apply { this.color = color; style = Paint.Style.FILL }
+            
+            for (level in 1..10) {
+                val count = counts[level] ?: 0
+                val barHeight = (count.toFloat() / maxCount) * histoHeight
+                val left = curX + (level - 1) * barWidth + 1f
+                val top = state.y + histoHeight - barHeight
+                val right = curX + level * barWidth - 1f
+                val bottom = state.y + histoHeight
+                
+                if (barHeight > 0) {
+                    state.canvas.drawRect(RectF(left, top, right, bottom), barPaint)
+                }
+            }
+
+            // Draw labels for 1 and 10
+            val labelPaint = Paint(textPaint).apply { textSize = 7f }
+            state.canvas.drawText("1", curX, state.y + histoHeight + 10f, labelPaint)
+            state.canvas.drawText("10", curX + histoWidth - 8f, state.y + histoHeight + 10f, labelPaint)
+
+            curX += histoWidth + spacing
         }
+        
+        state.advance(histoHeight + 30f)
     }
 }

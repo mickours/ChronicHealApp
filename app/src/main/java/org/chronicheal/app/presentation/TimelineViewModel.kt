@@ -24,6 +24,8 @@ import org.chronicheal.app.domain.usecase.GetEntriesUseCase
 import org.chronicheal.app.domain.usecase.GetEntryByIdUseCase
 import org.chronicheal.app.domain.usecase.GetReminderByIdUseCase
 import org.chronicheal.app.domain.usecase.UpdateEntryUseCase
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @HiltViewModel
@@ -64,18 +66,51 @@ class TimelineViewModel @Inject constructor(
             
             matchesQuery && matchesType
         }
+        
+        val weeklyStats = calculateWeeklyStats(entries)
+
         TimelineUiState(
             entries = filteredEntries, 
             searchQuery = query,
             selectedTypes = selectedTypes,
             message = message,
-            favorites = favorites
+            favorites = favorites,
+            weeklyStats = weeklyStats
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = TimelineUiState()
     )
+
+    private fun calculateWeeklyStats(entries: List<HealthEntry>): WeeklyStats? {
+        val now = Instant.now()
+        val oneWeekAgo = now.minus(7, ChronoUnit.DAYS)
+        val twoWeeksAgo = now.minus(14, ChronoUnit.DAYS)
+
+        val currentWeekEntries = entries.filter { it.timestamp.isAfter(oneWeekAgo) }
+        val previousWeekEntries = entries.filter { it.timestamp.isAfter(twoWeeksAgo) && it.timestamp.isBefore(oneWeekAgo) }
+
+        if (currentWeekEntries.isEmpty()) return null
+
+        val currentPain = currentWeekEntries.filter { it.type == EntryType.PAIN }.mapNotNull { it.intensity }.average().takeIf { !it.isNaN() }
+        val previousPain = previousWeekEntries.filter { it.type == EntryType.PAIN }.mapNotNull { it.intensity }.average().takeIf { !it.isNaN() }
+        
+        val currentDrugs = currentWeekEntries.count { it.type == EntryType.DRUG }
+        val previousDrugs = previousWeekEntries.count { it.type == EntryType.DRUG }
+
+        val currentSleep = currentWeekEntries.filter { it.type == EntryType.SLEEP }.mapNotNull { it.durationMinutes?.toDouble() ?: (it.intensity?.toDouble()?.times(60.0)) }.average().takeIf { !it.isNaN() }
+        val previousSleep = previousWeekEntries.filter { it.type == EntryType.SLEEP }.mapNotNull { it.durationMinutes?.toDouble() ?: (it.intensity?.toDouble()?.times(60.0)) }.average().takeIf { !it.isNaN() }
+
+        return WeeklyStats(
+            avgPain = currentPain,
+            painTrend = if (currentPain != null && previousPain != null) ((currentPain - previousPain) / previousPain * 100).toInt() else null,
+            drugCount = currentDrugs,
+            drugTrend = if (previousDrugs > 0) currentDrugs - previousDrugs else null,
+            avgSleepMinutes = currentSleep?.toInt(),
+            sleepTrend = if (currentSleep != null && previousSleep != null) ((currentSleep - previousSleep) / previousSleep * 100).toInt() else null
+        )
+    }
 
     private fun createSortedSuggestions(
         filter: (HealthEntry) -> Boolean,
@@ -289,11 +324,21 @@ sealed class UndoAction {
     data class Update(val originalEntry: HealthEntry) : UndoAction()
 }
 
+data class WeeklyStats(
+    val avgPain: Double? = null,
+    val painTrend: Int? = null, // percentage
+    val drugCount: Int = 0,
+    val drugTrend: Int? = null, // absolute difference
+    val avgSleepMinutes: Int? = null,
+    val sleepTrend: Int? = null // percentage
+)
+
 data class TimelineUiState(
     val entries: List<HealthEntry> = emptyList(),
     val searchQuery: String = "",
     val selectedTypes: Set<EntryType> = emptySet(),
     val isLoading: Boolean = false,
     val message: String? = null,
-    val favorites: Set<EntryType> = emptySet()
+    val favorites: Set<EntryType> = emptySet(),
+    val weeklyStats: WeeklyStats? = null
 )
