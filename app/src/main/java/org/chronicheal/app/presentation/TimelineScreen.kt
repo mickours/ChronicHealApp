@@ -790,24 +790,43 @@ fun EntryItem(
                     }
                 }
                 
-                if (entry.note.isNotEmpty()) {
+                // If both name and location exist, we already showed one in the title. 
+                // Show the other one here if it wasn't the one highlighted.
+                // We only show location if it's NOT NULL and NOT BLANK.
+                if (entry.name != null && !displayedLocation.isNullOrBlank()) {
                     Text(
-                        text = entry.note,
-                        modifier = Modifier.padding(top = 8.dp),
-                        style = MaterialTheme.typography.bodyMedium
+                        text = stringResource(R.string.location_label_format, displayedLocation),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 4.dp)
                     )
                 }
 
-                // If both name and location exist, we already showed one. 
-                // Show the other one here if it wasn't the one highlighted.
-                if (entry.name != null && displayedLocation != null) {
-                    Text(text = stringResource(R.string.location_label_format, displayedLocation), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                // Value and Unit / Dosage / Quantity
+                // For Drugs and Beverages, the quantity/dosage is stored in 'unit' and 'value' is often null.
+                val displayValue = if (entry.value != null) {
+                    stringResource(R.string.value_label, entry.value.toString(), entry.unit ?: "")
+                } else if (!entry.unit.isNullOrBlank()) {
+                    // For Drugs/Beverages, unit field contains the whole "500mg" or "250ml"
+                    if (entry.type == EntryType.DRUG) {
+                        stringResource(R.string.dosage_label_format, entry.unit)
+                    } else if (entry.type == EntryType.BEVERAGE) {
+                        stringResource(R.string.dosage_label_format, entry.unit).replace("Dosage", stringResource(R.string.quantity))
+                    } else {
+                        entry.unit
+                    }
+                } else {
+                    null
                 }
-                
-                entry.value?.let {
-                    Text(text = "Value: $it ${entry.unit ?: ""}", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+
+                displayValue?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
                 }
-                
+
+                // Duration
                 entry.durationMinutes?.let { duration ->
                     if (duration > 0) {
                         val hours = duration / 60
@@ -824,6 +843,31 @@ fun EntryItem(
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
+                }
+
+                // Ingredients (for Meals)
+                if (!entry.ingredients.isNullOrEmpty()) {
+                    val ingredientsText = entry.ingredients.joinToString(", ") { ingredient ->
+                        val qtyPart = ingredient.quantity?.let { 
+                            val formattedQty = if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()
+                            " ($formattedQty${ingredient.unit ?: ""})"
+                        } ?: ""
+                        "${ingredient.name}$qtyPart"
+                    }
+                    Text(
+                        text = stringResource(R.string.ingredients_label) + ": $ingredientsText",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+
+                if (entry.note.isNotEmpty()) {
+                    Text(
+                        text = entry.note,
+                        modifier = Modifier.padding(top = 8.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
 

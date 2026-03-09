@@ -149,6 +149,14 @@ Goal: Interactive tools and notifications.
     - **Technical IDs**: Pain entries now store the technical ID from the SVG (e.g., `shoulder_left`) instead of the localized name.
     - **On-the-fly Translation**: The UI uses `formatId(context, id)` to translate these IDs into the current system language (English/French) for display.
 
+## Phase 25: Enhanced Timeline Detail Visibility (Completed)
+- **Increased Information Density**: Updated the `EntryItem` component to show all filled-in fields directly in the timeline.
+- **Contextual Data Display**: 
+    - Meal entries now list their ingredients and quantities.
+    - Medication and beverage entries display their specific dosages/volumes.
+    - Duration is shown for any entry where it's recorded (e.g., activities, sleep).
+    - Location and Name are both shown if they exist and aren't redundant with the title.
+
 ## Phase 32: Automated Rolling Backups (Completed)
 - **Automated Backup System**: Implemented a daily automated backup using `WorkManager`.
 - **Rolling Retention Logic**:
