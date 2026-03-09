@@ -75,8 +75,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -298,39 +300,10 @@ fun TimelineScreen(
         },
         bottomBar = {
             if (uiState.favorites.isNotEmpty()) {
-                Surface(
-                    tonalElevation = 8.dp,
-                    shadowElevation = 8.dp,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .navigationBarsPadding(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = stringResource(R.string.quick_add),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 4.dp),
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center
-                        )
-                        LazyRow(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            items(uiState.favorites.toList()) { type ->
-                                QuickAddChip(
-                                    type = type,
-                                    onClick = { onEntryTypeClick(type) }
-                                )
-                            }
-                        }
-                    }
-                }
+                QuickAddBar(
+                    favorites = uiState.favorites.toList(),
+                    onEntryTypeClick = onEntryTypeClick
+                )
             }
         }
     ) { innerPadding ->
@@ -381,6 +354,63 @@ fun TimelineScreen(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun QuickAddBar(
+    favorites: List<EntryType>,
+    onEntryTypeClick: (EntryType) -> Unit
+) {
+    Surface(
+        tonalElevation = 8.dp,
+        shadowElevation = 8.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .navigationBarsPadding()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Vertical "Quick Add" Label
+            Box(
+                modifier = Modifier
+                    .padding(end = 8.dp)
+                    .layout { measurable, constraints ->
+                        val placeable = measurable.measure(constraints)
+                        layout(placeable.height, placeable.width) {
+                            placeable.placeRelative(
+                                x = -(placeable.width / 2 - placeable.height / 2),
+                                y = -(placeable.height / 2 - placeable.width / 2)
+                            )
+                        }
+                    }
+                    .rotate(-90f)
+            ) {
+                Text(
+                    text = stringResource(R.string.quick_add),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1
+                )
+            }
+
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(end = 8.dp),
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                items(favorites) { type ->
+                    QuickAddChip(
+                        type = type,
+                        onClick = { onEntryTypeClick(type) }
+                    )
                 }
             }
         }
@@ -500,18 +530,19 @@ fun QuickAddChip(
         Surface(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(40.dp) // Reduced from 48.dp
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(text = type.emoji, fontSize = 24.sp)
+                Text(text = type.emoji, fontSize = 20.sp) // Reduced from 24.sp
             }
         }
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(2.dp)) // Reduced from 4.dp
         Text(
             text = stringResource(type.displayRes),
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            fontSize = 10.sp // Reduced from default
         )
     }
 }
