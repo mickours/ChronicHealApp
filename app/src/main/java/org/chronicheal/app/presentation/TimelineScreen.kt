@@ -46,6 +46,7 @@ import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -92,9 +93,11 @@ import coil.compose.AsyncImage
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.presentation.navigation.Screen
 import org.chronicheal.app.ui.theme.HeaderBlue
 import org.chronicheal.app.ui.theme.PrimaryOrange
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -337,12 +340,26 @@ fun TimelineScreen(
                         }
                         is TimelineItem.MonthHeader -> {
                             item(key = "month_${item.month}_$index") {
-                                MonthHeader(item.month)
+                                MonthHeader(
+                                    month = item.month,
+                                    yearMonth = item.yearMonth,
+                                    onMonthClick = {
+                                        // For "Day view for the month", we navigate to Calendar
+                                        navController.navigate(Screen.Calendar.route)
+                                    }
+                                )
                             }
                         }
                         is TimelineItem.DayHeader -> {
                             stickyHeader(key = "day_${item.day}_$index") {
-                                DayHeader(item.day, item.isToday)
+                                DayHeader(
+                                    day = item.day,
+                                    date = item.date,
+                                    isToday = item.isToday,
+                                    onDayClick = {
+                                        navController.navigate(Screen.DayView.createRoute(item.date.toString()))
+                                    }
+                                )
                             }
                         }
                         is TimelineItem.Entry -> {
@@ -550,8 +567,8 @@ fun QuickAddChip(
 sealed class TimelineItem {
     data class WeeklyInsights(val stats: WeeklyStats) : TimelineItem()
     data class YearHeader(val year: Int) : TimelineItem()
-    data class MonthHeader(val month: String) : TimelineItem()
-    data class DayHeader(val day: String, val isToday: Boolean = false) : TimelineItem()
+    data class MonthHeader(val month: String, val yearMonth: YearMonth) : TimelineItem()
+    data class DayHeader(val day: String, val date: LocalDate, val isToday: Boolean = false) : TimelineItem()
     data class Entry(val entry: HealthEntry) : TimelineItem()
 }
 
@@ -584,14 +601,17 @@ fun buildTimelineItems(entries: List<HealthEntry>, stats: WeeklyStats?): List<Ti
             lastMonth = -1
         }
         if (date.monthValue != lastMonth) {
-            items.add(TimelineItem.MonthHeader(date.month.getDisplayName(TextStyle.FULL, Locale.getDefault())))
+            items.add(TimelineItem.MonthHeader(
+                month = date.month.getDisplayName(TextStyle.FULL, Locale.getDefault()),
+                yearMonth = YearMonth.from(date)
+            ))
             lastMonth = date.monthValue
         }
         
         val isToday = date == today
         // Use localized date format for the header
         val fullDate = date.format(dayGroupFormatter)
-        items.add(TimelineItem.DayHeader(fullDate, isToday))
+        items.add(TimelineItem.DayHeader(fullDate, date, isToday))
         
         entriesByDate[date]?.forEach { entry ->
             items.add(TimelineItem.Entry(entry))
@@ -622,15 +642,21 @@ fun YearHeader(year: Int) {
 }
 
 @Composable
-fun MonthHeader(month: String) {
+fun MonthHeader(
+    month: String, 
+    yearMonth: YearMonth,
+    onMonthClick: () -> Unit
+) {
     Surface(
         color = MaterialTheme.colorScheme.secondaryContainer,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 text = month,
@@ -638,21 +664,39 @@ fun MonthHeader(month: String) {
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.secondary
             )
+            IconButton(
+                onClick = onMonthClick,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Visibility,
+                    contentDescription = "View Month",
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
     }
 }
 
 @Composable
-fun DayHeader(day: String, isToday: Boolean) {
+fun DayHeader(
+    day: String, 
+    date: LocalDate,
+    isToday: Boolean,
+    onDayClick: () -> Unit
+) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 4.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -677,6 +721,17 @@ fun DayHeader(day: String, isToday: Boolean) {
                         )
                     }
                 }
+            }
+            IconButton(
+                onClick = onDayClick,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Visibility,
+                    contentDescription = "View Day Details",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
     }
