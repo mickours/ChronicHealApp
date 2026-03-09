@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -26,6 +27,8 @@ class SettingsRepositoryImpl @Inject constructor(
         val WELCOME_WIZARD_COMPLETED = booleanPreferencesKey("welcome_wizard_completed")
         val FAVORITE_ENTRY_TYPES = stringSetPreferencesKey("favorite_entry_types")
         val SHOWN_VOICE_PERMISSION_RATIONALE = booleanPreferencesKey("shown_voice_permission_rationale")
+        val IS_AUTO_BACKUP_ENABLED = booleanPreferencesKey("is_auto_backup_enabled")
+        val BACKUP_DIRECTORY_URI = stringPreferencesKey("backup_directory_uri")
     }
 
     override val isWelcomeWizardCompleted: Flow<Boolean> = context.settingsDataStore.data
@@ -66,6 +69,32 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setHasShownVoicePermissionRationale(shown: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[PreferencesKeys.SHOWN_VOICE_PERMISSION_RATIONALE] = shown
+        }
+    }
+
+    override val isAutoBackupEnabled: Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.IS_AUTO_BACKUP_ENABLED] ?: false
+        }
+
+    override suspend fun setAutoBackupEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_AUTO_BACKUP_ENABLED] = enabled
+        }
+    }
+
+    override val backupDirectoryUri: Flow<String?> = context.settingsDataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.BACKUP_DIRECTORY_URI]
+        }
+
+    override suspend fun setBackupDirectoryUri(uri: String?) {
+        context.settingsDataStore.edit { preferences ->
+            if (uri == null) {
+                preferences.remove(PreferencesKeys.BACKUP_DIRECTORY_URI)
+            } else {
+                preferences[PreferencesKeys.BACKUP_DIRECTORY_URI] = uri
+            }
         }
     }
 }

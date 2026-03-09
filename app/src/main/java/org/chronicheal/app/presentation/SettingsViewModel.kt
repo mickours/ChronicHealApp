@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.chronicheal.app.data.worker.BackupManager
 import org.chronicheal.app.domain.repository.SettingsRepository
 import org.chronicheal.app.domain.usecase.ExportDataUseCase
 import org.chronicheal.app.domain.usecase.ImportDataUseCase
@@ -15,37 +19,77 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val exportDataUseCase: ExportDataUseCase,
     private val importDataUseCase: ImportDataUseCase,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val backupManager: BackupManager
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SettingsUiState())
-    val uiState = _uiState.asStateFlow()
+    private val _isLoading = MutableStateFlow(false)
+    private val _message = MutableStateFlow<String?>(null)
+
+    val uiState: StateFlow<SettingsUiState> = combine(
+        _isLoading,
+        _message,
+        settingsRepository.isAutoBackupEnabled,
+        settingsRepository.backupDirectoryUri
+    ) { isLoading, message, isAutoBackupEnabled, backupDirectoryUri ->
+        SettingsUiState(
+            isLoading = isLoading,
+            message = message,
+            isAutoBackupEnabled = isAutoBackupEnabled,
+            backupDirectoryUri = backupDirectoryUri
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = SettingsUiState()
+    )
 
     fun exportData(onDataReady: (String) -> Unit) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _isLoading.value = true
             try {
                 val json = exportDataUseCase()
                 onDataReady(json)
-                _uiState.value = _uiState.value.copy(message = "Export successful")
+                _message.value = "Export successful"
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(message = "Export failed: ${e.message}")
+                _message.value = "Export failed: ${e.message}"
             } finally {
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _isLoading.value = false
             }
         }
     }
 
     fun importData(jsonData: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _isLoading.value = true
             try {
                 importDataUseCase(jsonData)
-                _uiState.value = _uiState.value.copy(message = "Import successful")
+                _message.value = "Import successful"
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(message = "Import failed: ${e.message}")
+                _message.value = "Import failed: ${e.message}"
             } finally {
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun toggleAutoBackup(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setAutoBackupEnabled(enabled)
+            if (enabled) {
+                backupManager.scheduleDailyBackup()
+            } else {
+                backupManager.cancelDailyBackup()
+            }
+        }
+    }
+
+    fun setBackupDirectory(uri: String?) {
+        viewModelScope.launch {
+            settingsRepository.setBackupDirectoryUri(uri)
+            // Re-schedule to apply new directory (though WorkManager is periodic, it doesn't hurt)
+            if (uiState.value.isAutoBackupEnabled) {
+                backupManager.scheduleDailyBackup()
             }
         }
     }
@@ -53,16 +97,18 @@ class SettingsViewModel @Inject constructor(
     fun resetWelcomeWizard() {
         viewModelScope.launch {
             settingsRepository.setWelcomeWizardCompleted(false)
-            _uiState.value = _uiState.value.copy(message = "Wizard reset. It will appear on next restart.")
+            _message.value = "Wizard reset. It will appear on next restart."
         }
     }
     
     fun clearMessage() {
-        _uiState.value = _uiState.value.copy(message = null)
+        _message.value = null
     }
 }
 
 data class SettingsUiState(
     val isLoading: Boolean = false,
-    val message: String? = null
+    val message: String? = null,
+    val isAutoBackupEnabled: Boolean = false,
+    val backupDirectoryUri: String? = null
 )

@@ -12,4 +12,10 @@ interface SettingsRepository {
 
     val hasShownVoicePermissionRationale: Flow<Boolean>
     suspend fun setHasShownVoicePermissionRationale(shown: Boolean)
+
+    val isAutoBackupEnabled: Flow<Boolean>
+    suspend fun setAutoBackupEnabled(enabled: Boolean)
+
+    val backupDirectoryUri: Flow<String?>
+    suspend fun setBackupDirectoryUri(uri: String?)
 }

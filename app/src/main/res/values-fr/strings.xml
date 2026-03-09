@@ -327,6 +327,12 @@
     <string name="biometric_lock">Verrouillage Biométrique</string>
     <string name="biometric_lock_desc">Exiger une authentification pour ouvrir l\'application</string>
     <string name="biometric_not_available">L\'authentification biométrique n\'est pas disponible sur cet appareil</string>
+    <string name="auto_backup">Sauvegarde automatique quotidienne</string>
+    <string name="auto_backup_desc">Conserve les sauvegardes des 7 derniers jours et une par mois</string>
+    <string name="backup_directory">Dossier de sauvegarde</string>
+    <string name="backup_directory_default">Par défaut (Stockage interne)</string>
+    <string name="backup_directory_change">Changer de dossier</string>
+    <string name="backup_directory_reset">Réinitialiser par défaut</string>
     <string name="data_management">Gestion des Données</string>
     <string name="onboarding">Démarrage</string>
     <string name="reset_wizard">Réinitialiser l\'assistant de bienvenue</string>

@@ -147,5 +147,13 @@ Goal: Interactive tools and notifications.
 - **Scale Standardization**: Sleep Quality standardized to 1-10.
 - **Body Scan Localization**:
     - **Technical IDs**: Pain entries now store the technical ID from the SVG (e.g., `shoulder_left`) instead of the localized name.
-    - **On-the-fly Translation**: The UI uses `formatId(context, id)` to translate these IDs into the current system language (English/French) for display in the Timeline and Day View.
-    - **Stability**: This ensures that changing the app's language correctly updates the displayed location for existing entries.
+    - **On-the-fly Translation**: The UI uses `formatId(context, id)` to translate these IDs into the current system language (English/French) for display.
+
+## Phase 32: Automated Rolling Backups (Completed)
+- **Automated Backup System**: Implemented a daily automated backup using `WorkManager`.
+- **Rolling Retention Logic**:
+    - Keeps all backups from the **last 7 days**.
+    - Keeps the **first backup of each month** for all previous months.
+    - Automatically purges older redundant files to manage storage usage.
+- **Internal Storage**: Backups are stored in the app's internal files directory (`/backups`) for maximum privacy and security.
+- **User Control**: Added a toggle in the Settings screen to enable or disable automated backups.

@@ -333,6 +333,12 @@
     <string name="biometric_lock">Biometric Lock</string>
     <string name="biometric_lock_desc">Require authentication to open the app</string>
     <string name="biometric_not_available">Biometric authentication is not available on this device</string>
+    <string name="auto_backup">Automated Daily Backup</string>
+    <string name="auto_backup_desc">Keeps backups from the last 7 days and one per month</string>
+    <string name="backup_directory">Backup Directory</string>
+    <string name="backup_directory_default">Default (Internal storage)</string>
+    <string name="backup_directory_change">Change directory</string>
+    <string name="backup_directory_reset">Reset to default</string>
     <string name="data_management">Data Management</string>
     <string name="onboarding">Onboarding</string>
     <string name="reset_wizard">Reset Welcome Wizard</string>

@@ -1,5 +1,7 @@
 package org.chronicheal.app.presentation
 
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +27,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -80,6 +83,20 @@ fun SettingsScreen(
                 val content = reader.readText()
                 viewModel.importData(content)
             }
+        }
+    }
+
+    // Launcher for picking backup directory
+    val pickDirectoryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let {
+            // Take persistable permission for background work
+            context.contentResolver.takePersistableUriPermission(
+                it,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+            viewModel.setBackupDirectory(it.toString())
         }
     }
 
@@ -162,6 +179,57 @@ fun SettingsScreen(
 
             Text(text = stringResource(R.string.data_management), style = MaterialTheme.typography.titleMedium)
             
+            // AUTOMATED BACKUP TOGGLE
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.auto_backup),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = stringResource(R.string.auto_backup_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Switch(
+                    checked = uiState.isAutoBackupEnabled,
+                    onCheckedChange = { viewModel.toggleAutoBackup(it) }
+                )
+            }
+
+            // BACKUP DIRECTORY SELECTION
+            if (uiState.isAutoBackupEnabled) {
+                Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp)) {
+                    Text(
+                        text = stringResource(R.string.backup_directory),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = if (uiState.backupDirectoryUri == null) 
+                            stringResource(R.string.backup_directory_default)
+                            else Uri.parse(uiState.backupDirectoryUri).path ?: uiState.backupDirectoryUri!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = { pickDirectoryLauncher.launch(null) }) {
+                            Text(stringResource(R.string.backup_directory_change))
+                        }
+                        if (uiState.backupDirectoryUri != null) {
+                            TextButton(onClick = { viewModel.setBackupDirectory(null) }) {
+                                Text(stringResource(R.string.backup_directory_reset))
+                            }
+                        }
+                    }
+                }
+            }
+
             Button(
                 onClick = { createJsonLauncher.launch("chronicheal_backup.json") },
                 modifier = Modifier.fillMaxWidth(),
