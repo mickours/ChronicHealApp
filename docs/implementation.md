@@ -117,7 +117,7 @@ Goal: Interactive tools and notifications.
 
 ## Phase 17: Calendar Search and Filtering (Completed)
 - **Integrated Search & Filters**: Replicated the search bar and type-filtering from the Timeline onto the Calendar screen.
-- **Dynamic Calendar Heatmap**: The calendar grid dots now update in real-time based on the active search query and selected filters.
+- **Dynamic Calendar Heatmap**: The calendar grid dots now update in real-time based on the search query and selected filters.
 
 ## Phase 18: Enhanced Analytics and Reporting (Completed)
 - **Clickable Legends**: Legend items in evolution charts are now clickable to toggle visibility.
@@ -165,3 +165,14 @@ Goal: Interactive tools and notifications.
     - Automatically purges older redundant files to manage storage usage.
 - **Internal Storage**: Backups are stored in the app's internal files directory (`/backups`) for maximum privacy and security.
 - **User Control**: Added a toggle in the Settings screen to enable or disable automated backups.
+
+## Phase 33: Full Checkup and Body Scan Refinement (Completed)
+- **Dedicated Body Scan for Pain**:
+    - Decoupled the Body Scan from the Full Checkup.
+    - The "Add Pain" action now leads directly to the `BodyScanScreen` which focuses exclusively on anatomical pain logging.
+- **Enhanced Full Checkup (`AddCompleteEntryScreen`)**:
+    - **Drug Compliance**: Automatically fetches enabled drug reminders and asks "Did you take your drug X?".
+    - **Multi-Symptom Logging**: Added support for adding an unlimited number of symptoms within a single check-in session.
+    - **Sleep Assessment**: Added a "Did you sleep well?" section with a 1-10 quality slider and duration input.
+    - **Streamlined Content**: Removed less frequent fields like "period" and "stool" from the unified check-in to reduce cognitive load.
+- **Navigation UX**: Updated `NavGraph` and `EntryTypeSelectionScreen` to ensure "Add Pain" shortcuts lead to the interactive body scan.

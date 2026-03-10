@@ -97,6 +97,14 @@ class TimelineViewModel @Inject constructor(
         initialValue = TimelineUiState()
     )
 
+    val drugReminders: StateFlow<List<Reminder>> = reminderRepository.getEnabledReminders()
+        .map { reminders -> reminders.filter { it.entryType == EntryType.DRUG } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     private fun calculateWeeklyStats(entries: List<HealthEntry>): WeeklyStats? {
         val now = Instant.now()
         val oneWeekAgo = now.minus(7, ChronoUnit.DAYS)

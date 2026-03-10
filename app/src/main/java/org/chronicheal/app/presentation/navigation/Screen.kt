@@ -6,7 +6,9 @@ sealed class Screen(val route: String) {
     object Calendar : Screen("calendar")
     object Settings : Screen("settings")
     object Analytics : Screen("analytics")
-    object BodyScan : Screen("body_scan")
+    object BodyScan : Screen("body_scan?date={date}") {
+        fun createRoute(date: String? = null) = if (date != null) "body_scan?date=$date" else "body_scan"
+    }
     object BodyScanReminders : Screen("body_scan_reminders")
     object Reminders : Screen("reminders")
     object AddReminder : Screen("add_reminder?type={type}&id={id}") {
@@ -48,6 +50,9 @@ sealed class Screen(val route: String) {
     }
     object AddSleep : Screen("add_sleep?date={date}&location={location}&id={id}") {
         fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_sleep", date, location, id)
+    }
+    object AddSleepSimplified : Screen("add_sleep_simplified?date={date}") {
+        fun createRoute(date: String? = null) = if (date != null) "add_sleep_simplified?date=$date" else "add_sleep_simplified"
     }
     object AddMedicalAppointment : Screen("add_medical_appointment?date={date}&location={location}&id={id}") {
         fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_medical_appointment", date, location, id)

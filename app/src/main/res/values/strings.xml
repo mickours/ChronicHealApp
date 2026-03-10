@@ -244,6 +244,9 @@
     <string name="section_sleep">Last night\'s sleep</string>
     <string name="section_medication">Medication</string>
     <string name="section_anything_else">Anything else?</string>
+    <string name="question_drugs">Did you take your drugs %1$s?</string>
+    <string name="question_sleep_well">Did you sleep well?</string>
+    <string name="add_symptom">Add Symptom</string>
 
     <!-- Mood Labels -->
     <string name="mood_very_bad">Very Bad</string>

@@ -12,8 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -25,8 +23,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -41,7 +37,6 @@ import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -63,6 +58,7 @@ import kotlin.math.roundToInt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BodyScanScreen(
+    dateString: String? = null,
     onBackClick: () -> Unit,
     onRemindersClick: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -75,25 +71,8 @@ fun BodyScanScreen(
     var existingEntryId by remember { mutableStateOf<Long?>(null) }
     var showMenu by remember { mutableStateOf(false) }
 
-    // Unified State
-    var logDate by rememberSaveable { mutableStateOf(LocalDate.now()) }
+    var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
-
-    // Mood State
-    var moodIntensity by rememberSaveable { mutableFloatStateOf(5f) }
-    var moodNote by rememberSaveable { mutableStateOf("") }
-
-    // Symptom State
-    var symptomName by rememberSaveable { mutableStateOf("") }
-    var symptomIntensity by rememberSaveable { mutableFloatStateOf(5f) }
-    var symptomNote by rememberSaveable { mutableStateOf("") }
-
-    // Stool State
-    var stoolAspect by rememberSaveable { mutableStateOf("") }
-    var stoolIntensity by rememberSaveable { mutableFloatStateOf(5f) }
-
-    // Period State
-    var periodIntensity by rememberSaveable { mutableFloatStateOf(5f) }
 
     // Pain State (Temporary Bottom Sheet State)
     var painIntensity by remember { mutableFloatStateOf(5f) }
@@ -111,42 +90,16 @@ fun BodyScanScreen(
         }
     }
 
-    val handleSaveAll = {
-        val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-        val entries = mutableListOf<HealthEntry>()
-
-        entries.add(HealthEntry(timestamp = timestamp, type = EntryType.MOOD, intensity = moodIntensity.roundToInt(), note = moodNote))
-
-        if (symptomName.isNotBlank()) {
-            entries.add(HealthEntry(timestamp = timestamp, type = EntryType.SYMPTOM, name = symptomName, intensity = symptomIntensity.roundToInt(), note = symptomNote))
-        }
-
-        if (stoolAspect.isNotBlank()) {
-            entries.add(HealthEntry(timestamp = timestamp, type = EntryType.STOOL, name = stoolAspect, intensity = stoolIntensity.roundToInt()))
-        }
-
-        if (periodIntensity > 0) {
-            entries.add(HealthEntry(timestamp = timestamp, type = EntryType.PERIOD, intensity = periodIntensity.roundToInt()))
-        }
-
-        entries.forEach { viewModel.addEntry(it) }
-        viewModel.showMessage(context.getString(R.string.entry_saved))
-        onBackClick()
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.complete_checkin)) },
+                title = { Text(stringResource(R.string.type_pain)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
-                    Button(onClick = handleSaveAll, modifier = Modifier.padding(end = 8.dp)) {
-                        Text(stringResource(R.string.save))
-                    }
                     Box {
                         IconButton(onClick = { showMenu = true }) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.menu))
@@ -179,128 +132,57 @@ fun BodyScanScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            LazyColumn(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.surface),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                item {
-                    EntryDateTimePicker(
-                        date = logDate,
-                        onDateChange = { newDate -> logDate = newDate },
-                        startTime = startTime,
-                        onStartTimeChange = { newTime -> startTime = newTime }
+                EntryDateTimePicker(
+                    date = logDate,
+                    onDateChange = { newDate -> logDate = newDate },
+                    startTime = startTime,
+                    onStartTimeChange = { newTime -> startTime = newTime }
+                )
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    colors = CardDefaults.cardColors(containerColor = HeaderBlue),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    BodySilhouette(
+                        modifier = Modifier.fillMaxSize(),
+                        onRegionHold = { regionId, currentIntensity ->
+                            val existing = uiState.entries.find { 
+                                it.type == EntryType.PAIN && 
+                                it.location?.equals(regionId, ignoreCase = true) == true && 
+                                it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() == logDate 
+                            }
+                            
+                            if (existing != null) {
+                                existingEntryId = existing.id
+                                painNote = existing.note
+                            } else {
+                                existingEntryId = null
+                                painNote = ""
+                            }
+                            
+                            painIntensity = currentIntensity
+                            selectedRegionId = regionId
+                            
+                            currentHoldRegionId = regionId
+                            currentHoldIntensity = currentIntensity
+                        },
+                        onRelease = {
+                            currentHoldRegionId = null
+                            showBottomSheet = true
+                        },
+                        painEntries = uiState.entries
+                            .filter { it.type == EntryType.PAIN && it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() == logDate }
                     )
-                }
-
-                // MOOD
-                item {
-                    SectionHeader(type = EntryType.MOOD, title = stringResource(R.string.section_mood))
-                    MoodSection(
-                        intensity = moodIntensity,
-                        onIntensityChange = { newMoodIntensity -> moodIntensity = newMoodIntensity },
-                        note = moodNote,
-                        onNoteChange = { newMoodNote -> moodNote = newMoodNote }
-                    )
-                }
-
-                // SYMPTOMS
-                item {
-                    SectionHeader(type = EntryType.SYMPTOM, title = stringResource(R.string.type_symptom))
-                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            val suggestions by viewModel.symptomSuggestions.collectAsState()
-                            AutoCompleteTextField(
-                                value = symptomName,
-                                onValueChange = { newSymptomName -> symptomName = newSymptomName },
-                                suggestions = suggestions,
-                                label = stringResource(R.string.symptom_name_label)
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            Text(stringResource(R.string.intensity_label, symptomIntensity.roundToInt()))
-                            Slider(value = symptomIntensity, onValueChange = { newSymptomIntensity -> symptomIntensity = newSymptomIntensity }, valueRange = 1f..10f, steps = 8)
-                            VoiceEnabledTextField(value = symptomNote, onValueChange = { newSymptomNote -> symptomNote = newSymptomNote }, label = stringResource(R.string.notes_label))
-                        }
-                    }
-                }
-
-                // PAINS (BODY SCAN)
-                item {
-                    SectionHeader(type = EntryType.PAIN, title = stringResource(R.string.type_pain))
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(500.dp),
-                        colors = CardDefaults.cardColors(containerColor = HeaderBlue),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        BodySilhouette(
-                            modifier = Modifier.fillMaxSize(),
-                            onRegionHold = { regionId, currentIntensity ->
-                                val existing = uiState.entries.find { 
-                                    it.type == EntryType.PAIN && 
-                                    it.location?.equals(regionId, ignoreCase = true) == true && 
-                                    it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() == logDate 
-                                }
-                                
-                                if (existing != null) {
-                                    existingEntryId = existing.id
-                                    painNote = existing.note
-                                } else {
-                                    existingEntryId = null
-                                    painNote = ""
-                                }
-                                
-                                painIntensity = currentIntensity
-                                selectedRegionId = regionId
-                                
-                                currentHoldRegionId = regionId
-                                currentHoldIntensity = currentIntensity
-                            },
-                            onRelease = {
-                                currentHoldRegionId = null
-                                showBottomSheet = true
-                            },
-                            painEntries = uiState.entries
-                                .filter { it.type == EntryType.PAIN && it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() == logDate }
-                        )
-                    }
-                }
-
-                // STOOL
-                item {
-                    SectionHeader(type = EntryType.STOOL, title = stringResource(R.string.type_stool))
-                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            val suggestions by viewModel.stoolAspectSuggestions.collectAsState()
-                            AutoCompleteTextField(
-                                value = stoolAspect,
-                                onValueChange = { newStoolAspect -> stoolAspect = newStoolAspect },
-                                suggestions = suggestions,
-                                label = stringResource(R.string.stool_aspect_label)
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            Text(stringResource(R.string.intensity_label, stoolIntensity.roundToInt()))
-                            Slider(value = stoolIntensity, onValueChange = { newStoolIntensity -> stoolIntensity = newStoolIntensity }, valueRange = 1f..10f, steps = 8)
-                        }
-                    }
-                }
-
-                // PERIOD
-                item {
-                    SectionHeader(type = EntryType.PERIOD, title = stringResource(R.string.type_period))
-                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(stringResource(R.string.intensity_label, periodIntensity.roundToInt()))
-                            Slider(value = periodIntensity, onValueChange = { newPeriodIntensity -> periodIntensity = newPeriodIntensity }, valueRange = 0f..10f, steps = 9)
-                        }
-                    }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
 

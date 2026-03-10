@@ -96,7 +96,7 @@ fun NavGraph(
 
         val onEntryTypeClick: (EntryType) -> Unit = { type ->
             val route = when (type) {
-                EntryType.PAIN -> Screen.BodyScan.route
+                EntryType.PAIN -> Screen.BodyScan.createRoute()
                 EntryType.DRUG -> Screen.AddDrug.createRoute()
                 EntryType.SYMPTOM -> Screen.AddSymptom.createRoute()
                 EntryType.DISEASE -> Screen.AddDisease.createRoute()
@@ -142,7 +142,7 @@ fun NavGraph(
                     navController.navigate(Screen.Analytics.route)
                 },
                 onBodyScanClick = {
-                    navController.navigate(Screen.BodyScan.route)
+                    navController.navigate(Screen.BodyScan.createRoute())
                 },
                 onVoiceLoggingClick = {
                     navController.navigate(Screen.VoiceLogging.route)
@@ -164,8 +164,15 @@ fun NavGraph(
                 }
             )
         }
-        composable(route = Screen.BodyScan.route) {
+        composable(
+            route = Screen.BodyScan.route,
+            arguments = listOf(
+                navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
             BodyScanScreen(
+                dateString = date,
                 onBackClick = { navController.popBackStack() },
                 onRemindersClick = { navController.navigate(Screen.BodyScanReminders.route) }
             )
@@ -246,7 +253,7 @@ fun NavGraph(
             EntryTypeSelectionScreen(
                 onTypeSelected = { type ->
                     val route = when (type) {
-                        EntryType.PAIN -> Screen.BodyScan.route
+                        EntryType.PAIN -> Screen.BodyScan.createRoute(date)
                         EntryType.DRUG -> Screen.AddDrug.createRoute(date, location)
                         EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(date, location)
                         EntryType.DISEASE -> Screen.AddDisease.createRoute(date, location)
@@ -265,7 +272,7 @@ fun NavGraph(
                     navController.navigate(route)
                 },
                 onCompleteEntryClick = {
-                    navController.navigate(Screen.BodyScan.route)
+                    navController.navigate(Screen.AddCompleteEntry.createRoute(date))
                 },
                 onVoiceLoggingClick = {
                     navController.navigate(Screen.VoiceLogging.route)
