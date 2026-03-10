@@ -329,7 +329,7 @@ fun AutoCompleteTextField(
 }
 
 @Composable
-fun VoiceEnabledTextField(
+fun TextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -434,7 +434,7 @@ fun MoodSection(
             }
             Text("${stringResource(R.string.type_mood)}: $moodLabel (${intensity.roundToInt()}/10)")
             Slider(value = intensity, onValueChange = onIntensityChange, valueRange = 1f..10f, steps = 8)
-            VoiceEnabledTextField(value = note, onValueChange = onNoteChange, label = stringResource(R.string.section_mood))
+            TextField(value = note, onValueChange = onNoteChange, label = stringResource(R.string.section_mood))
         }
     }
 }
@@ -492,7 +492,7 @@ fun PainEntryForm(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        VoiceEnabledTextField(
+        TextField(
             value = note,
             onValueChange = onNoteChange,
             label = stringResource(R.string.notes_label),

@@ -11,7 +11,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -130,7 +129,7 @@ fun AddBeverageScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            VoiceEnabledTextField(
+            TextField(
                 value = quantity,
                 onValueChange = { quantity = it },
                 label = stringResource(R.string.dosage_label) // Reusing dosage for quantity consistency
@@ -138,7 +137,7 @@ fun AddBeverageScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            VoiceEnabledTextField(
+            TextField(
                 value = note,
                 onValueChange = { note = it },
                 label = stringResource(R.string.notes_label),

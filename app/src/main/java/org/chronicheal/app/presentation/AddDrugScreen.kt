@@ -189,7 +189,7 @@ fun AddDrugScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            VoiceEnabledTextField(
+            TextField(
                 value = dosage,
                 onValueChange = { dosage = it },
                 label = stringResource(R.string.dosage_label)
@@ -197,7 +197,7 @@ fun AddDrugScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            VoiceEnabledTextField(
+            TextField(
                 value = note,
                 onValueChange = { note = it },
                 label = stringResource(R.string.notes_label),

@@ -270,7 +270,7 @@ fun BodyScanScreen(
                     Spacer(Modifier.height(16.dp))
                     Text(stringResource(R.string.intensity_label, painIntensity.roundToInt()))
                     Slider(value = painIntensity, onValueChange = { newPainIntensity -> painIntensity = newPainIntensity }, valueRange = 1f..10f, steps = 8)
-                    VoiceEnabledTextField(value = painNote, onValueChange = { newPainNote -> painNote = newPainNote }, label = stringResource(R.string.notes_label))
+                    TextField(value = painNote, onValueChange = { newPainNote -> painNote = newPainNote }, label = stringResource(R.string.notes_label))
                     Spacer(Modifier.height(32.dp))
                 }
             }

@@ -2,7 +2,6 @@ package org.chronicheal.app.presentation
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -286,7 +285,7 @@ fun AddCompleteEntryScreen(
             )
 
             SectionHeader(type = EntryType.JOURNAL, title = stringResource(R.string.section_anything_else))
-            VoiceEnabledTextField(
+            TextField(
                 value = generalNote,
                 onValueChange = { generalNote = it },
                 label = stringResource(R.string.notes_label),
@@ -350,7 +349,7 @@ fun SymptomsSection(
                         steps = 8
                     )
                     
-                    VoiceEnabledTextField(
+                    TextField(
                         value = symptom.note,
                         onValueChange = { onSymptomChange(index, symptom.copy(note = it)) },
                         label = stringResource(R.string.notes_label)
@@ -466,7 +465,7 @@ fun MedicationCheckSection(
                 suggestions = suggestions,
                 label = stringResource(R.string.name_label)
             )
-            VoiceEnabledTextField(
+            TextField(
                 value = manualDosage,
                 onValueChange = onManualDosageChange,
                 label = stringResource(R.string.dosage_label)
@@ -493,7 +492,7 @@ fun PainSection(
                 val suggestions by viewModel.painLocationSuggestions.collectAsState()
                 AutoCompleteTextField(value = location, onValueChange = onLocationChange, suggestions = suggestions, label = stringResource(R.string.location_label))
                 Spacer(Modifier.height(8.dp))
-                VoiceEnabledTextField(value = note, onValueChange = onNoteChange, label = stringResource(R.string.notes_label))
+                TextField(value = note, onValueChange = onNoteChange, label = stringResource(R.string.notes_label))
             }
         }
     }
@@ -508,7 +507,7 @@ fun SleepSection(
 ) {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            VoiceEnabledTextField(value = durationHours, onValueChange = onDurationChange, label = stringResource(R.string.duration_hours_label))
+            TextField(value = durationHours, onValueChange = onDurationChange, label = stringResource(R.string.duration_hours_label))
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.quality_label, quality.roundToInt()))
             Slider(value = quality, onValueChange = onQualityChange, valueRange = 1f..10f, steps = 9)

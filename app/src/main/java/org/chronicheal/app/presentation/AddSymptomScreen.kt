@@ -147,7 +147,7 @@ fun AddSymptomScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            VoiceEnabledTextField(
+            TextField(
                 value = note,
                 onValueChange = { note = it },
                 label = stringResource(R.string.notes_label),
