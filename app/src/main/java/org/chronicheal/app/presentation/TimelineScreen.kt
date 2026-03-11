@@ -312,12 +312,20 @@ fun TimelineScreen(
     ) { innerPadding ->
         if (uiState.entries.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
-                Text(
-                    text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedTypes.isNotEmpty()) 
-                        stringResource(R.string.no_matches) else stringResource(R.string.no_entries_yet),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(32.dp)
-                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    AsyncImage(
+                        model = "file:///android_asset/Body-dont-know.svg",
+                        contentDescription = null,
+                        modifier = Modifier.size(200.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = if (uiState.searchQuery.isNotEmpty() || uiState.selectedTypes.isNotEmpty()) 
+                            stringResource(R.string.no_matches) else stringResource(R.string.no_entries_yet),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 32.dp)
+                    )
+                }
             }
         } else {
             LazyColumn(
