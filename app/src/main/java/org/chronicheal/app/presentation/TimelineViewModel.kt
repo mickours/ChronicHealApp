@@ -310,16 +310,6 @@ class TimelineViewModel @Inject constructor(
         }
     }
 
-    fun restoreDeletedEntry() {
-        viewModelScope.launch {
-            recentlyDeletedEntry?.let {
-                addEntryUseCase(it)
-                recentlyDeletedEntry = null
-                _message.value = "Deletion undone"
-            }
-        }
-    }
-
     suspend fun getEntryById(id: Long): HealthEntry? {
         return getEntryByIdUseCase(id)
     }

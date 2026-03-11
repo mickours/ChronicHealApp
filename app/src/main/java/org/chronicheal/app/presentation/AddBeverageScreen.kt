@@ -25,12 +25,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.model.Reminder
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -45,6 +47,7 @@ fun AddBeverageScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf("") }
     var quantity by rememberSaveable { mutableStateOf("") }
     var note by rememberSaveable { mutableStateOf("") }
@@ -55,19 +58,29 @@ fun AddBeverageScreen(
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    var isNewFromTemplate by remember { mutableStateOf(false) }
 
     val nameSuggestions by viewModel.beverageSuggestions.collectAsState()
 
     LaunchedEffect(id) {
         if (id != null && existingEntry == null) {
-            val entry = viewModel.getEntryById(id)
+            var entry = viewModel.getEntryById(id)
+            if (entry == null) {
+                entry = viewModel.getEntryByReminderId(id)
+                if (entry != null) {
+                    isNewFromTemplate = true
+                }
+            }
+            
             if (entry != null) {
                 existingEntry = entry
                 name = entry.name ?: ""
                 quantity = entry.unit ?: ""
                 note = entry.note
-                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                if (!isNewFromTemplate) {
+                    logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                    startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                }
                 setReminder = entry.hasReminder
                 
                 if (entry.hasReminder && entry.reminderId != null) {
@@ -81,7 +94,7 @@ fun AddBeverageScreen(
 
     val createEntry = {
         HealthEntry(
-            id = id ?: 0,
+            id = if (isNewFromTemplate) 0 else (id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.BEVERAGE,
             name = name.trim(),
@@ -93,9 +106,31 @@ fun AddBeverageScreen(
         )
     }
 
+    val handleSave = {
+        val entry = createEntry()
+        if (setReminder) {
+            val reminder = Reminder(
+                id = existingEntry?.reminderId ?: 0,
+                title = context.getString(R.string.type_beverage) + ": ${entry.name}",
+                time = reminderTime,
+                daysOfWeek = setOf(1, 2, 3, 4, 5, 6, 7),
+                isEnabled = true,
+                entryType = EntryType.BEVERAGE
+            )
+            if (entry.id == 0L) {
+                viewModel.addEntryWithReminder(entry, reminder)
+            } else {
+                viewModel.updateEntryWithReminder(entry, reminder)
+            }
+        } else {
+            viewModel.saveEntryAndNotify(if (isNewFromTemplate) null else existingEntry, entry)
+        }
+        onSaveSuccess()
+    }
+
     AddEntryScaffold(
-        title = if (id == null) stringResource(R.string.log_beverage) else stringResource(R.string.edit_beverage),
-        existingEntry = existingEntry,
+        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_beverage) else stringResource(R.string.edit_beverage),
+        existingEntry = if (isNewFromTemplate) null else existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
         onSaveSuccess = onSaveSuccess,
@@ -103,7 +138,8 @@ fun AddBeverageScreen(
             existingEntry?.let { viewModel.deleteEntry(it) }
             onBackClick()
         },
-        viewModel = viewModel
+        viewModel = viewModel,
+        onSave = handleSave
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -129,15 +165,15 @@ fun AddBeverageScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextField(
+            VoiceEnabledTextField(
                 value = quantity,
                 onValueChange = { quantity = it },
-                label = stringResource(R.string.dosage_label) // Reusing dosage for quantity consistency
+                label = stringResource(R.string.dosage_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
                 label = stringResource(R.string.notes_label),

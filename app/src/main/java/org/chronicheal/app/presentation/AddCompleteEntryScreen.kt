@@ -1,6 +1,8 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -41,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -73,8 +76,7 @@ fun AddCompleteEntryScreen(
     var moodNote by rememberSaveable { mutableStateOf("") }
 
     // Pain State
-    var painIntensity by rememberSaveable { mutableFloatStateOf(0f) }
-    var painLocation by rememberSaveable { mutableStateOf("") }
+    val painEntries = remember { mutableStateListOf<HealthEntry>() }
     var painNote by rememberSaveable { mutableStateOf("") }
 
     // Sleep State
@@ -123,14 +125,11 @@ fun AddCompleteEntryScreen(
             )
         )
 
-        // Add Pain if recorded
-        if (painIntensity > 0) {
+        // Add Pains
+        painEntries.forEach { pain ->
             entries.add(
-                HealthEntry(
+                pain.copy(
                     timestamp = timestamp,
-                    type = EntryType.PAIN,
-                    intensity = painIntensity.roundToInt(),
-                    location = painLocation.ifBlank { null },
                     note = painNote
                 )
             )
@@ -244,12 +243,11 @@ fun AddCompleteEntryScreen(
 
             SectionHeader(type = EntryType.PAIN, title = stringResource(R.string.section_pain))
             PainSection(
-                intensity = painIntensity,
-                onIntensityChange = { painIntensity = it },
-                location = painLocation,
-                onLocationChange = { painLocation = it },
+                pains = painEntries,
                 note = painNote,
                 onNoteChange = { painNote = it },
+                logDate = logDate,
+                startTime = startTime,
                 viewModel = viewModel
             )
 
@@ -285,7 +283,7 @@ fun AddCompleteEntryScreen(
             )
 
             SectionHeader(type = EntryType.JOURNAL, title = stringResource(R.string.section_anything_else))
-            TextField(
+            VoiceEnabledTextField(
                 value = generalNote,
                 onValueChange = { generalNote = it },
                 label = stringResource(R.string.notes_label),
@@ -293,6 +291,91 @@ fun AddCompleteEntryScreen(
             )
             
             Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+fun PainSection(
+    pains: MutableList<HealthEntry>,
+    note: String,
+    onNoteChange: (String) -> Unit,
+    logDate: LocalDate,
+    startTime: LocalTime,
+    viewModel: TimelineViewModel
+) {
+    val context = LocalContext.current
+    var currentHoldRegionId by remember { mutableStateOf<String?>(null) }
+    var currentHoldIntensity by remember { mutableFloatStateOf(1f) }
+
+    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
+                BodySilhouette(
+                    modifier = Modifier.fillMaxSize(),
+                    onRegionHold = { regionId: String, intensity: Float ->
+                        currentHoldRegionId = regionId
+                        currentHoldIntensity = intensity
+                    },
+                    onRelease = {
+                        val regionId = currentHoldRegionId
+                        if (regionId != null) {
+                            val existingIndex = pains.indexOfFirst { it.location == regionId }
+                            if (existingIndex >= 0) {
+                                pains[existingIndex] = pains[existingIndex].copy(intensity = currentHoldIntensity.toInt())
+                            } else {
+                                pains.add(HealthEntry(
+                                    type = EntryType.PAIN,
+                                    location = regionId,
+                                    intensity = currentHoldIntensity.toInt(),
+                                    timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
+                                ))
+                            }
+                        }
+                        currentHoldRegionId = null
+                    },
+                    painEntries = pains
+                )
+
+                if (currentHoldRegionId != null) {
+                    Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                        VerticalIntensityGauge(
+                            intensity = currentHoldIntensity.toInt(),
+                            maxVal = 10,
+                            color = Color.Red,
+                            label = stringResource(R.string.intensity_short_label)
+                        )
+                    }
+                }
+            }
+
+            if (pains.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                pains.forEach { pain ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        val locationName = formatId(context, pain.location ?: "")
+                        Text(
+                            text = "$locationName: ${pain.intensity}/10",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        IconButton(onClick = { pains.remove(pain) }, modifier = Modifier.size(24.dp)) {
+                            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                VoiceEnabledTextField(value = note, onValueChange = onNoteChange, label = stringResource(R.string.notes_label))
+            } else {
+                Text(
+                    text = stringResource(R.string.select_body_part),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
+                )
+            }
         }
     }
 }
@@ -349,7 +432,7 @@ fun SymptomsSection(
                         steps = 8
                     )
                     
-                    TextField(
+                    VoiceEnabledTextField(
                         value = symptom.note,
                         onValueChange = { onSymptomChange(index, symptom.copy(note = it)) },
                         label = stringResource(R.string.notes_label)
@@ -465,35 +548,11 @@ fun MedicationCheckSection(
                 suggestions = suggestions,
                 label = stringResource(R.string.name_label)
             )
-            TextField(
+            VoiceEnabledTextField(
                 value = manualDosage,
                 onValueChange = onManualDosageChange,
                 label = stringResource(R.string.dosage_label)
             )
-        }
-    }
-}
-
-@Composable
-fun PainSection(
-    intensity: Float,
-    onIntensityChange: (Float) -> Unit,
-    location: String,
-    onLocationChange: (String) -> Unit,
-    note: String,
-    onNoteChange: (String) -> Unit,
-    viewModel: TimelineViewModel
-) {
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.intensity_label, intensity.roundToInt()))
-            Slider(value = intensity, onValueChange = onIntensityChange, valueRange = 0f..10f, steps = 9)
-            if (intensity > 0) {
-                val suggestions by viewModel.painLocationSuggestions.collectAsState()
-                AutoCompleteTextField(value = location, onValueChange = onLocationChange, suggestions = suggestions, label = stringResource(R.string.location_label))
-                Spacer(Modifier.height(8.dp))
-                TextField(value = note, onValueChange = onNoteChange, label = stringResource(R.string.notes_label))
-            }
         }
     }
 }
@@ -507,7 +566,7 @@ fun SleepSection(
 ) {
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            TextField(value = durationHours, onValueChange = onDurationChange, label = stringResource(R.string.duration_hours_label))
+            VoiceEnabledTextField(value = durationHours, onValueChange = onDurationChange, label = stringResource(R.string.duration_hours_label))
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.quality_label, quality.roundToInt()))
             Slider(value = quality, onValueChange = onQualityChange, valueRange = 1f..10f, steps = 9)

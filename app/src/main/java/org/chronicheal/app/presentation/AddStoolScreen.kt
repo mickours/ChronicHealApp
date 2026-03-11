@@ -3,11 +3,9 @@ package org.chronicheal.app.presentation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,8 +16,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
@@ -40,25 +40,35 @@ fun AddStoolScreen(
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    var isNewFromTemplate by remember { mutableStateOf(false) }
 
     val aspectSuggestions by viewModel.stoolAspectSuggestions.collectAsState()
 
     LaunchedEffect(id) {
         if (id != null && existingEntry == null) {
-            val entry = viewModel.getEntryById(id)
+            var entry = viewModel.getEntryById(id)
+            if (entry == null) {
+                entry = viewModel.getEntryByReminderId(id)
+                if (entry != null) {
+                    isNewFromTemplate = true
+                }
+            }
+            
             if (entry != null) {
                 existingEntry = entry
                 aspect = entry.name ?: ""
                 note = entry.note
-                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                if (!isNewFromTemplate) {
+                    logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                    startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                }
             }
         }
     }
 
     val createEntry = {
         HealthEntry(
-            id = id ?: 0,
+            id = if (isNewFromTemplate) 0 else (id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.STOOL,
             name = aspect.trim(),
@@ -68,8 +78,8 @@ fun AddStoolScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null) "Log Stool" else "Edit Stool",
-        existingEntry = existingEntry,
+        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_stool) else stringResource(R.string.edit_stool),
+        existingEntry = if (isNewFromTemplate) null else existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
         onSaveSuccess = onSaveSuccess,
@@ -98,16 +108,15 @@ fun AddStoolScreen(
                 value = aspect,
                 onValueChange = { aspect = it },
                 suggestions = aspectSuggestions,
-                label = "Aspect (e.g. Hard, Soft, Normal)"
+                label = stringResource(R.string.stool_aspect_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Notes") },
-                modifier = Modifier.fillMaxWidth(),
+                label = stringResource(R.string.notes_label),
                 minLines = 3
             )
         }

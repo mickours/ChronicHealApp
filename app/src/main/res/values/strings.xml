@@ -247,6 +247,7 @@
     <string name="question_drugs">Did you take your drugs %1$s?</string>
     <string name="question_sleep_well">Did you sleep well?</string>
     <string name="add_symptom">Add Symptom</string>
+    <string name="tap_hold_body">Tap or hold body regions to log pain intensity</string>
 
     <!-- Mood Labels -->
     <string name="mood_very_bad">Very Bad</string>

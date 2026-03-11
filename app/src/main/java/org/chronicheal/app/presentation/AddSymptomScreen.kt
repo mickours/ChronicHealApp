@@ -10,7 +10,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -52,33 +51,24 @@ fun AddSymptomScreen(
     val nameSuggestions by viewModel.symptomSuggestions.collectAsState()
     val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
 
-    LaunchedEffect(id) {
-        if (id != null && existingEntry == null) {
-            var entry = viewModel.getEntryById(id)
-            if (entry == null) {
-                entry = viewModel.getEntryByReminderId(id)
-                if (entry != null) {
-                    isNewFromTemplate = true
-                }
-            }
-            
-            if (entry != null) {
-                existingEntry = entry
-                name = entry.name ?: ""
-                severity = entry.intensity?.toFloat() ?: 3f
-                location = entry.location ?: ""
-                note = entry.note
-                if (!isNewFromTemplate) {
-                    logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                    startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                }
+    LogNowEffect(id = id, viewModel = viewModel,
+        onEntryFound = { entry, fromTemplate ->
+            existingEntry = entry
+            isNewFromTemplate = fromTemplate
+            name = entry.name ?: ""
+            severity = entry.intensity?.toFloat() ?: 3f
+            location = entry.location ?: ""
+            note = entry.note
+            if (!isNewFromTemplate) {
+                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
         }
-    }
+    )
 
     val createEntry = {
         HealthEntry(
-            id = if (isNewFromTemplate) 0 else (id ?: 0),
+            id = if (isNewFromTemplate) 0 else (existingEntry?.id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.SYMPTOM,
             name = name.trim(),
@@ -147,7 +137,7 @@ fun AddSymptomScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
                 label = stringResource(R.string.notes_label),

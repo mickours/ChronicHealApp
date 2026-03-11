@@ -30,6 +30,7 @@ import org.chronicheal.app.presentation.SecurityViewModel
 import org.chronicheal.app.presentation.navigation.NavGraph
 import org.chronicheal.app.presentation.navigation.Screen
 import org.chronicheal.app.ui.theme.ChronicHealTheme
+import java.time.LocalDateTime
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -81,7 +82,7 @@ class MainActivity : AppCompatActivity() {
                                 val entryType = try { EntryType.valueOf(typeName) } catch(_: Exception) { null }
                                 if (entryType != null) {
                                     val route = when (entryType) {
-                                        EntryType.PAIN -> if (reminderId == null) Screen.BodyScan.route else Screen.AddPain.createRoute(id = reminderId)
+                                        EntryType.PAIN -> Screen.BodyScan.createRoute(date = LocalDateTime.now().toString())
                                         EntryType.DRUG -> Screen.AddDrug.createRoute(id = reminderId)
                                         EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(id = reminderId)
                                         EntryType.DISEASE -> Screen.AddDisease.createRoute(id = reminderId)

@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -32,9 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -63,7 +60,6 @@ import org.chronicheal.app.domain.model.Ingredient
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,17 +70,18 @@ fun AddMealScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf("") }
     var note by rememberSaveable { mutableStateOf("") }
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    var isNewFromTemplate by remember { mutableStateOf(false) }
 
     val ingredients = remember { mutableStateListOf<Ingredient>() }
 
     var setReminder by rememberSaveable { mutableStateOf(false) }
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
-    var showTimePicker by rememberSaveable { mutableStateOf(false) }
     var advancedOptionsExpanded by rememberSaveable { mutableStateOf(false) }
 
     val nameSuggestions by viewModel.mealSuggestions.collectAsState()
@@ -92,28 +89,23 @@ fun AddMealScreen(
     val lastItemFocusRequester = remember { FocusRequester() }
     var shouldFocusNewIngredient by remember { mutableStateOf(false) }
 
-    LaunchedEffect(id) {
-        if (id != null && existingEntry == null) {
-            val entry = viewModel.getEntryById(id)
-            if (entry != null) {
-                existingEntry = entry
-                name = entry.name ?: ""
-                note = entry.note
+    LogNowEffect(id = id, viewModel = viewModel,
+        onEntryFound = { entry, fromTemplate ->
+            existingEntry = entry
+            isNewFromTemplate = fromTemplate
+            name = entry.name ?: ""
+            note = entry.note
+            if (!isNewFromTemplate) {
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                setReminder = entry.hasReminder
-                
-                ingredients.clear()
-                entry.ingredients?.let { ingredients.addAll(it) }
-
-                if (entry.hasReminder && entry.reminderId != null) {
-                    viewModel.getReminderById(entry.reminderId)?.let { reminder ->
-                        reminderTime = reminder.time
-                    }
-                }
             }
-        }
-    }
+            setReminder = entry.hasReminder
+            
+            ingredients.clear()
+            entry.ingredients?.let { ingredients.addAll(it) }
+        },
+        onReminderTimeFound = { reminderTime = it }
+    )
 
     LaunchedEffect(ingredients.size) {
         if (shouldFocusNewIngredient && ingredients.isNotEmpty()) {
@@ -133,7 +125,7 @@ fun AddMealScreen(
 
     val createEntry = {
         HealthEntry(
-            id = id ?: 0,
+            id = if (isNewFromTemplate) 0 else (existingEntry?.id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.MEAL,
             name = name.trim(),
@@ -145,9 +137,22 @@ fun AddMealScreen(
         )
     }
 
+    val handleSave = {
+        handleEntrySave(
+            viewModel = viewModel,
+            existingEntry = existingEntry,
+            isNewFromTemplate = isNewFromTemplate,
+            currentEntry = createEntry(),
+            setReminder = setReminder,
+            reminderTime = reminderTime,
+            reminderTitle = name.trim().ifBlank { context.getString(R.string.type_meal) },
+            onSaveSuccess = onSaveSuccess
+        )
+    }
+
     AddEntryScaffold(
-        title = if (id == null) stringResource(R.string.log_meal) else stringResource(R.string.edit_meal),
-        existingEntry = existingEntry,
+        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_meal) else stringResource(R.string.edit_meal),
+        existingEntry = if (isNewFromTemplate) null else existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
         onSaveSuccess = onSaveSuccess,
@@ -155,7 +160,8 @@ fun AddMealScreen(
             existingEntry?.let { viewModel.deleteEntry(it) }
             onBackClick()
         },
-        viewModel = viewModel
+        viewModel = viewModel,
+        onSave = handleSave
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
@@ -247,11 +253,10 @@ fun AddMealScreen(
 
                         AnimatedVisibility(visible = advancedOptionsExpanded) {
                             Column(modifier = Modifier.padding(8.dp)) {
-                                OutlinedTextField(
+                                VoiceEnabledTextField(
                                     value = note,
                                     onValueChange = { note = it },
-                                    label = { Text(stringResource(R.string.notes_label)) },
-                                    modifier = Modifier.fillMaxWidth(),
+                                    label = stringResource(R.string.notes_label),
                                     minLines = 3,
                                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
@@ -259,60 +264,19 @@ fun AddMealScreen(
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Checkbox(
-                                        checked = setReminder,
-                                        onCheckedChange = { setReminder = it }
-                                    )
-                                    Text(
-                                        text = if (existingEntry?.hasReminder == true) stringResource(R.string.update_daily_reminder) else stringResource(R.string.set_daily_reminder),
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }
-
-                                if (setReminder) {
-                                    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
-                                    OutlinedButton(
-                                        onClick = { showTimePicker = true },
-                                        modifier = Modifier.padding(start = 32.dp)
-                                    ) {
-                                        Text(stringResource(R.string.time_label) + ": ${reminderTime.format(timeFormatter)}")
-                                    }
-                                }
+                                ReminderSection(
+                                    setReminder = setReminder,
+                                    onSetReminderChange = { setReminder = it },
+                                    reminderTime = reminderTime,
+                                    onReminderTimeChange = { reminderTime = it },
+                                    isUpdate = existingEntry?.hasReminder == true
+                                )
                             }
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(32.dp))
-            }
-        }
-
-        if (showTimePicker) {
-            val timeState = rememberTimePickerState(
-                initialHour = reminderTime.hour,
-                initialMinute = reminderTime.minute
-            )
-            TimePickerDialog(
-                onDismissRequest = { showTimePicker = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        reminderTime = LocalTime.of(timeState.hour, timeState.minute)
-                        showTimePicker = false
-                    }) {
-                        Text(stringResource(R.string.ok))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showTimePicker = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                }
-            ) {
-                TimePicker(state = timeState)
             }
         }
     }

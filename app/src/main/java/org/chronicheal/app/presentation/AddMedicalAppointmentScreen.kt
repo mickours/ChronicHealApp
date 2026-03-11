@@ -11,7 +11,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -26,10 +25,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.model.Reminder
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -44,6 +47,7 @@ fun AddMedicalAppointmentScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     var doctorName by rememberSaveable { mutableStateOf("") }
     var purpose by rememberSaveable { mutableStateOf("") }
     var outcome by rememberSaveable { mutableStateOf("") }
@@ -55,19 +59,29 @@ fun AddMedicalAppointmentScreen(
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    var isNewFromTemplate by remember { mutableStateOf(false) }
 
     val doctorSuggestions by viewModel.doctorSuggestions.collectAsState()
 
     LaunchedEffect(id) {
         if (id != null && existingEntry == null) {
-            val entry = viewModel.getEntryById(id)
+            var entry = viewModel.getEntryById(id)
+            if (entry == null) {
+                entry = viewModel.getEntryByReminderId(id)
+                if (entry != null) {
+                    isNewFromTemplate = true
+                }
+            }
+            
             if (entry != null) {
                 existingEntry = entry
                 doctorName = entry.name ?: ""
                 purpose = entry.location ?: ""
                 note = entry.note
-                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                if (!isNewFromTemplate) {
+                    logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                    startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                }
                 setReminder = entry.hasReminder
                 
                 if (entry.hasReminder && entry.reminderId != null) {
@@ -81,7 +95,7 @@ fun AddMedicalAppointmentScreen(
 
     val createEntry = {
         HealthEntry(
-            id = id ?: 0,
+            id = if (isNewFromTemplate) 0 else (id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.MEDICAL_APPOINTMENT,
             name = doctorName.trim(),
@@ -93,9 +107,31 @@ fun AddMedicalAppointmentScreen(
         )
     }
 
+    val handleSave = {
+        val entry = createEntry()
+        if (setReminder) {
+            val reminder = Reminder(
+                id = existingEntry?.reminderId ?: 0,
+                title = context.getString(R.string.type_appointment) + ": ${entry.name}",
+                time = reminderTime,
+                daysOfWeek = setOf(1, 2, 3, 4, 5, 6, 7),
+                isEnabled = true,
+                entryType = EntryType.MEDICAL_APPOINTMENT
+            )
+            if (entry.id == 0L) {
+                viewModel.addEntryWithReminder(entry, reminder)
+            } else {
+                viewModel.updateEntryWithReminder(entry, reminder)
+            }
+        } else {
+            viewModel.saveEntryAndNotify(if (isNewFromTemplate) null else existingEntry, entry)
+        }
+        onSaveSuccess()
+    }
+
     AddEntryScaffold(
-        title = if (id == null) "Medical Appointment" else "Edit Appointment",
-        existingEntry = existingEntry,
+        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_appointment) else stringResource(R.string.edit_appointment),
+        existingEntry = if (isNewFromTemplate) null else existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
         onSaveSuccess = onSaveSuccess,
@@ -103,7 +139,8 @@ fun AddMedicalAppointmentScreen(
             existingEntry?.let { viewModel.deleteEntry(it) }
             onBackClick()
         },
-        viewModel = viewModel
+        viewModel = viewModel,
+        onSave = handleSave
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -124,34 +161,31 @@ fun AddMedicalAppointmentScreen(
                 value = doctorName,
                 onValueChange = { doctorName = it },
                 suggestions = doctorSuggestions,
-                label = "Doctor/Specialist Name"
+                label = stringResource(R.string.appointment_name_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = purpose,
                 onValueChange = { purpose = it },
-                label = { Text("Purpose (e.g. Follow-up, Scan)") },
-                modifier = Modifier.fillMaxWidth()
+                label = stringResource(R.string.location_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = outcome,
                 onValueChange = { outcome = it },
-                label = { Text("Outcome/Diagnosis") },
-                modifier = Modifier.fillMaxWidth()
+                label = stringResource(R.string.notes_label) // Reusing notes for outcome/diagnosis for now
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
-                label = { Text("Notes") },
-                modifier = Modifier.fillMaxWidth(),
+                label = stringResource(R.string.notes_label),
                 minLines = 3
             )
 
@@ -166,7 +200,7 @@ fun AddMedicalAppointmentScreen(
                     onCheckedChange = { setReminder = it }
                 )
                 Text(
-                    text = if (existingEntry?.hasReminder == true) "Update daily reminder" else "Set daily reminder for this appointment",
+                    text = if (existingEntry?.hasReminder == true) stringResource(R.string.update_daily_reminder) else stringResource(R.string.set_daily_reminder),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -176,7 +210,7 @@ fun AddMedicalAppointmentScreen(
                     onClick = { showTimePicker = true },
                     modifier = Modifier.padding(start = 32.dp)
                 ) {
-                    Text("Time: ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
+                    Text(stringResource(R.string.time_label) + ": ${reminderTime.format(DateTimeFormatter.ofPattern("HH:mm"))}")
                 }
             }
         }
@@ -193,12 +227,12 @@ fun AddMedicalAppointmentScreen(
                         reminderTime = LocalTime.of(timeState.hour, timeState.minute)
                         showTimePicker = false
                     }) {
-                        Text("OK")
+                        Text(stringResource(R.string.ok))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showTimePicker = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             ) {

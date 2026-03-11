@@ -11,19 +11,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -34,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -44,7 +39,6 @@ import org.chronicheal.app.domain.model.HealthEntry
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +50,7 @@ fun AddActivityScreen(
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     var name by rememberSaveable { mutableStateOf("") }
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
@@ -64,40 +59,35 @@ fun AddActivityScreen(
     var intensity by rememberSaveable { mutableFloatStateOf(3f) }
     var note by rememberSaveable { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    var isNewFromTemplate by remember { mutableStateOf(false) }
 
     var setReminder by rememberSaveable { mutableStateOf(false) }
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
-    var showTimePicker by rememberSaveable { mutableStateOf(false) }
 
     val nameSuggestions by viewModel.activitySuggestions.collectAsState()
 
-    LaunchedEffect(id) {
-        if (id != null && existingEntry == null) {
-            val entry = viewModel.getEntryById(id)
-            if (entry != null) {
-                existingEntry = entry
-                name = entry.name ?: ""
+    LogNowEffect(id = id, viewModel = viewModel,
+        onEntryFound = { entry, fromTemplate ->
+            existingEntry = entry
+            isNewFromTemplate = fromTemplate
+            name = entry.name ?: ""
+            if (!isNewFromTemplate) {
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                val totalMinutes = entry.durationMinutes ?: 30
-                durationHours = totalMinutes / 60
-                durationMinutes = totalMinutes % 60
-                intensity = entry.intensity?.toFloat() ?: 3f
-                note = entry.note
-                setReminder = entry.hasReminder
-                
-                if (entry.hasReminder && entry.reminderId != null) {
-                    viewModel.getReminderById(entry.reminderId)?.let { reminder ->
-                        reminderTime = reminder.time
-                    }
-                }
             }
-        }
-    }
+            val totalMinutes = entry.durationMinutes ?: 30
+            durationHours = totalMinutes / 60
+            durationMinutes = totalMinutes % 60
+            intensity = entry.intensity?.toFloat() ?: 3f
+            note = entry.note
+            setReminder = entry.hasReminder
+        },
+        onReminderTimeFound = { reminderTime = it }
+    )
 
     val createEntry = {
         HealthEntry(
-            id = id ?: 0,
+            id = if (isNewFromTemplate) 0 else (existingEntry?.id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.ACTIVITY,
             name = name.trim(),
@@ -109,9 +99,22 @@ fun AddActivityScreen(
         )
     }
 
+    val handleSave = {
+        handleEntrySave(
+            viewModel = viewModel,
+            existingEntry = existingEntry,
+            isNewFromTemplate = isNewFromTemplate,
+            currentEntry = createEntry(),
+            setReminder = setReminder,
+            reminderTime = reminderTime,
+            reminderTitle = context.getString(R.string.type_activity) + ": $name",
+            onSaveSuccess = onSaveSuccess
+        )
+    }
+
     AddEntryScaffold(
-        title = if (id == null) stringResource(R.string.log_activity) else stringResource(R.string.edit_activity),
-        existingEntry = existingEntry,
+        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_activity) else stringResource(R.string.edit_activity),
+        existingEntry = if (isNewFromTemplate) null else existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
         onSaveSuccess = onSaveSuccess,
@@ -119,7 +122,8 @@ fun AddActivityScreen(
             existingEntry?.let { viewModel.deleteEntry(it) }
             onBackClick()
         },
-        viewModel = viewModel
+        viewModel = viewModel,
+        onSave = handleSave
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -147,7 +151,7 @@ fun AddActivityScreen(
                 OutlinedTextField(
                     value = durationHours.toString(),
                     onValueChange = { durationHours = it.toIntOrNull() ?: 0 },
-                    label = { Text("H") }, // TODO: String resource if needed
+                    label = { Text("H") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
@@ -155,7 +159,7 @@ fun AddActivityScreen(
                 OutlinedTextField(
                     value = durationMinutes.toString(),
                     onValueChange = { durationMinutes = it.toIntOrNull() ?: 0 },
-                    label = { Text("M") }, // TODO: String resource if needed
+                    label = { Text("M") },
                     modifier = Modifier.weight(1f),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
@@ -185,7 +189,7 @@ fun AddActivityScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
                 label = stringResource(R.string.notes_label),
@@ -194,54 +198,13 @@ fun AddActivityScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Checkbox(
-                    checked = setReminder,
-                    onCheckedChange = { setReminder = it }
-                )
-                Text(
-                    text = if (existingEntry?.hasReminder == true) stringResource(R.string.update_daily_reminder) else stringResource(R.string.set_daily_reminder),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-
-            if (setReminder) {
-                val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
-                OutlinedButton(
-                    onClick = { showTimePicker = true },
-                    modifier = Modifier.padding(start = 32.dp)
-                ) {
-                    Text(stringResource(R.string.time_label) + ": ${reminderTime.format(timeFormatter)}")
-                }
-            }
-        }
-
-        if (showTimePicker) {
-            val timeState = rememberTimePickerState(
-                initialHour = reminderTime.hour,
-                initialMinute = reminderTime.minute
+            ReminderSection(
+                setReminder = setReminder,
+                onSetReminderChange = { setReminder = it },
+                reminderTime = reminderTime,
+                onReminderTimeChange = { reminderTime = it },
+                isUpdate = existingEntry?.hasReminder == true
             )
-            TimePickerDialog(
-                onDismissRequest = { showTimePicker = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        reminderTime = LocalTime.of(timeState.hour, timeState.minute)
-                        showTimePicker = false
-                    }) {
-                        Text(stringResource(R.string.ok))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showTimePicker = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
-                }
-            ) {
-                TimePicker(state = timeState)
-            }
         }
     }
 }

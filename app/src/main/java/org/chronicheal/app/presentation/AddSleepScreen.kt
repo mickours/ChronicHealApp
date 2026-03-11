@@ -83,6 +83,7 @@ fun AddSleepScreen(
     var quality by rememberSaveable { mutableFloatStateOf(5f) }
     var note by rememberSaveable { mutableStateOf("") }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
+    var isNewFromTemplate by remember { mutableStateOf(false) }
 
     var setReminder by rememberSaveable { mutableStateOf(false) }
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.of(22, 0)) }
@@ -90,16 +91,26 @@ fun AddSleepScreen(
 
     LaunchedEffect(id) {
         if (id != null && existingEntry == null) {
-            val entry = viewModel.getEntryById(id)
+            var entry = viewModel.getEntryById(id)
+            if (entry == null) {
+                entry = viewModel.getEntryByReminderId(id)
+                if (entry != null) {
+                    isNewFromTemplate = true
+                }
+            }
+            
             if (entry != null) {
                 existingEntry = entry
                 quality = entry.intensity?.toFloat() ?: 5f
                 note = entry.note
-                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                if (!isNewFromTemplate) {
+                    logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                    startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+                }
                 
                 val durationMins = entry.durationMinutes?.toLong() ?: 480L
-                val end = entry.timestamp.plus(Duration.ofMinutes(durationMins)).atZone(ZoneId.systemDefault())
+                val start = if (isNewFromTemplate) logDate.atTime(startTime) else entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDateTime()
+                val end = start.plus(Duration.ofMinutes(durationMins))
                 endDate = end.toLocalDate()
                 endTime = end.toLocalTime()
                 
@@ -130,7 +141,7 @@ fun AddSleepScreen(
 
     val createEntry = {
         HealthEntry(
-            id = id ?: 0,
+            id = if (isNewFromTemplate) 0 else (id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.SLEEP,
             intensity = quality.roundToInt(),
@@ -142,8 +153,8 @@ fun AddSleepScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null) stringResource(R.string.log_sleep) else stringResource(R.string.edit_sleep),
-        existingEntry = existingEntry,
+        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_sleep) else stringResource(R.string.edit_sleep),
+        existingEntry = if (isNewFromTemplate) null else existingEntry,
         currentEntry = createEntry,
         onBackClick = onBackClick,
         onSaveSuccess = onSaveSuccess,
@@ -207,7 +218,7 @@ fun AddSleepScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            TextField(
+            VoiceEnabledTextField(
                 value = note,
                 onValueChange = { note = it },
                 label = stringResource(R.string.notes_label),

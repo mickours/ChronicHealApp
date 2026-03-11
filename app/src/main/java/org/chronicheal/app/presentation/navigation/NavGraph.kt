@@ -254,7 +254,7 @@ fun NavGraph(
                 onTypeSelected = { type ->
                     val route = when (type) {
                         EntryType.PAIN -> Screen.BodyScan.createRoute(date)
-                        EntryType.DRUG -> Screen.AddDrug.createRoute(date, location)
+                        EntryType.DRUG -> Screen.AddDrug.createRoute(date)
                         EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(date, location)
                         EntryType.DISEASE -> Screen.AddDisease.createRoute(date, location)
                         EntryType.MEAL -> Screen.AddMeal.createRoute(date, location)
