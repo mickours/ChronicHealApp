@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
@@ -26,6 +27,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,6 +37,7 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -52,6 +56,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -80,8 +85,28 @@ fun AddCompleteEntryScreen(
     var painNote by rememberSaveable { mutableStateOf("") }
 
     // Sleep State
-    var sleepDurationHours by rememberSaveable { mutableStateOf("") }
+    val now = remember { LocalTime.now() }
+    val today = remember { LocalDate.now() }
+    val defaultStartDateTime = remember(now, today) {
+        if (now.hour in 5..11) today.minusDays(1).atTime(22, 0) else today.atTime(22, 0)
+    }
+    val defaultEndDateTime = remember(now, today) {
+        if (now.hour in 5..11) today.atTime(7, 0) else today.plusDays(1).atTime(7, 0)
+    }
+
+    var sleepLogDate by rememberSaveable { mutableStateOf(defaultStartDateTime.toLocalDate()) }
+    var sleepStartTime by rememberSaveable { mutableStateOf(defaultStartDateTime.toLocalTime()) }
+    var sleepEndDate by rememberSaveable { mutableStateOf(defaultEndDateTime.toLocalDate()) }
+    var sleepEndTime by rememberSaveable { mutableStateOf(defaultEndDateTime.toLocalTime()) }
     var sleepQuality by rememberSaveable { mutableFloatStateOf(5f) }
+
+    val sleepDurationMinutes by remember(sleepLogDate, sleepStartTime, sleepEndDate, sleepEndTime) {
+        derivedStateOf {
+            val start = sleepLogDate.atTime(sleepStartTime).atZone(ZoneId.systemDefault())
+            val end = sleepEndDate.atTime(sleepEndTime).atZone(ZoneId.systemDefault())
+            Duration.between(start, end).toMinutes().toInt().coerceAtLeast(0)
+        }
+    }
 
     // Medication State
     val drugReminders by viewModel.drugReminders.collectAsState()
@@ -136,13 +161,12 @@ fun AddCompleteEntryScreen(
         }
 
         // Add Sleep if recorded
-        val sleepMins = sleepDurationHours.toIntOrNull()?.let { it * 60 }
-        if (sleepMins != null || sleepQuality != 5f) {
+        if (sleepDurationMinutes > 0) {
             entries.add(
                 HealthEntry(
-                    timestamp = timestamp,
+                    timestamp = sleepLogDate.atTime(sleepStartTime).atZone(ZoneId.systemDefault()).toInstant(),
                     type = EntryType.SLEEP,
-                    durationMinutes = sleepMins,
+                    durationMinutes = sleepDurationMinutes,
                     intensity = sleepQuality.roundToInt()
                 )
             )
@@ -262,8 +286,15 @@ fun AddCompleteEntryScreen(
 
             SectionHeader(type = EntryType.SLEEP, title = stringResource(R.string.question_sleep_well))
             SleepSection(
-                durationHours = sleepDurationHours,
-                onDurationChange = { sleepDurationHours = it },
+                logDate = sleepLogDate,
+                onLogDateChange = { sleepLogDate = it },
+                startTime = sleepStartTime,
+                onStartTimeChange = { sleepStartTime = it },
+                endDate = sleepEndDate,
+                onEndDateChange = { sleepEndDate = it },
+                endTime = sleepEndTime,
+                onEndTimeChange = { sleepEndTime = it },
+                durationMinutes = sleepDurationMinutes,
                 quality = sleepQuality,
                 onQualityChange = { sleepQuality = it }
             )
@@ -358,8 +389,9 @@ fun PainSection(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         val locationName = formatId(context, pain.location ?: "")
+                        val intensityValue = (pain.intensity ?: 0).toLong()
                         Text(
-                            text = "$locationName: ${pain.intensity}/10",
+                            text = stringResource(R.string.pain_item_format, locationName, intensityValue),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         IconButton(onClick = { pains.remove(pain) }, modifier = Modifier.size(24.dp)) {
@@ -404,7 +436,7 @@ fun SymptomsSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(R.string.type_symptom) + " #${index + 1}",
+                            text = stringResource(R.string.symptom_item_title, stringResource(R.string.type_symptom), index + 1),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -535,41 +567,78 @@ fun MedicationCheckSection(
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
-            
-            Text(
-                text = stringResource(R.string.add_reminder), // Reusing string for "Add other medication"
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            val suggestions by viewModel.drugSuggestions.collectAsState()
-            AutoCompleteTextField(
-                value = manualName,
-                onValueChange = onManualNameChange,
-                suggestions = suggestions,
-                label = stringResource(R.string.name_label)
-            )
-            VoiceEnabledTextField(
-                value = manualDosage,
-                onValueChange = onManualDosageChange,
-                label = stringResource(R.string.dosage_label)
-            )
         }
     }
 }
 
 @Composable
 fun SleepSection(
-    durationHours: String,
-    onDurationChange: (String) -> Unit,
+    logDate: LocalDate,
+    onLogDateChange: (LocalDate) -> Unit,
+    startTime: LocalTime,
+    onStartTimeChange: (LocalTime) -> Unit,
+    endDate: LocalDate,
+    onEndDateChange: (LocalDate) -> Unit,
+    endTime: LocalTime,
+    onEndTimeChange: (LocalTime) -> Unit,
+    durationMinutes: Int,
     quality: Float,
     onQualityChange: (Float) -> Unit
 ) {
+    val context = LocalContext.current
+    val durationText = remember(durationMinutes) {
+        val h = durationMinutes / 60
+        val m = durationMinutes % 60
+        if (h > 0) context.getString(R.string.duration_h_m, h, m) else context.getString(R.string.duration_m, m)
+    }
+
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            VoiceEnabledTextField(value = durationHours, onValueChange = onDurationChange, label = stringResource(R.string.duration_hours_label))
-            Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.quality_label, quality.roundToInt()))
-            Slider(value = quality, onValueChange = onQualityChange, valueRange = 1f..10f, steps = 9)
+            Text(stringResource(R.string.bedtime_label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+            EntryDateTimePicker(
+                date = logDate,
+                onDateChange = onLogDateChange,
+                startTime = startTime,
+                onStartTimeChange = onStartTimeChange
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(stringResource(R.string.wakeup_time_label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
+            EntryDateTimePicker(
+                date = endDate,
+                onDateChange = onEndDateChange,
+                startTime = endTime,
+                onStartTimeChange = onEndTimeChange
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = durationText,
+                onValueChange = { },
+                label = { Text(stringResource(R.string.computed_duration_label)) },
+                modifier = Modifier.fillMaxWidth(),
+                readOnly = true,
+                leadingIcon = { Icon(Icons.Default.Timer, contentDescription = null) },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = stringResource(R.string.quality_label, quality.roundToInt()),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Slider(
+                value = quality,
+                onValueChange = onQualityChange,
+                valueRange = 1f..10f,
+                steps = 8
+            )
         }
     }
 }
