@@ -461,7 +461,7 @@ fun MoodSection(
                 in 7..8 -> stringResource(R.string.mood_good)
                 else -> stringResource(R.string.mood_amazing)
             }
-            Text("${stringResource(R.string.type_mood)}: $moodLabel (${intensity.roundToInt()}/10)")
+            Text(stringResource(R.string.mood_summary_format, stringResource(R.string.type_mood), moodLabel, intensity.roundToInt()))
             Slider(value = intensity, onValueChange = onIntensityChange, valueRange = 1f..10f, steps = 8)
             VoiceEnabledTextField(value = note, onValueChange = onNoteChange, label = stringResource(R.string.section_mood))
         }

@@ -1,6 +1,5 @@
 package org.chronicheal.app.presentation
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,10 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -56,6 +55,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.model.Reminder
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
@@ -124,9 +124,6 @@ fun AddCompleteEntryScreen(
         }
     }
 
-    var manualMedicationName by rememberSaveable { mutableStateOf("") }
-    var manualMedicationDosage by rememberSaveable { mutableStateOf("") }
-
     // Symptoms State
     val symptomEntries = remember { mutableStateListOf<SymptomEntryState>() }
     if (symptomEntries.isEmpty()) {
@@ -185,19 +182,6 @@ fun AddCompleteEntryScreen(
                     )
                 )
             }
-        }
-
-        // Add Manual Medication
-        if (manualMedicationName.isNotBlank()) {
-            entries.add(
-                HealthEntry(
-                    timestamp = timestamp,
-                    type = EntryType.DRUG,
-                    name = manualMedicationName,
-                    unit = manualMedicationDosage,
-                    note = ""
-                )
-            )
         }
 
         // Add Symptoms
@@ -271,8 +255,7 @@ fun AddCompleteEntryScreen(
                 note = painNote,
                 onNoteChange = { painNote = it },
                 logDate = logDate,
-                startTime = startTime,
-                viewModel = viewModel
+                startTime = startTime
             )
 
             SectionHeader(type = EntryType.SYMPTOM, title = stringResource(R.string.type_symptom))
@@ -305,12 +288,7 @@ fun AddCompleteEntryScreen(
                 taken = medicationTaken,
                 onTakenChange = { index, isTaken -> if (index < medicationTaken.size) medicationTaken[index] = isTaken },
                 times = medicationTimes,
-                onTimeChange = { index, newTime -> if (index < medicationTimes.size) medicationTimes[index] = newTime },
-                manualName = manualMedicationName,
-                onManualNameChange = { manualMedicationName = it },
-                manualDosage = manualMedicationDosage,
-                onManualDosageChange = { manualMedicationDosage = it },
-                viewModel = viewModel
+                onTimeChange = { index, newTime -> if (index < medicationTimes.size) medicationTimes[index] = newTime }
             )
 
             SectionHeader(type = EntryType.JOURNAL, title = stringResource(R.string.section_anything_else))
@@ -332,8 +310,7 @@ fun PainSection(
     note: String,
     onNoteChange: (String) -> Unit,
     logDate: LocalDate,
-    startTime: LocalTime,
-    viewModel: TimelineViewModel
+    startTime: LocalTime
 ) {
     val context = LocalContext.current
     var currentHoldRegionId by remember { mutableStateOf<String?>(null) }
@@ -487,85 +464,79 @@ fun SymptomsSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MedicationCheckSection(
-    reminders: List<org.chronicheal.app.domain.model.Reminder>,
+    reminders: List<Reminder>,
     taken: List<Boolean>,
     onTakenChange: (Int, Boolean) -> Unit,
     times: List<LocalTime>,
-    onTimeChange: (Int, LocalTime) -> Unit,
-    manualName: String,
-    onManualNameChange: (String) -> Unit,
-    manualDosage: String,
-    onManualDosageChange: (String) -> Unit,
-    viewModel: TimelineViewModel
+    onTimeChange: (Int, LocalTime) -> Unit
 ) {
+    if (reminders.isEmpty()) return
+
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (reminders.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.section_medication),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                reminders.forEachIndexed { index, reminder ->
-                    var showTimePicker by remember { mutableStateOf(false) }
-                    val currentTime = if (index < times.size) times[index] else LocalTime.now()
-                    val timeFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
+            Text(
+                text = stringResource(R.string.section_medication),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            reminders.forEachIndexed { index, reminder ->
+                var showTimePicker by remember { mutableStateOf(false) }
+                val currentTime = if (index < times.size) times[index] else LocalTime.now()
+                val timeFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = if (index < taken.size) taken[index] else false,
-                            onCheckedChange = { onTakenChange(index, it) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = if (index < taken.size) taken[index] else false,
+                        onCheckedChange = { onTakenChange(index, it) }
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.question_drugs, reminder.title),
+                            modifier = Modifier.padding(start = 8.dp)
                         )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.question_drugs, reminder.title),
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                            IconButton(
-                                onClick = { showTimePicker = true },
-                                modifier = Modifier.padding(start = 4.dp)
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(16.dp))
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        text = currentTime.format(timeFormatter),
-                                        style = MaterialTheme.typography.bodySmall
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if (showTimePicker) {
-                        val timeState = rememberTimePickerState(
-                            initialHour = currentTime.hour,
-                            initialMinute = currentTime.minute
-                        )
-                        TimePickerDialog(
-                            onDismissRequest = { showTimePicker = false },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    onTimeChange(index, LocalTime.of(timeState.hour, timeState.minute))
-                                    showTimePicker = false
-                                }) {
-                                    Text(stringResource(R.string.ok))
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { showTimePicker = false }) {
-                                    Text(stringResource(R.string.cancel))
-                                }
-                            }
+                        IconButton(
+                            onClick = { showTimePicker = true },
+                            modifier = Modifier.padding(start = 4.dp)
                         ) {
-                            TimePicker(state = timeState)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = currentTime.format(timeFormatter),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
                     }
                 }
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                if (showTimePicker) {
+                    val timeState = rememberTimePickerState(
+                        initialHour = currentTime.hour,
+                        initialMinute = currentTime.minute
+                    )
+                    TimePickerDialog(
+                        onDismissRequest = { showTimePicker = false },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                onTimeChange(index, LocalTime.of(timeState.hour, timeState.minute))
+                                showTimePicker = false
+                            }) {
+                                Text(stringResource(R.string.ok))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showTimePicker = false }) {
+                                Text(stringResource(R.string.cancel))
+                            }
+                        }
+                    ) {
+                        TimePicker(state = timeState)
+                    }
+                }
             }
         }
     }

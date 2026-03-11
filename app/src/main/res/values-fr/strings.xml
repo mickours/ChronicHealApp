@@ -89,7 +89,7 @@
     <string name="category_occurrence">Ce qui vous arrive</string>
     <string name="category_management">Ce que vous gérez</string>
     <string name="complete_checkin">Bilan complet</string>
-    <string name="complete_checkin_desc">Notez humeur, douleur, symptôme, selles et règles d\'un coup</string>
+    <string name="complete_checkin_desc">Notez humeur, douleur, sommeil et médicaments d\'un coup</string>
 
     <!-- Entry Details Labels -->
     <string name="intensity_label">Intensité : %1$d/10</string>
@@ -111,7 +111,7 @@
     <string name="bedtime_label">Heure du coucher :</string>
     <string name="wakeup_time_label">Heure de réveil :</string>
     <string name="computed_duration_label">Durée calculée</string>
-    <string name="quality_label">Qualité : %1$d/10</string>
+    <string name="quality_label">Qualité : %1$d/5</string>
     <string name="impact_label">Impact/Intensité : %1$d/10</string>
     <string name="scale_label">Échelle %1$s</string>
     <string name="select_items_legend">Sélectionnez des éléments dans la légende pour afficher les données</string>
@@ -177,6 +177,12 @@
     <string name="factor_name_label">Facteur (ex: Météo, Stress, Pollution)</string>
     <string name="beverage_name_label">Nom de la boisson (ex: Eau, Café)</string>
     <string name="stool_aspect_label">Aspect (Optionnel)</string>
+    <string name="ingredients_label">Ingrédients</string>
+    <string name="add_ingredient">Ajouter un ingrédient</string>
+    <string name="ingredient_name">Nom de l\'ingrédient</string>
+    <string name="quantity">Qté</string>
+    <string name="unit">Unité</string>
+    <string name="advanced_options">Options avancées</string>
     
     <!-- Calendar Screen -->
     <string name="calendar_title">Calendrier</string>
@@ -236,8 +242,17 @@
     <string name="section_mood">Comment vous sentez-vous ?</string>
     <string name="section_pain">Des douleurs ?</string>
     <string name="section_sleep">Sommeil de la nuit dernière</string>
-    <string name="section_medication">Médications</string>
+    <string name="section_medication">Médication</string>
     <string name="section_anything_else">Autre chose ?</string>
+    <string name="question_drugs">Avez-vous pris vos médicaments %1$s ?</string>
+    <string name="question_sleep_well">Avez-vous bien dormi ?</string>
+    <string name="add_symptom">Ajouter un symptôme</string>
+    <string name="tap_hold_body">Appuyez ou maintenez les zones du corps pour noter l\'intensité de la douleur</string>
+    <string name="pain_item_format">%1$s : %2$d/10</string>
+    <string name="symptom_item_title">%1$s n°%2$d</string>
+    <string name="duration_h_m">%1$dh %2$dm</string>
+    <string name="duration_m">%1$dm</string>
+    <string name="mood_summary_format">%1$s : %2$s (%3$d/10)</string>
 
     <!-- Mood Labels -->
     <string name="mood_very_bad">Très Mauvais</string>
