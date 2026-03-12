@@ -188,9 +188,6 @@ fun TimelineScreen(
                         )
                     },
                     actions = {
-                        IconButton(onClick = onVoiceLoggingClick) {
-                            Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.voice_logging_title))
-                        }
                         IconButton(onClick = { 
                             isSearchVisible = !isSearchVisible 
                             if (!isSearchVisible) {
@@ -302,9 +299,10 @@ fun TimelineScreen(
             }
         },
         bottomBar = {
-            if (uiState.favorites.isNotEmpty()) {
+            val quickAddFavorites = uiState.favorites.filter { it != EntryType.VOICE_LOGGING }.toList()
+            if (quickAddFavorites.isNotEmpty()) {
                 QuickAddBar(
-                    favorites = uiState.favorites.toList(),
+                    favorites = quickAddFavorites,
                     onEntryTypeClick = onEntryTypeClick
                 )
             }

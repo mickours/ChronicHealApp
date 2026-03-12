@@ -18,7 +18,7 @@ import java.time.LocalTime
 import javax.inject.Inject
 
 data class WelcomeWizardUiState(
-    val favoriteTypes: Set<EntryType> = setOf(EntryType.VOICE_LOGGING),
+    val favoriteTypes: Set<EntryType> = emptySet(), // Removed VOICE_LOGGING from default
     val isCheckupReminderEnabled: Boolean = false,
     val checkupReminderTime: LocalTime = LocalTime.of(20, 0), // Default 8 PM
     val isBiometricLockEnabled: Boolean = false,

@@ -61,7 +61,8 @@ class SettingsRepositoryImpl @Inject constructor(
                 }
             }?.toSet()
             
-            types ?: setOf(EntryType.VOICE_LOGGING) // Default to Voice Logging if not set
+            // Removed VOICE_LOGGING from default favorites
+            types ?: emptySet()
         }
 
     override suspend fun setFavoriteEntryTypes(types: Set<EntryType>) {
