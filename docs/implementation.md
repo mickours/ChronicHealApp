@@ -173,3 +173,9 @@ Goal: Interactive tools and notifications.
 - **Integrated Reminders**: Users can now enable and schedule their daily Checkup reminder directly within the Checkup logging screen.
 - **Welcome Wizard Update**: The onboarding flow now proposes a daily Checkup reminder instead of a Body Scan reminder.
 - **Cleanup**: Removed redundant dedicated Body Scan reminders to favor the unified Checkup approach.
+
+## Phase 34: User Profile and Health Foundation (Completed)
+- **Health Profile Collection**: Added a new step to the Welcome Wizard to collect basic user data: **Age, Sex, Weight, Height, and Chronic Conditions**.
+- **Settings Integration**: Added a collapsible "**My Profile**" section in the Settings screen to view and edit this information anytime.
+- **Data Persistence**: Integrated profile fields into the `SettingsRepository` using encrypted DataStore preferences.
+- **Chronic Conditions Management**: Interactive chip-based UI for adding and removing multiple chronic diseases.

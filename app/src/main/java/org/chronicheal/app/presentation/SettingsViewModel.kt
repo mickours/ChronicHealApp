@@ -30,13 +30,34 @@ class SettingsViewModel @Inject constructor(
         _isLoading,
         _message,
         settingsRepository.isAutoBackupEnabled,
-        settingsRepository.backupDirectoryUri
-    ) { isLoading, message, isAutoBackupEnabled, backupDirectoryUri ->
+        settingsRepository.backupDirectoryUri,
+        settingsRepository.userAge,
+        settingsRepository.userSex,
+        settingsRepository.userWeight,
+        settingsRepository.userHeight,
+        settingsRepository.chronicDiseases
+    ) { params ->
+        val isLoading = params[0] as Boolean
+        val message = params[1] as String?
+        val isAutoBackupEnabled = params[2] as Boolean
+        val backupDirectoryUri = params[3] as String?
+        val userAge = params[4] as Int
+        val userSex = params[5] as String?
+        val userWeight = params[6] as Float
+        val userHeight = params[7] as Int
+        @Suppress("UNCHECKED_CAST")
+        val chronicDiseases = params[8] as Set<String>
+
         SettingsUiState(
             isLoading = isLoading,
             message = message,
             isAutoBackupEnabled = isAutoBackupEnabled,
-            backupDirectoryUri = backupDirectoryUri
+            backupDirectoryUri = backupDirectoryUri,
+            userAge = userAge,
+            userSex = userSex,
+            userWeight = userWeight,
+            userHeight = userHeight,
+            chronicDiseases = chronicDiseases
         )
     }.stateIn(
         scope = viewModelScope,
@@ -101,6 +122,13 @@ class SettingsViewModel @Inject constructor(
         }
     }
     
+    // Profile Updates
+    fun setUserAge(age: Int) { viewModelScope.launch { settingsRepository.setUserAge(age) } }
+    fun setUserSex(sex: String?) { viewModelScope.launch { settingsRepository.setUserSex(sex) } }
+    fun setUserWeight(weight: Float) { viewModelScope.launch { settingsRepository.setUserWeight(weight) } }
+    fun setUserHeight(height: Int) { viewModelScope.launch { settingsRepository.setUserHeight(height) } }
+    fun setChronicDiseases(diseases: Set<String>) { viewModelScope.launch { settingsRepository.setChronicDiseases(diseases) } }
+
     fun clearMessage() {
         _message.value = null
     }
@@ -110,5 +138,12 @@ data class SettingsUiState(
     val isLoading: Boolean = false,
     val message: String? = null,
     val isAutoBackupEnabled: Boolean = false,
-    val backupDirectoryUri: String? = null
+    val backupDirectoryUri: String? = null,
+    
+    // Profile data
+    val userAge: Int = 0,
+    val userSex: String? = null,
+    val userWeight: Float = 0f,
+    val userHeight: Int = 0,
+    val chronicDiseases: Set<String> = emptySet()
 )

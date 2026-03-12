@@ -5,6 +5,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -29,6 +31,13 @@ class SettingsRepositoryImpl @Inject constructor(
         val SHOWN_VOICE_PERMISSION_RATIONALE = booleanPreferencesKey("shown_voice_permission_rationale")
         val IS_AUTO_BACKUP_ENABLED = booleanPreferencesKey("is_auto_backup_enabled")
         val BACKUP_DIRECTORY_URI = stringPreferencesKey("backup_directory_uri")
+        
+        // Profile
+        val USER_AGE = intPreferencesKey("user_age")
+        val USER_SEX = stringPreferencesKey("user_sex")
+        val USER_WEIGHT = floatPreferencesKey("user_weight")
+        val USER_HEIGHT = intPreferencesKey("user_height")
+        val CHRONIC_DISEASES = stringSetPreferencesKey("chronic_diseases")
     }
 
     override val isWelcomeWizardCompleted: Flow<Boolean> = context.settingsDataStore.data
@@ -96,5 +105,44 @@ class SettingsRepositoryImpl @Inject constructor(
                 preferences[PreferencesKeys.BACKUP_DIRECTORY_URI] = uri
             }
         }
+    }
+
+    // Profile implementation
+    override val userAge: Flow<Int> = context.settingsDataStore.data
+        .map { preferences -> preferences[PreferencesKeys.USER_AGE] ?: 0 }
+
+    override suspend fun setUserAge(age: Int) {
+        context.settingsDataStore.edit { preferences -> preferences[PreferencesKeys.USER_AGE] = age }
+    }
+
+    override val userSex: Flow<String?> = context.settingsDataStore.data
+        .map { preferences -> preferences[PreferencesKeys.USER_SEX] }
+
+    override suspend fun setUserSex(sex: String?) {
+        context.settingsDataStore.edit { preferences ->
+            if (sex == null) preferences.remove(PreferencesKeys.USER_SEX)
+            else preferences[PreferencesKeys.USER_SEX] = sex
+        }
+    }
+
+    override val userWeight: Flow<Float> = context.settingsDataStore.data
+        .map { preferences -> preferences[PreferencesKeys.USER_WEIGHT] ?: 0f }
+
+    override suspend fun setUserWeight(weight: Float) {
+        context.settingsDataStore.edit { preferences -> preferences[PreferencesKeys.USER_WEIGHT] = weight }
+    }
+
+    override val userHeight: Flow<Int> = context.settingsDataStore.data
+        .map { preferences -> preferences[PreferencesKeys.USER_HEIGHT] ?: 0 }
+
+    override suspend fun setUserHeight(height: Int) {
+        context.settingsDataStore.edit { preferences -> preferences[PreferencesKeys.USER_HEIGHT] = height }
+    }
+
+    override val chronicDiseases: Flow<Set<String>> = context.settingsDataStore.data
+        .map { preferences -> preferences[PreferencesKeys.CHRONIC_DISEASES] ?: emptySet() }
+
+    override suspend fun setChronicDiseases(diseases: Set<String>) {
+        context.settingsDataStore.edit { preferences -> preferences[PreferencesKeys.CHRONIC_DISEASES] = diseases }
     }
 }

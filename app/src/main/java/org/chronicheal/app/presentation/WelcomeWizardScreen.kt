@@ -9,6 +9,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +20,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -26,12 +29,15 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AssignmentTurnedIn
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -39,8 +45,11 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -61,6 +70,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -81,7 +91,7 @@ fun WelcomeWizardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { 4 })
+    val pagerState = rememberPagerState(pageCount = { 5 })
 
     LaunchedEffect(uiState.isCompleted) {
         if (uiState.isCompleted) {
@@ -99,17 +109,30 @@ fun WelcomeWizardScreen(
         ) { page ->
             when (page) {
                 0 -> WelcomePage()
-                1 -> PrivacyPage(
+                1 -> ProfilePage(
+                    age = uiState.userAge,
+                    onAgeChange = viewModel::setUserAge,
+                    sex = uiState.userSex,
+                    onSexChange = viewModel::setUserSex,
+                    weight = uiState.userWeight,
+                    onWeightChange = viewModel::setUserWeight,
+                    height = uiState.userHeight,
+                    onHeightChange = viewModel::setUserHeight,
+                    chronicDiseases = uiState.chronicDiseases,
+                    onAddDisease = viewModel::addChronicDisease,
+                    onRemoveDisease = viewModel::toggleChronicDisease
+                )
+                2 -> PrivacyPage(
                     isBiometricEnabled = uiState.isBiometricLockEnabled,
                     onBiometricToggled = viewModel::setBiometricLockEnabled
                 )
-                2 -> NotificationPermissionPage(
+                3 -> NotificationPermissionPage(
                     isCheckupEnabled = uiState.isCheckupReminderEnabled,
                     onCheckupToggled = viewModel::setCheckupReminder,
                     checkupTime = uiState.checkupReminderTime,
                     onCheckupTimeChange = viewModel::setCheckupReminderTime
                 )
-                3 -> FavoriteEntryTypesPage(
+                4 -> FavoriteEntryTypesPage(
                     selectedTypes = uiState.favoriteTypes,
                     onToggleType = viewModel::toggleFavorite
                 )
@@ -134,13 +157,13 @@ fun WelcomeWizardScreen(
             }
 
             Button(onClick = {
-                if (pagerState.currentPage < 3) {
+                if (pagerState.currentPage < 4) {
                     scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                 } else {
                     viewModel.completeWizard()
                 }
             }) {
-                Text(if (pagerState.currentPage == 3) stringResource(R.string.get_started) else stringResource(R.string.next))
+                Text(if (pagerState.currentPage == 4) stringResource(R.string.get_started) else stringResource(R.string.next))
             }
         }
     }
@@ -182,6 +205,156 @@ fun WelcomePage() {
             textAlign = TextAlign.Start,
             lineHeight = 24.sp
         )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ProfilePage(
+    age: String,
+    onAgeChange: (String) -> Unit,
+    sex: String,
+    onSexChange: (String) -> Unit,
+    weight: String,
+    onWeightChange: (String) -> Unit,
+    height: String,
+    onHeightChange: (String) -> Unit,
+    chronicDiseases: Set<String>,
+    onAddDisease: (String) -> Unit,
+    onRemoveDisease: (String) -> Unit
+) {
+    var newDisease by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Person,
+            contentDescription = null,
+            modifier = Modifier.size(80.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.profile_title),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = stringResource(R.string.profile_desc),
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            OutlinedTextField(
+                value = age,
+                onValueChange = onAgeChange,
+                label = { Text(stringResource(R.string.age_label)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+            
+            // Sex Dropdown replacement (simple buttons for Wizard)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.sex_label), style = MaterialTheme.typography.labelSmall)
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    listOf(stringResource(R.string.sex_male), stringResource(R.string.sex_female), stringResource(R.string.sex_other)).forEach { option ->
+                        val isSelected = sex == option
+                        Surface(
+                            onClick = { onSexChange(option) },
+                            shape = CircleShape,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.size(40.dp).padding(4.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    text = option.take(1),
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            OutlinedTextField(
+                value = weight,
+                onValueChange = onWeightChange,
+                label = { Text(stringResource(R.string.weight_label)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = height,
+                onValueChange = onHeightChange,
+                label = { Text(stringResource(R.string.height_label)) },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        Text(
+            text = stringResource(R.string.chronic_diseases_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.align(Alignment.Start)
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = newDisease,
+                onValueChange = { newDisease = it },
+                placeholder = { Text(stringResource(R.string.add_disease_hint)) },
+                modifier = Modifier.weight(1f),
+                singleLine = true
+            )
+            IconButton(onClick = { 
+                if (newDisease.isNotBlank()) {
+                    onAddDisease(newDisease)
+                    newDisease = ""
+                }
+            }) {
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add))
+            }
+        }
+        
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            chronicDiseases.forEach { disease ->
+                InputChip(
+                    selected = true,
+                    onClick = { onRemoveDisease(disease) },
+                    label = { Text(disease) },
+                    trailingIcon = { Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+            }
+        }
     }
 }
 

@@ -22,7 +22,14 @@ data class WelcomeWizardUiState(
     val isCheckupReminderEnabled: Boolean = false,
     val checkupReminderTime: LocalTime = LocalTime.of(20, 0), // Default 8 PM
     val isBiometricLockEnabled: Boolean = false,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    
+    // Profile Fields
+    val userAge: String = "",
+    val userSex: String = "",
+    val userWeight: String = "",
+    val userHeight: String = "",
+    val chronicDiseases: Set<String> = emptySet()
 )
 
 @HiltViewModel
@@ -59,6 +66,28 @@ class WelcomeWizardViewModel @Inject constructor(
         _uiState.update { it.copy(isBiometricLockEnabled = enabled) }
     }
 
+    // Profile Updates
+    fun setUserAge(age: String) { _uiState.update { it.copy(userAge = age) } }
+    fun setUserSex(sex: String) { _uiState.update { it.copy(userSex = sex) } }
+    fun setUserWeight(weight: String) { _uiState.update { it.copy(userWeight = weight) } }
+    fun setUserHeight(height: String) { _uiState.update { it.copy(userHeight = height) } }
+    
+    fun toggleChronicDisease(disease: String) {
+        _uiState.update { state ->
+            val newDiseases = if (state.chronicDiseases.contains(disease)) {
+                state.chronicDiseases - disease
+            } else {
+                state.chronicDiseases + disease
+            }
+            state.copy(chronicDiseases = newDiseases)
+        }
+    }
+    
+    fun addChronicDisease(disease: String) {
+        if (disease.isBlank()) return
+        _uiState.update { it.copy(chronicDiseases = it.chronicDiseases + disease) }
+    }
+
     fun completeWizard() {
         viewModelScope.launch {
             if (_uiState.value.isCheckupReminderEnabled) {
@@ -74,6 +103,14 @@ class WelcomeWizardViewModel @Inject constructor(
             
             securityRepository.setBiometricLockEnabled(_uiState.value.isBiometricLockEnabled)
             settingsRepository.setFavoriteEntryTypes(_uiState.value.favoriteTypes)
+            
+            // Save Profile Data
+            settingsRepository.setUserAge(_uiState.value.userAge.toIntOrNull() ?: 0)
+            settingsRepository.setUserSex(_uiState.value.userSex.ifBlank { null })
+            settingsRepository.setUserWeight(_uiState.value.userWeight.replace(",", ".").toFloatOrNull() ?: 0f)
+            settingsRepository.setUserHeight(_uiState.value.userHeight.toIntOrNull() ?: 0)
+            settingsRepository.setChronicDiseases(_uiState.value.chronicDiseases)
+
             settingsRepository.setWelcomeWizardCompleted(true)
             _uiState.update { it.copy(isCompleted = true) }
         }

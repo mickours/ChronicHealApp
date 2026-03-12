@@ -18,4 +18,20 @@ interface SettingsRepository {
 
     val backupDirectoryUri: Flow<String?>
     suspend fun setBackupDirectoryUri(uri: String?)
+
+    // User Profile
+    val userAge: Flow<Int>
+    suspend fun setUserAge(age: Int)
+
+    val userSex: Flow<String?>
+    suspend fun setUserSex(sex: String?)
+
+    val userWeight: Flow<Float>
+    suspend fun setUserWeight(weight: Float)
+
+    val userHeight: Flow<Int>
+    suspend fun setUserHeight(height: Int)
+
+    val chronicDiseases: Flow<Set<String>>
+    suspend fun setChronicDiseases(diseases: Set<String>)
 }
