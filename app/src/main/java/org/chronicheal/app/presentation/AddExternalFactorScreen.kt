@@ -35,6 +35,7 @@ import kotlin.math.roundToInt
 fun AddExternalFactorScreen(
     dateString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -49,7 +50,10 @@ fun AddExternalFactorScreen(
 
     val nameSuggestions by viewModel.externalFactorSuggestions.collectAsState()
 
-    LogNowEffect(id = id, viewModel = viewModel,
+    LogNowEffect(
+        id = id, 
+        reminderId = reminderId,
+        viewModel = viewModel,
         onEntryFound = { entry, fromTemplate ->
             existingEntry = entry
             isNewFromTemplate = fromTemplate

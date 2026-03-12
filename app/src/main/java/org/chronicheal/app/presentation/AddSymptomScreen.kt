@@ -35,6 +35,7 @@ fun AddSymptomScreen(
     dateString: String? = null,
     locationString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -51,7 +52,10 @@ fun AddSymptomScreen(
     val nameSuggestions by viewModel.symptomSuggestions.collectAsState()
     val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
 
-    LogNowEffect(id = id, viewModel = viewModel,
+    LogNowEffect(
+        id = id, 
+        reminderId = reminderId,
+        viewModel = viewModel,
         onEntryFound = { entry, fromTemplate ->
             existingEntry = entry
             isNewFromTemplate = fromTemplate

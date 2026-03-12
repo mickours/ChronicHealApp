@@ -27,10 +27,9 @@ class NotificationHelper @Inject constructor(
         
         const val EXTRA_ENTRY_TYPE = "extra_entry_type"
         const val EXTRA_REMINDER_ID = "extra_reminder_id"
+        const val EXTRA_IS_LOG_NOW = "extra_is_log_now"
         
         const val ACTION_SKIP = "org.chronicheal.app.ACTION_SKIP"
-        const val ACTION_SNOOZE_10 = "org.chronicheal.app.ACTION_SNOOZE_10"
-        const val ACTION_SNOOZE_60 = "org.chronicheal.app.ACTION_SNOOZE_60"
         const val ACTION_LOG_NOW = "org.chronicheal.app.ACTION_LOG_NOW"
     }
 
@@ -45,7 +44,7 @@ class NotificationHelper @Inject constructor(
                 REMINDER_CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Channel for health reminders"
+                description = context.getString(R.string.checkup_reminder_desc)
                 enableLights(true)
                 enableVibration(true)
                 setShowBadge(true)
@@ -56,42 +55,31 @@ class NotificationHelper @Inject constructor(
     }
 
     fun showReminderNotification(title: String, message: String, reminderId: Long, entryType: EntryType? = null) {
-        val openIntent = Intent(context, MainActivity::class.java).apply {
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            if (entryType != null) {
-                putExtra(EXTRA_ENTRY_TYPE, entryType.name)
+        // Use a consistent intent for both main click and Log Now action, distinguishing with isLogNow extra
+        fun createActivityIntent(isLogNow: Boolean): Intent {
+            return Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_MAIN
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                if (entryType != null) {
+                    putExtra(EXTRA_ENTRY_TYPE, entryType.name)
+                }
+                putExtra(EXTRA_REMINDER_ID, reminderId)
+                putExtra(EXTRA_IS_LOG_NOW, isLogNow)
             }
-            putExtra(EXTRA_REMINDER_ID, reminderId)
         }
         
         val openPendingIntent = PendingIntent.getActivity(
             context,
             reminderId.toInt(),
-            openIntent,
+            createActivityIntent(isLogNow = false),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val snooze10Intent = Intent(context, ReminderReceiver::class.java).apply {
-            action = ACTION_SNOOZE_10
-            putExtra("reminder_id", reminderId)
-        }
-        val snooze10PendingIntent = PendingIntent.getBroadcast(
+        val logNowPendingIntent = PendingIntent.getActivity(
             context,
-            reminderId.toInt() + 2000,
-            snooze10Intent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val snooze60Intent = Intent(context, ReminderReceiver::class.java).apply {
-            action = ACTION_SNOOZE_60
-            putExtra("reminder_id", reminderId)
-        }
-        val snooze60PendingIntent = PendingIntent.getBroadcast(
-            context,
-            reminderId.toInt() + 3000,
-            snooze60Intent,
+            reminderId.toInt() + 4000,
+            createActivityIntent(isLogNow = true),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
@@ -107,20 +95,6 @@ class NotificationHelper @Inject constructor(
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val logNowIntent = Intent(context, ReminderReceiver::class.java).apply {
-            action = ACTION_LOG_NOW
-            putExtra("reminder_id", reminderId)
-            if (entryType != null) {
-                putExtra(EXTRA_ENTRY_TYPE, entryType.name)
-            }
-        }
-        val logNowPendingIntent = PendingIntent.getBroadcast(
-            context,
-            reminderId.toInt() + 4000,
-            logNowIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
         val builder = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_logo)
             .setContentTitle(title)
@@ -131,22 +105,16 @@ class NotificationHelper @Inject constructor(
             .setContentIntent(openPendingIntent)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .addAction(android.R.drawable.ic_menu_add, "Log Now", logNowPendingIntent)
-            .addAction(android.R.drawable.ic_menu_recent_history, "10 min", snooze10PendingIntent)
-            .addAction(android.R.drawable.ic_menu_recent_history, "1 hour", snooze60PendingIntent)
-
-        if (entryType == EntryType.PAIN) {
-            builder.addAction(
-                android.R.drawable.ic_menu_edit,
-                "Start Body Scan",
-                openPendingIntent
+            .addAction(
+                android.R.drawable.ic_menu_add, 
+                context.getString(R.string.notification_action_log_now), 
+                logNowPendingIntent
             )
-            builder.addAction(
+            .addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
-                "Skip Today",
+                context.getString(R.string.notification_action_skip),
                 skipPendingIntent
             )
-        }
 
         notificationManager.notify(reminderId.toInt(), builder.build())
     }

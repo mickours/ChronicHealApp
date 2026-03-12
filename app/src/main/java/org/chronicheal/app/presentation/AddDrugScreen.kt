@@ -32,6 +32,7 @@ import java.time.ZoneId
 fun AddDrugScreen(
     dateString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -53,7 +54,8 @@ fun AddDrugScreen(
     val nameSuggestions by viewModel.drugSuggestions.collectAsState()
 
     LogNowEffect(
-        id = id, 
+        id = id,
+        reminderId = reminderId,
         viewModel = viewModel,
         onEntryFound = { entry, fromTemplate ->
             existingEntry = entry

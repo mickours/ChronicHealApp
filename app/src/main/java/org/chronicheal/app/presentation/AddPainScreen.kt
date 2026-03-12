@@ -35,6 +35,7 @@ fun AddPainScreen(
     dateString: String? = null,
     locationString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -49,7 +50,10 @@ fun AddPainScreen(
 
     val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
 
-    LogNowEffect(id = id, viewModel = viewModel,
+    LogNowEffect(
+        id = id, 
+        reminderId = reminderId,
+        viewModel = viewModel,
         onEntryFound = { entry, fromTemplate ->
             existingEntry = entry
             isNewFromTemplate = fromTemplate

@@ -36,6 +36,7 @@ import kotlin.math.roundToInt
 fun AddMoodScreen(
     dateString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -47,7 +48,10 @@ fun AddMoodScreen(
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
     var isNewFromTemplate by remember { mutableStateOf(false) }
 
-    LogNowEffect(id = id, viewModel = viewModel,
+    LogNowEffect(
+        id = id, 
+        reminderId = reminderId,
+        viewModel = viewModel,
         onEntryFound = { entry, fromTemplate ->
             existingEntry = entry
             isNewFromTemplate = fromTemplate

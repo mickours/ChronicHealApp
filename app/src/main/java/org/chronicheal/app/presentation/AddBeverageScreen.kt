@@ -43,6 +43,7 @@ import java.time.format.DateTimeFormatter
 fun AddBeverageScreen(
     dateString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -62,35 +63,24 @@ fun AddBeverageScreen(
 
     val nameSuggestions by viewModel.beverageSuggestions.collectAsState()
 
-    LaunchedEffect(id) {
-        if (id != null && existingEntry == null) {
-            var entry = viewModel.getEntryById(id)
-            if (entry == null) {
-                entry = viewModel.getEntryByReminderId(id)
-                if (entry != null) {
-                    isNewFromTemplate = true
-                }
+    LogNowEffect(
+        id = id, 
+        reminderId = reminderId,
+        viewModel = viewModel,
+        onEntryFound = { entry, fromTemplate ->
+            existingEntry = entry
+            isNewFromTemplate = fromTemplate
+            name = entry.name ?: ""
+            quantity = entry.unit ?: ""
+            note = entry.note
+            if (!isNewFromTemplate) {
+                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
-            
-            if (entry != null) {
-                existingEntry = entry
-                name = entry.name ?: ""
-                quantity = entry.unit ?: ""
-                note = entry.note
-                if (!isNewFromTemplate) {
-                    logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                    startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                }
-                setReminder = entry.hasReminder
-                
-                if (entry.hasReminder && entry.reminderId != null) {
-                    viewModel.getReminderById(entry.reminderId)?.let { reminder ->
-                        reminderTime = reminder.time
-                    }
-                }
-            }
-        }
-    }
+            setReminder = entry.hasReminder
+        },
+        onReminderTimeFound = { reminderTime = it }
+    )
 
     val createEntry = {
         HealthEntry(

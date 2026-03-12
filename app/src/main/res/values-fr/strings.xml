@@ -18,6 +18,7 @@
     <string name="delete_entry_title">Supprimer l\'entrée</string>
     <string name="delete_entry_msg">Êtes-vous sûr de vouloir supprimer ce log ?</string>
     <string name="menu">Menu</string>
+    <string name="add">Ajouter</string>
 
     <!-- Timeline Screen -->
     <string name="timeline_title">Journal</string>
@@ -88,7 +89,7 @@
     <string name="track_selection_title">Que souhaitez-vous suivre ?</string>
     <string name="category_occurrence">Ce qui vous arrive</string>
     <string name="category_management">Ce que vous gérez</string>
-    <string name="complete_checkin">Bilan complet</string>
+    <string name="complete_checkin">Bilan</string>
     <string name="complete_checkin_desc">Notez humeur, douleur, sommeil et médicaments d\'un coup</string>
 
     <!-- Entry Details Labels -->
@@ -111,7 +112,7 @@
     <string name="bedtime_label">Heure du coucher :</string>
     <string name="wakeup_time_label">Heure de réveil :</string>
     <string name="computed_duration_label">Durée calculée</string>
-    <string name="quality_label">Qualité : %1$d/5</string>
+    <string name="quality_label">Qualité : %1$d/10</string>
     <string name="impact_label">Impact/Intensité : %1$d/10</string>
     <string name="scale_label">Échelle %1$s</string>
     <string name="select_items_legend">Sélectionnez des éléments dans la légende pour afficher les données</string>
@@ -328,13 +329,26 @@
     <string name="data_control_desc">ChronicHeal est construit avec la vie privée au cœur. Vos informations de santé ne quittent jamais votre téléphone sauf si vous choisissez de les exporter.</string>
     <string name="stay_on_track_title">Restez à Jour</string>
     <string name="stay_on_track_desc">Accordez les permissions de notification pour recevoir des rappels haute précision pour vos médicaments, rendez-vous et bilans quotidiens.</string>
-    <string name="body_scan_reminder_title">Rappel Scan Corporel Quotidien</string>
-    <string name="body_scan_reminder_desc">Une invite pour noter vos points de douleur chaque jour</string>
+    <string name="checkup_reminder_title">Rappel Bilan Quotidien</string>
+    <string name="checkup_reminder_desc">Une invite pour noter votre humeur, douleur, sommeil et médicaments chaque jour</string>
     <string name="reminder_time_label">Heure du Rappel</string>
     <string name="personalize_title">Personnalisez Votre Experience</string>
     <string name="personalize_desc">Sélectionnez les types d\'entrées que vous utiliserez le plus souvent pour les épingler sur votre journal.</string>
     <string name="backup_portability_title">Sauvegarde &amp; Portabilité</string>
     <string name="backup_portability_desc">Vous pouvez créer des sauvegardes chiffrées ou exporter vos données en JSON/PDF à tout moment depuis les Paramètres.</string>
+
+    <!-- Profile -->
+    <string name="profile_title">Mon Profil</string>
+    <string name="profile_desc">Fournir votre profil de santé de base aide à générer des analyses plus pertinentes.</string>
+    <string name="age_label">Âge</string>
+    <string name="sex_label">Sexe</string>
+    <string name="weight_label">Poids (kg)</string>
+    <string name="height_label">Taille (cm)</string>
+    <string name="chronic_diseases_title">Maladies Chroniques / Affections</string>
+    <string name="add_disease_hint">Ajouter une affection…</string>
+    <string name="sex_male">Homme</string>
+    <string name="sex_female">Femme</string>
+    <string name="sex_other">Autre</string>
 
     <!-- Settings -->
     <string name="settings_title">Paramètres</string>
@@ -355,4 +369,10 @@
     <string name="import_json">Importer les données depuis JSON</string>
     <string name="import_warning">Cela remplacera vos données actuelles. Êtes-vous sûr ?</string>
     <string name="app_version_info">ChronicHeal v1.0 - Open Source &amp; Privacy First</string>
+
+    <!-- Notifications -->
+    <string name="notification_reminder_title_format">Rappel : %1$s</string>
+    <string name="notification_reminder_message">C\'est l\'heure de votre activité programmée.</string>
+    <string name="notification_action_log_now">Noter maintenant</string>
+    <string name="notification_action_skip">Passer aujourd\'hui</string>
 </resources>

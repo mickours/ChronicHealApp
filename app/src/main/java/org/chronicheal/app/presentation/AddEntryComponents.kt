@@ -554,28 +554,24 @@ fun ReminderSection(
 @Composable
 fun LogNowEffect(
     id: Long?,
+    reminderId: Long?,
     viewModel: TimelineViewModel,
     onEntryFound: (HealthEntry, Boolean) -> Unit,
     onReminderTimeFound: ((LocalTime) -> Unit)? = null
 ) {
-    LaunchedEffect(id) {
+    LaunchedEffect(id, reminderId) {
         if (id != null) {
-            var entry = viewModel.getEntryById(id)
-            var isNewFromTemplate = false
-            if (entry == null) {
-                entry = viewModel.getEntryByReminderId(id)
-                if (entry != null) {
-                    isNewFromTemplate = true
-                }
-            }
+            val entry = viewModel.getEntryById(id)
             if (entry != null) {
-                onEntryFound(entry, isNewFromTemplate)
-                
+                onEntryFound(entry, false)
+            }
+        } else if (reminderId != null) {
+            val entry = viewModel.getEntryByReminderId(reminderId)
+            if (entry != null) {
+                onEntryFound(entry, true)
                 if (onReminderTimeFound != null) {
-                    entry.reminderId?.let { rId ->
-                        viewModel.getReminderById(rId)?.let { reminder ->
-                            onReminderTimeFound(reminder.time)
-                        }
+                    viewModel.getReminderById(reminderId)?.let { reminder ->
+                        onReminderTimeFound(reminder.time)
                     }
                 }
             }

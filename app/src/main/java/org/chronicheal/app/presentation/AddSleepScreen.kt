@@ -50,6 +50,7 @@ import kotlin.math.roundToInt
 fun AddSleepScreen(
     dateString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -89,27 +90,19 @@ fun AddSleepScreen(
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.of(22, 0)) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(id) {
-        if (id != null && existingEntry == null) {
-            var entry = viewModel.getEntryById(id)
-            if (entry == null) {
-                entry = viewModel.getEntryByReminderId(id)
-                if (entry != null) {
-                    isNewFromTemplate = true
-                }
-            }
-            
+    LaunchedEffect(id, reminderId) {
+        if (id != null) {
+            val entry = viewModel.getEntryById(id)
             if (entry != null) {
                 existingEntry = entry
+                isNewFromTemplate = false
                 quality = entry.intensity?.toFloat() ?: 5f
                 note = entry.note
-                if (!isNewFromTemplate) {
-                    logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                    startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                }
+                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
                 
                 val durationMins = entry.durationMinutes?.toLong() ?: 480L
-                val start = if (isNewFromTemplate) logDate.atTime(startTime) else entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDateTime()
+                val start = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDateTime()
                 val end = start.plus(Duration.ofMinutes(durationMins))
                 endDate = end.toLocalDate()
                 endTime = end.toLocalTime()
@@ -120,6 +113,26 @@ fun AddSleepScreen(
                     viewModel.getReminderById(entry.reminderId)?.let { reminder ->
                         reminderTime = reminder.time
                     }
+                }
+            }
+        } else if (reminderId != null) {
+            val entry = viewModel.getEntryByReminderId(reminderId)
+            if (entry != null) {
+                existingEntry = entry
+                isNewFromTemplate = true
+                quality = entry.intensity?.toFloat() ?: 5f
+                note = entry.note
+                
+                // For template, we want to keep the current time defaults but apply the duration
+                val durationMins = entry.durationMinutes?.toLong() ?: 480L
+                val start = logDate.atTime(startTime)
+                val end = start.plus(Duration.ofMinutes(durationMins))
+                endDate = end.toLocalDate()
+                endTime = end.toLocalTime()
+                
+                setReminder = entry.hasReminder
+                viewModel.getReminderById(reminderId)?.let { reminder ->
+                    reminderTime = reminder.time
                 }
             }
         }

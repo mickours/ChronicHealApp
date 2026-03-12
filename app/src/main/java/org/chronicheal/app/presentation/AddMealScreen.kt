@@ -66,6 +66,7 @@ import java.time.ZoneId
 fun AddMealScreen(
     dateString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -89,7 +90,10 @@ fun AddMealScreen(
     val lastItemFocusRequester = remember { FocusRequester() }
     var shouldFocusNewIngredient by remember { mutableStateOf(false) }
 
-    LogNowEffect(id = id, viewModel = viewModel,
+    LogNowEffect(
+        id = id, 
+        reminderId = reminderId,
+        viewModel = viewModel,
         onEntryFound = { entry, fromTemplate ->
             existingEntry = entry
             isNewFromTemplate = fromTemplate

@@ -34,6 +34,7 @@ import kotlin.math.roundToInt
 fun AddDiseaseScreen(
     dateString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -48,7 +49,10 @@ fun AddDiseaseScreen(
 
     val nameSuggestions by viewModel.diseaseSuggestions.collectAsState()
 
-    LogNowEffect(id = id, viewModel = viewModel,
+    LogNowEffect(
+        id = id, 
+        reminderId = reminderId,
+        viewModel = viewModel,
         onEntryFound = { entry, fromTemplate ->
             existingEntry = entry
             isNewFromTemplate = fromTemplate

@@ -34,6 +34,7 @@ import kotlin.math.roundToInt
 fun AddPeriodScreen(
     dateString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -45,24 +46,24 @@ fun AddPeriodScreen(
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
     var isNewFromTemplate by remember { mutableStateOf(false) }
 
-    LaunchedEffect(id) {
-        if (id != null && existingEntry == null) {
-            var entry = viewModel.getEntryById(id)
-            if (entry == null) {
-                entry = viewModel.getEntryByReminderId(id)
-                if (entry != null) {
-                    isNewFromTemplate = true
-                }
-            }
-            
+    LaunchedEffect(id, reminderId) {
+        if (id != null) {
+            val entry = viewModel.getEntryById(id)
             if (entry != null) {
                 existingEntry = entry
+                isNewFromTemplate = false
                 flowIntensity = entry.intensity?.toFloat() ?: 3f
                 note = entry.note
-                if (!isNewFromTemplate) {
-                    logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                    startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                }
+                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
+            }
+        } else if (reminderId != null) {
+            val entry = viewModel.getEntryByReminderId(reminderId)
+            if (entry != null) {
+                existingEntry = entry
+                isNewFromTemplate = true
+                flowIntensity = entry.intensity?.toFloat() ?: 3f
+                note = entry.note
             }
         }
     }

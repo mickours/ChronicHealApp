@@ -42,6 +42,7 @@ import java.time.format.DateTimeFormatter
 fun AddJournalScreen(
     dateString: String? = null,
     id: Long? = null,
+    reminderId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -57,29 +58,33 @@ fun AddJournalScreen(
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(id) {
-        if (id != null && existingEntry == null) {
-            var entry = viewModel.getEntryById(id)
-            if (entry == null) {
-                entry = viewModel.getEntryByReminderId(id)
-                if (entry != null) {
-                    isNewFromTemplate = true
-                }
-            }
-            
+    LaunchedEffect(id, reminderId) {
+        if (id != null) {
+            val entry = viewModel.getEntryById(id)
             if (entry != null) {
                 existingEntry = entry
+                isNewFromTemplate = false
                 content = entry.note
-                if (!isNewFromTemplate) {
-                    logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
-                    startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                }
+                logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
                 setReminder = entry.hasReminder
                 
                 if (entry.hasReminder && entry.reminderId != null) {
                     viewModel.getReminderById(entry.reminderId)?.let { reminder ->
                         reminderTime = reminder.time
                     }
+                }
+            }
+        } else if (reminderId != null) {
+            val entry = viewModel.getEntryByReminderId(reminderId)
+            if (entry != null) {
+                existingEntry = entry
+                isNewFromTemplate = true
+                content = entry.note
+                setReminder = entry.hasReminder
+                
+                viewModel.getReminderById(reminderId)?.let { reminder ->
+                    reminderTime = reminder.time
                 }
             }
         }

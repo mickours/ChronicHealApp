@@ -369,4 +369,10 @@
     <string name="import_json">Import Data from JSON</string>
     <string name="import_warning">This will replace your current data. Are you sure?</string>
     <string name="app_version_info">ChronicHeal v1.0 - Open Source &amp; Privacy First</string>
+
+    <!-- Notifications -->
+    <string name="notification_reminder_title_format">Reminder: %1$s</string>
+    <string name="notification_reminder_message">It\'s time for your scheduled activity.</string>
+    <string name="notification_action_log_now">Log Now</string>
+    <string name="notification_action_skip">Skip Today</string>
 </resources>

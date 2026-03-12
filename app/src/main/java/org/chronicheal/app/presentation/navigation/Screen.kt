@@ -30,61 +30,62 @@ sealed class Screen(val route: String) {
             return if (query.isNotEmpty()) "entry_type_selection?$query" else "entry_type_selection"
         }
     }
-    object AddPain : Screen("add_pain?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_pain", date, location, id)
+    object AddPain : Screen("add_pain?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_pain", date, location, id, reminderId)
     }
-    object AddDrug : Screen("add_drug?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_drug", date, location, id)
+    object AddDrug : Screen("add_drug?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_drug", date, location, id, reminderId)
     }
-    object AddSymptom : Screen("add_symptom?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_symptom", date, location, id)
+    object AddSymptom : Screen("add_symptom?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_symptom", date, location, id, reminderId)
     }
-    object AddActivity : Screen("add_activity?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_activity", date, location, id)
+    object AddActivity : Screen("add_activity?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_activity", date, location, id, reminderId)
     }
-    object AddMeal : Screen("add_meal?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_meal", date, location, id)
+    object AddMeal : Screen("add_meal?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_meal", date, location, id, reminderId)
     }
-    object AddDisease : Screen("add_disease?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_disease", date, location, id)
+    object AddDisease : Screen("add_disease?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_disease", date, location, id, reminderId)
     }
-    object AddSleep : Screen("add_sleep?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_sleep", date, location, id)
+    object AddSleep : Screen("add_sleep?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_sleep", date, location, id, reminderId)
     }
     object AddSleepSimplified : Screen("add_sleep_simplified?date={date}") {
         fun createRoute(date: String? = null) = if (date != null) "add_sleep_simplified?date=$date" else "add_sleep_simplified"
     }
-    object AddMedicalAppointment : Screen("add_medical_appointment?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_medical_appointment", date, location, id)
+    object AddMedicalAppointment : Screen("add_medical_appointment?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_medical_appointment", date, location, id, reminderId)
     }
-    object AddExternalFactor : Screen("add_external_factor?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_external_factor", date, location, id)
+    object AddExternalFactor : Screen("add_external_factor?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_external_factor", date, location, id, reminderId)
     }
-    object AddJournal : Screen("add_journal?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_journal", date, location, id)
+    object AddJournal : Screen("add_journal?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_journal", date, location, id, reminderId)
     }
-    object AddPeriod : Screen("add_period?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_period", date, location, id)
+    object AddPeriod : Screen("add_period?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_period", date, location, id, reminderId)
     }
-    object AddBeverage : Screen("add_beverage?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_beverage", date, location, id)
+    object AddBeverage : Screen("add_beverage?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_beverage", date, location, id, reminderId)
     }
-    object AddStool : Screen("add_stool?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_stool", date, location, id)
+    object AddStool : Screen("add_stool?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_stool", date, location, id, reminderId)
     }
-    object AddMood : Screen("add_mood?date={date}&location={location}&id={id}") {
-        fun createRoute(date: String? = null, location: String? = null, id: Long? = null) = createQueryRoute("add_mood", date, location, id)
+    object AddMood : Screen("add_mood?date={date}&location={location}&id={id}&reminderId={reminderId}") {
+        fun createRoute(date: String? = null, location: String? = null, id: Long? = null, reminderId: Long? = null) = createQueryRoute("add_mood", date, location, id, reminderId)
     }
     object AddCompleteEntry : Screen("add_complete_entry?date={date}") {
         fun createRoute(date: String? = null) = if (date != null) "add_complete_entry?date=$date" else "add_complete_entry"
     }
     object VoiceLogging : Screen("voice_logging")
 
-    protected fun createQueryRoute(base: String, date: String?, location: String?, id: Long? = null): String {
+    protected fun createQueryRoute(base: String, date: String?, location: String?, id: Long? = null, reminderId: Long? = null): String {
         val datePart = if (date != null) "date=$date" else null
         val locPart = if (location != null) "location=$location" else null
         val idPart = if (id != null) "id=$id" else null
-        val query = listOfNotNull(datePart, locPart, idPart).joinToString("&")
+        val remIdPart = if (reminderId != null) "reminderId=$reminderId" else null
+        val query = listOfNotNull(datePart, locPart, idPart, remIdPart).joinToString("&")
         return if (query.isNotEmpty()) "$base?$query" else base
     }
 }
