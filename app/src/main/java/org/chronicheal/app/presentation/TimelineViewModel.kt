@@ -105,6 +105,16 @@ class TimelineViewModel @Inject constructor(
             initialValue = emptyList()
         )
 
+    val checkupReminders: StateFlow<List<Reminder>> = reminderRepository.getAllReminders()
+        .map { reminders: List<Reminder> -> 
+            reminders.filter { it.title == "Checkup" || it.title == "Daily Checkup" || it.title == "Complete Check-in" } 
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     private fun calculateWeeklyStats(entries: List<HealthEntry>): WeeklyStats? {
         val now = Instant.now()
         val oneWeekAgo = now.minus(7, ChronoUnit.DAYS)
@@ -299,6 +309,17 @@ class TimelineViewModel @Inject constructor(
                 reminderScheduler.schedule(savedReminder)
             }
             updateEntryUseCase(entry.copy(reminderId = reminderId))
+        }
+    }
+
+    fun saveReminder(reminder: Reminder) {
+        viewModelScope.launch {
+            val id = reminderRepository.insertReminder(reminder)
+            if (reminder.isEnabled) {
+                reminderScheduler.schedule(reminder.copy(id = id))
+            } else {
+                reminderScheduler.cancel(reminder.copy(id = id))
+            }
         }
     }
 

@@ -17,17 +17,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
@@ -74,6 +77,20 @@ fun AddCompleteEntryScreen(
     val context = LocalContext.current
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
+
+    // Reminder State
+    var isReminderEnabled by rememberSaveable { mutableStateOf(false) }
+    var reminderTime by rememberSaveable { mutableStateOf(LocalTime.of(20, 0)) }
+    
+    val checkupReminders by viewModel.checkupReminders.collectAsState()
+    
+    LaunchedEffect(checkupReminders) {
+        val existingReminder = checkupReminders.firstOrNull()
+        if (existingReminder != null) {
+            isReminderEnabled = existingReminder.isEnabled
+            reminderTime = existingReminder.time
+        }
+    }
 
     // Mood State
     var moodIntensity by rememberSaveable { mutableFloatStateOf(5f) }
@@ -135,6 +152,20 @@ fun AddCompleteEntryScreen(
     val handleSave = {
         val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
         val entries = mutableListOf<HealthEntry>()
+
+        // Update/Create Checkup Reminder
+        val currentReminder = checkupReminders.firstOrNull()
+        if (isReminderEnabled) {
+            val reminder = (currentReminder ?: Reminder(
+                title = "Checkup",
+                time = reminderTime,
+                daysOfWeek = (1..7).toSet(),
+                isEnabled = true
+            )).copy(time = reminderTime, isEnabled = true)
+            viewModel.saveReminder(reminder)
+        } else if (currentReminder != null) {
+            viewModel.saveReminder(currentReminder.copy(isEnabled = false))
+        }
 
         // Add Mood
         entries.add(
@@ -239,6 +270,62 @@ fun AddCompleteEntryScreen(
                 startTime = startTime,
                 onStartTimeChange = { startTime = it }
             )
+
+            // Reminder Settings
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(8.dp))
+                            Text(text = stringResource(R.string.set_daily_reminder), style = MaterialTheme.typography.titleMedium)
+                        }
+                        Switch(checked = isReminderEnabled, onCheckedChange = { isReminderEnabled = it })
+                    }
+                    if (isReminderEnabled) {
+                        Spacer(Modifier.height(8.dp))
+                        HorizontalDivider()
+                        Spacer(Modifier.height(8.dp))
+                        var showTimePicker by remember { mutableStateOf(false) }
+                        val timeFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(text = stringResource(R.string.reminder_time_label), style = MaterialTheme.typography.bodyMedium)
+                            TextButton(onClick = { showTimePicker = true }) {
+                                Text(text = reminderTime.format(timeFormatter))
+                            }
+                        }
+
+                        if (showTimePicker) {
+                            val timeState = rememberTimePickerState(initialHour = reminderTime.hour, initialMinute = reminderTime.minute)
+                            TimePickerDialog(
+                                onDismissRequest = { showTimePicker = false },
+                                confirmButton = {
+                                    TextButton(onClick = {
+                                        reminderTime = LocalTime.of(timeState.hour, timeState.minute)
+                                        showTimePicker = false
+                                    }) { Text(stringResource(R.string.ok)) }
+                                },
+                                dismissButton = {
+                                    TextButton(onClick = { showTimePicker = false }) {
+                                        Text(stringResource(R.string.cancel))
+                                    }
+                                }
+                            ) {
+                                TimePicker(state = timeState)
+                            }
+                        }
+                    }
+                }
+            }
 
             SectionHeader(type = EntryType.MOOD, title = stringResource(R.string.section_mood))
             MoodSection(

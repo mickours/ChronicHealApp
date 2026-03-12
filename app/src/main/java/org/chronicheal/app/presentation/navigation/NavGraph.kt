@@ -28,7 +28,6 @@ import org.chronicheal.app.presentation.AddSleepScreen
 import org.chronicheal.app.presentation.AddStoolScreen
 import org.chronicheal.app.presentation.AddSymptomScreen
 import org.chronicheal.app.presentation.AnalyticsScreen
-import org.chronicheal.app.presentation.BodyScanRemindersScreen
 import org.chronicheal.app.presentation.BodyScanScreen
 import org.chronicheal.app.presentation.CalendarScreen
 import org.chronicheal.app.presentation.DayViewScreen
@@ -141,8 +140,8 @@ fun NavGraph(
                 onAnalyticsClick = {
                     navController.navigate(Screen.Analytics.route)
                 },
-                onBodyScanClick = {
-                    navController.navigate(Screen.BodyScan.createRoute())
+                onCompleteEntryClick = {
+                    navController.navigate(Screen.AddCompleteEntry.createRoute())
                 },
                 onVoiceLoggingClick = {
                     navController.navigate(Screen.VoiceLogging.route)
@@ -173,19 +172,7 @@ fun NavGraph(
             val date = backStackEntry.arguments?.getString("date")
             BodyScanScreen(
                 dateString = date,
-                onBackClick = { navController.popBackStack() },
-                onRemindersClick = { navController.navigate(Screen.BodyScanReminders.route) }
-            )
-        }
-        composable(route = Screen.BodyScanReminders.route) {
-            BodyScanRemindersScreen(
-                onBackClick = { navController.popBackStack() },
-                onAddReminderClick = { 
-                    navController.navigate(Screen.AddReminder.createRoute(type = EntryType.PAIN.name)) 
-                },
-                onReminderClick = { reminderId ->
-                    navController.navigate(Screen.AddReminder.createRoute(id = reminderId))
-                }
+                onBackClick = { navController.popBackStack() }
             )
         }
         composable(

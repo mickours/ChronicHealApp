@@ -19,8 +19,8 @@ import javax.inject.Inject
 
 data class WelcomeWizardUiState(
     val favoriteTypes: Set<EntryType> = setOf(EntryType.VOICE_LOGGING),
-    val isBodyScanReminderEnabled: Boolean = false,
-    val bodyScanReminderTime: LocalTime = LocalTime.of(20, 0), // Default 8 PM
+    val isCheckupReminderEnabled: Boolean = false,
+    val checkupReminderTime: LocalTime = LocalTime.of(20, 0), // Default 8 PM
     val isBiometricLockEnabled: Boolean = false,
     val isCompleted: Boolean = false
 )
@@ -47,12 +47,12 @@ class WelcomeWizardViewModel @Inject constructor(
         }
     }
 
-    fun setBodyScanReminder(enabled: Boolean) {
-        _uiState.update { it.copy(isBodyScanReminderEnabled = enabled) }
+    fun setCheckupReminder(enabled: Boolean) {
+        _uiState.update { it.copy(isCheckupReminderEnabled = enabled) }
     }
 
-    fun setBodyScanReminderTime(time: LocalTime) {
-        _uiState.update { it.copy(bodyScanReminderTime = time) }
+    fun setCheckupReminderTime(time: LocalTime) {
+        _uiState.update { it.copy(checkupReminderTime = time) }
     }
 
     fun setBiometricLockEnabled(enabled: Boolean) {
@@ -61,12 +61,11 @@ class WelcomeWizardViewModel @Inject constructor(
 
     fun completeWizard() {
         viewModelScope.launch {
-            if (_uiState.value.isBodyScanReminderEnabled) {
+            if (_uiState.value.isCheckupReminderEnabled) {
                 val reminder = Reminder(
-                    title = "Daily Body Scan",
-                    time = _uiState.value.bodyScanReminderTime,
+                    title = "Checkup",
+                    time = _uiState.value.checkupReminderTime,
                     daysOfWeek = (1..7).toSet(),
-                    entryType = EntryType.PAIN,
                     isEnabled = true
                 )
                 val id = reminderRepository.insertReminder(reminder)

@@ -88,7 +88,7 @@
     <string name="track_selection_title">What do you want to track?</string>
     <string name="category_occurrence">What occurs to you</string>
     <string name="category_management">What you can manage</string>
-    <string name="complete_checkin">Complete Check-in</string>
+    <string name="complete_checkin">Checkup</string>
     <string name="complete_checkin_desc">Log mood, pain, sleep, and drugs at once</string>
 
     <!-- Entry Details Labels -->
@@ -328,8 +328,8 @@
     <string name="data_control_desc">ChronicHeal is built with privacy at its core. Your health information never leaves your phone unless you choose to export it.</string>
     <string name="stay_on_track_title">Stay on Track</string>
     <string name="stay_on_track_desc">Grant notification permissions to receive high-precision reminders for medications, appointments, and daily check-ins.</string>
-    <string name="body_scan_reminder_title">Daily Body Scan Reminder</string>
-    <string name="body_scan_reminder_desc">Prompt to log your pain points every day</string>
+    <string name="checkup_reminder_title">Daily Checkup Reminder</string>
+    <string name="checkup_reminder_desc">Prompt to log your mood, pain, sleep and medication every day</string>
     <string name="reminder_time_label">Reminder Time</string>
     <string name="personalize_title">Personalize Your Experience</string>
     <string name="personalize_desc">Select the entry types you\'ll use most often to pin them to your timeline.</string>

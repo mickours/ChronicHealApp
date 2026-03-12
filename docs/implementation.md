@@ -137,6 +137,7 @@ Goal: Interactive tools and notifications.
 - **Multi-Entry Voice Logging**: Support for multiple entries in one voice command.
 - **Permission Transparency**: One-time rationale dialog for microphone access.
 - **Timeline UX**: Reduced Quick Add section height.
+- **Empty State Illustrations**: Added the "Body-dont-know" SVG illustration to the empty states of the Reminders and Body Scan Reminders screens for better visual feedback.
 
 ## Phase 23: Unified Assessment and Voice Prioritization (Completed)
 - **Voice Entry Prioritization**: Moved Voice Logging to the top of entry selection.
@@ -166,13 +167,9 @@ Goal: Interactive tools and notifications.
 - **Internal Storage**: Backups are stored in the app's internal files directory (`/backups`) for maximum privacy and security.
 - **User Control**: Added a toggle in the Settings screen to enable or disable automated backups.
 
-## Phase 33: Full Checkup and Body Scan Refinement (Completed)
-- **Dedicated Body Scan for Pain**:
-    - Decoupled the Body Scan from the Full Checkup.
-    - The "Add Pain" action now leads directly to the `BodyScanScreen` which focuses exclusively on anatomical pain logging.
-- **Enhanced Full Checkup (`AddCompleteEntryScreen`)**:
-    - **Drug Compliance**: Automatically fetches enabled drug reminders and asks "Did you take your drug X?".
-    - **Multi-Symptom Logging**: Added support for adding an unlimited number of symptoms within a single check-in session.
-    - **Sleep Assessment**: Added a "Did you sleep well?" section with a 1-10 quality slider and duration input.
-    - **Streamlined Content**: Removed less frequent fields like "period" and "stool" from the unified check-in to reduce cognitive load.
-- **Navigation UX**: Updated `NavGraph` and `EntryTypeSelectionScreen` to ensure "Add Pain" shortcuts lead to the interactive body scan.
+## Phase 33: Checkup and Integrated Reminders (Completed)
+- **Renamed to Checkup**: Rebranded "Complete Check-in" as "**Checkup**" throughout the app for better clarity.
+- **Timeline Integration**: Replaced the Body Scan header shortcut with a dedicated Checkup button.
+- **Integrated Reminders**: Users can now enable and schedule their daily Checkup reminder directly within the Checkup logging screen.
+- **Welcome Wizard Update**: The onboarding flow now proposes a daily Checkup reminder instead of a Body Scan reminder.
+- **Cleanup**: Removed redundant dedicated Body Scan reminders to favor the unified Checkup approach.

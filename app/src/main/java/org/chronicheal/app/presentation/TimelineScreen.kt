@@ -36,8 +36,8 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingFlat
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.Accessibility
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
@@ -112,7 +112,7 @@ fun TimelineScreen(
     onCalendarClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onAnalyticsClick: () -> Unit,
-    onBodyScanClick: () -> Unit,
+    onCompleteEntryClick: () -> Unit,
     onVoiceLoggingClick: () -> Unit,
     onEntryTypeClick: (EntryType) -> Unit,
     onEntryClick: (HealthEntry) -> Unit,
@@ -202,8 +202,8 @@ fun TimelineScreen(
                                 contentDescription = "Toggle Search"
                             )
                         }
-                        IconButton(onClick = onBodyScanClick) {
-                            Icon(Icons.Default.Accessibility, contentDescription = "Body Scan")
+                        IconButton(onClick = onCompleteEntryClick) {
+                            Icon(Icons.Default.AssignmentTurnedIn, contentDescription = stringResource(R.string.complete_checkin))
                         }
                         IconButton(onClick = onAnalyticsClick) {
                             Icon(Icons.AutoMirrored.Filled.ShowChart, contentDescription = "Analytics")

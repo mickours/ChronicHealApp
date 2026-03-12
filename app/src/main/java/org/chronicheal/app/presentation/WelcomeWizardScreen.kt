@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,9 +24,11 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
@@ -38,6 +41,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,9 +57,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,6 +72,7 @@ import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 fun WelcomeWizardScreen(
@@ -96,10 +104,10 @@ fun WelcomeWizardScreen(
                     onBiometricToggled = viewModel::setBiometricLockEnabled
                 )
                 2 -> NotificationPermissionPage(
-                    isBodyScanEnabled = uiState.isBodyScanReminderEnabled,
-                    onBodyScanToggled = viewModel::setBodyScanReminder,
-                    bodyScanTime = uiState.bodyScanReminderTime,
-                    onBodyScanTimeChange = viewModel::setBodyScanReminderTime
+                    isCheckupEnabled = uiState.isCheckupReminderEnabled,
+                    onCheckupToggled = viewModel::setCheckupReminder,
+                    checkupTime = uiState.checkupReminderTime,
+                    onCheckupTimeChange = viewModel::setCheckupReminderTime
                 )
                 3 -> FavoriteEntryTypesPage(
                     selectedTypes = uiState.favoriteTypes,
@@ -269,24 +277,20 @@ fun PrivacyPage(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationPermissionPage(
-    isBodyScanEnabled: Boolean,
-    onBodyScanToggled: (Boolean) -> Unit,
-    bodyScanTime: LocalTime,
-    onBodyScanTimeChange: (LocalTime) -> Unit
+    isCheckupEnabled: Boolean,
+    onCheckupToggled: (Boolean) -> Unit,
+    checkupTime: LocalTime,
+    onCheckupTimeChange: (LocalTime) -> Unit
 ) {
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            onBodyScanToggled(true)
+            onCheckupToggled(true)
         }
     }
 
     var showTimePicker by remember { mutableStateOf(false) }
-    val timeState = rememberTimePickerState(
-        initialHour = bodyScanTime.hour,
-        initialMinute = bodyScanTime.minute
-    )
 
     Column(
         modifier = Modifier
@@ -313,7 +317,8 @@ fun NotificationPermissionPage(
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(32.dp))
+        
+        Spacer(modifier = Modifier.height(24.dp))
         
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -326,27 +331,28 @@ fun NotificationPermissionPage(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(text = stringResource(R.string.body_scan_reminder_title), style = MaterialTheme.typography.titleMedium)
-                        Text(text = stringResource(R.string.body_scan_reminder_desc), style = MaterialTheme.typography.bodySmall)
+                        Text(text = stringResource(R.string.checkup_reminder_title), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = stringResource(R.string.checkup_reminder_desc),
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                     Switch(
-                        checked = isBodyScanEnabled,
-                        onCheckedChange = { checked ->
-                            if (checked) {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
-                                    onBodyScanToggled(true)
-                                }
+                        checked = isCheckupEnabled,
+                        onCheckedChange = {
+                            if (it && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             } else {
-                                onBodyScanToggled(false)
+                                onCheckupToggled(it)
                             }
                         }
                     )
                 }
                 
-                if (isBodyScanEnabled) {
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                if (isCheckupEnabled) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -354,40 +360,42 @@ fun NotificationPermissionPage(
                     ) {
                         Text(text = stringResource(R.string.reminder_time_label), style = MaterialTheme.typography.bodyMedium)
                         TextButton(onClick = { showTimePicker = true }) {
-                            Text(
-                                text = bodyScanTime.format(DateTimeFormatter.ofPattern("HH:mm")),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+                            val timeFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
+                            Text(text = checkupTime.format(timeFormatter))
                         }
                     }
                 }
             }
         }
-    }
 
-    if (showTimePicker) {
-        TimePickerDialog(
-            onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    onBodyScanTimeChange(LocalTime.of(timeState.hour, timeState.minute))
-                    showTimePicker = false
-                }) {
-                    Text(stringResource(R.string.ok))
+        if (showTimePicker) {
+            val timeState = rememberTimePickerState(
+                initialHour = checkupTime.hour,
+                initialMinute = checkupTime.minute
+            )
+            TimePickerDialog(
+                onDismissRequest = { showTimePicker = false },
+                confirmButton = {
+                    TextButton(onClick = {
+                        onCheckupTimeChange(LocalTime.of(timeState.hour, timeState.minute))
+                        showTimePicker = false
+                    }) {
+                        Text(stringResource(R.string.ok))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showTimePicker = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
+            ) {
+                TimePicker(state = timeState)
             }
-        ) {
-            TimePicker(state = timeState)
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FavoriteEntryTypesPage(
     selectedTypes: Set<EntryType>,
@@ -396,45 +404,66 @@ fun FavoriteEntryTypesPage(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Text(
             text = stringResource(R.string.personalize_title),
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = stringResource(R.string.personalize_desc),
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
+        
         Spacer(modifier = Modifier.height(24.dp))
+        
         LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
+            columns = GridCells.Adaptive(100.dp),
             modifier = Modifier.weight(1f),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(EntryType.entries) { type ->
-                val isSelected = selectedTypes.contains(type)
-                Card(
-                    onClick = { onToggleType(type) },
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
-                    ),
-                    modifier = Modifier.height(80.dp)
+            items(EntryType.entries.filter { it != EntryType.VOICE_LOGGING }) { type ->
+                val isSelected = type in selectedTypes
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                        .clickable { onToggleType(type) }
+                        .padding(8.dp)
                 ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = "${type.emoji} ${stringResource(type.displayRes)}", textAlign = TextAlign.Center)
+                    Surface(
+                        shape = CircleShape,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(text = type.emoji, fontSize = 24.sp)
                             if (isSelected) {
-                                Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp).align(Alignment.BottomEnd)
+                                )
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(type.displayRes),
+                        style = MaterialTheme.typography.labelSmall,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }

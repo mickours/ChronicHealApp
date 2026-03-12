@@ -20,13 +20,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -73,7 +69,6 @@ import kotlin.math.roundToInt
 fun BodyScanScreen(
     dateString: String? = null,
     onBackClick: () -> Unit,
-    onRemindersClick: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -82,7 +77,6 @@ fun BodyScanScreen(
     var showBottomSheet by remember { mutableStateOf(false) }
     var selectedRegionId by remember { mutableStateOf<String?>(null) }
     var existingEntryId by remember { mutableStateOf<Long?>(null) }
-    var showMenu by remember { mutableStateOf(false) }
 
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
@@ -110,28 +104,6 @@ fun BodyScanScreen(
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-                    }
-                },
-                actions = {
-                    Box {
-                        IconButton(onClick = { showMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.menu))
-                        }
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.reminders_title)) },
-                                onClick = {
-                                    showMenu = false
-                                    onRemindersClick()
-                                },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Notifications, contentDescription = null)
-                                }
-                            )
-                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
