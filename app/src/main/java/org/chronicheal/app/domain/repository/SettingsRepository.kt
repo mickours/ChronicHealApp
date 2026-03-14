@@ -34,4 +34,11 @@ interface SettingsRepository {
 
     val chronicDiseases: Flow<Set<String>>
     suspend fun setChronicDiseases(diseases: Set<String>)
+
+    // Allergens
+    val allergenOrder: Flow<List<String>>
+    suspend fun setAllergenOrder(order: List<String>)
+
+    val deactivatedAllergens: Flow<Set<String>>
+    suspend fun setDeactivatedAllergens(allergens: Set<String>)
 }

@@ -184,6 +184,18 @@
     <string name="quantity">Qty</string>
     <string name="unit">Unit</string>
     <string name="advanced_options">Advanced Options</string>
+    <string name="is_alcoholic">Alcoholic</string>
+    <string name="is_caffeinated">Caffeinated</string>
+    <string name="allergens">Allergens</string>
+    <string name="allergen_gluten">Gluten</string>
+    <string name="allergen_lactose">Lactose</string>
+    <string name="allergen_nuts">Nuts</string>
+    <string name="allergen_shellfish">Shellfish</string>
+    <string name="allergen_eggs">Eggs</string>
+    <string name="allergen_fish">Fish</string>
+    <string name="allergen_soy">Soy</string>
+    <string name="allergen_wheat">Wheat</string>
+    <string name="step_allergens_desc">Select which allergens you want to track in your meals. You can change this anytime in Settings.</string>
 
     <!-- Calendar Screen -->
     <string name="calendar_title">Calendar</string>

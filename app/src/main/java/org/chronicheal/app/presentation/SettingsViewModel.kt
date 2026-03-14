@@ -35,7 +35,8 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.userSex,
         settingsRepository.userWeight,
         settingsRepository.userHeight,
-        settingsRepository.chronicDiseases
+        settingsRepository.chronicDiseases,
+        settingsRepository.deactivatedAllergens
     ) { params ->
         val isLoading = params[0] as Boolean
         val message = params[1] as String?
@@ -47,6 +48,8 @@ class SettingsViewModel @Inject constructor(
         val userHeight = params[7] as Int
         @Suppress("UNCHECKED_CAST")
         val chronicDiseases = params[8] as Set<String>
+        @Suppress("UNCHECKED_CAST")
+        val deactivatedAllergens = params[9] as Set<String>
 
         SettingsUiState(
             isLoading = isLoading,
@@ -57,7 +60,8 @@ class SettingsViewModel @Inject constructor(
             userSex = userSex,
             userWeight = userWeight,
             userHeight = userHeight,
-            chronicDiseases = chronicDiseases
+            chronicDiseases = chronicDiseases,
+            deactivatedAllergens = deactivatedAllergens
         )
     }.stateIn(
         scope = viewModelScope,
@@ -129,6 +133,12 @@ class SettingsViewModel @Inject constructor(
     fun setUserHeight(height: Int) { viewModelScope.launch { settingsRepository.setUserHeight(height) } }
     fun setChronicDiseases(diseases: Set<String>) { viewModelScope.launch { settingsRepository.setChronicDiseases(diseases) } }
 
+    fun setDeactivatedAllergens(allergens: Set<String>) {
+        viewModelScope.launch {
+            settingsRepository.setDeactivatedAllergens(allergens)
+        }
+    }
+
     fun clearMessage() {
         _message.value = null
     }
@@ -145,5 +155,6 @@ data class SettingsUiState(
     val userSex: String? = null,
     val userWeight: Float = 0f,
     val userHeight: Int = 0,
-    val chronicDiseases: Set<String> = emptySet()
+    val chronicDiseases: Set<String> = emptySet(),
+    val deactivatedAllergens: Set<String> = emptySet()
 )

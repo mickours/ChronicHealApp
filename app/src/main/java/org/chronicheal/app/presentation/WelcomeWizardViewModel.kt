@@ -29,7 +29,10 @@ data class WelcomeWizardUiState(
     val userSex: String = "",
     val userWeight: String = "",
     val userHeight: String = "",
-    val chronicDiseases: Set<String> = emptySet()
+    val chronicDiseases: Set<String> = emptySet(),
+    
+    // Allergens
+    val deactivatedAllergens: Set<String> = emptySet()
 )
 
 @HiltViewModel
@@ -88,6 +91,14 @@ class WelcomeWizardViewModel @Inject constructor(
         _uiState.update { it.copy(chronicDiseases = it.chronicDiseases + disease) }
     }
 
+    fun toggleAllergenDeactivation(allergen: String) {
+        _uiState.update { state ->
+            val current = state.deactivatedAllergens
+            val next = if (allergen in current) current - allergen else current + allergen
+            state.copy(deactivatedAllergens = next)
+        }
+    }
+
     fun completeWizard() {
         viewModelScope.launch {
             if (_uiState.value.isCheckupReminderEnabled) {
@@ -110,6 +121,9 @@ class WelcomeWizardViewModel @Inject constructor(
             settingsRepository.setUserWeight(_uiState.value.userWeight.replace(",", ".").toFloatOrNull() ?: 0f)
             settingsRepository.setUserHeight(_uiState.value.userHeight.toIntOrNull() ?: 0)
             settingsRepository.setChronicDiseases(_uiState.value.chronicDiseases)
+            
+            // Save Allergens
+            settingsRepository.setDeactivatedAllergens(_uiState.value.deactivatedAllergens)
 
             settingsRepository.setWelcomeWizardCompleted(true)
             _uiState.update { it.copy(isCompleted = true) }

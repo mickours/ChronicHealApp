@@ -213,6 +213,12 @@ class TimelineViewModel @Inject constructor(
         selector = { it.name }
     )
 
+    val allergenOrder: StateFlow<List<String>> = settingsRepository.allergenOrder
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val deactivatedAllergens: StateFlow<Set<String>> = settingsRepository.deactivatedAllergens
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
@@ -354,6 +360,20 @@ class TimelineViewModel @Inject constructor(
     fun setHasShownVoiceRationale(shown: Boolean) {
         viewModelScope.launch {
             settingsRepository.setHasShownVoicePermissionRationale(shown)
+        }
+    }
+
+    fun setAllergenOrder(order: List<String>) {
+        viewModelScope.launch {
+            settingsRepository.setAllergenOrder(order)
+        }
+    }
+
+    fun toggleAllergenDeactivation(allergen: String) {
+        viewModelScope.launch {
+            val current = settingsRepository.deactivatedAllergens.first()
+            val next = if (allergen in current) current - allergen else current + allergen
+            settingsRepository.setDeactivatedAllergens(next)
         }
     }
 }

@@ -16,7 +16,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +57,9 @@ fun AddBeverageScreen(
     var setReminder by rememberSaveable { mutableStateOf(false) }
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    var isAlcoholic by rememberSaveable { mutableStateOf(false) }
+    var isCaffeinated by rememberSaveable { mutableStateOf(false) }
+    
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
     var isNewFromTemplate by remember { mutableStateOf(false) }
 
@@ -78,6 +80,8 @@ fun AddBeverageScreen(
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
             setReminder = entry.hasReminder
+            isAlcoholic = entry.isAlcoholic ?: false
+            isCaffeinated = entry.isCaffeinated ?: false
         },
         onReminderTimeFound = { reminderTime = it }
     )
@@ -92,7 +96,9 @@ fun AddBeverageScreen(
             note = note,
             hasReminder = setReminder,
             reminderId = existingEntry?.reminderId,
-            durationMinutes = existingEntry?.durationMinutes
+            durationMinutes = existingEntry?.durationMinutes,
+            isAlcoholic = isAlcoholic,
+            isCaffeinated = isCaffeinated
         )
     }
 
@@ -160,6 +166,16 @@ fun AddBeverageScreen(
                 onValueChange = { quantity = it },
                 label = stringResource(R.string.dosage_label)
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = isAlcoholic, onCheckedChange = { isAlcoholic = it })
+                Text(text = stringResource(R.string.is_alcoholic), style = MaterialTheme.typography.bodyLarge)
+                Spacer(modifier = Modifier.padding(8.dp))
+                Checkbox(checked = isCaffeinated, onCheckedChange = { isCaffeinated = it })
+                Text(text = stringResource(R.string.is_caffeinated), style = MaterialTheme.typography.bodyLarge)
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 

@@ -18,11 +18,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,6 +57,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
+import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Ingredient
@@ -80,12 +84,30 @@ fun AddMealScreen(
     var isNewFromTemplate by remember { mutableStateOf(false) }
 
     val ingredients = remember { mutableStateListOf<Ingredient>() }
+    val selectedAllergenIds = remember { mutableStateListOf<String>() }
 
     var setReminder by rememberSaveable { mutableStateOf(false) }
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var advancedOptionsExpanded by rememberSaveable { mutableStateOf(false) }
 
     val nameSuggestions by viewModel.mealSuggestions.collectAsState()
+    val allergenOrderFromSettings by viewModel.allergenOrder.collectAsState()
+    val deactivatedAllergenIds by viewModel.deactivatedAllergens.collectAsState()
+    
+    var currentVisibleAllergenIds by remember { mutableStateOf(emptyList<String>()) }
+    
+    LaunchedEffect(allergenOrderFromSettings, deactivatedAllergenIds) {
+        val baseOrder = if (allergenOrderFromSettings.isEmpty()) {
+            Allergen.allIds
+        } else {
+            val saved = allergenOrderFromSettings
+            val extras = Allergen.allIds.filter { it !in saved }
+            saved + extras
+        }
+        // STRICTLY show only activated allergens as requested
+        currentVisibleAllergenIds = baseOrder.filter { it !in deactivatedAllergenIds }
+    }
+
     val focusManager = LocalFocusManager.current
     val lastItemFocusRequester = remember { FocusRequester() }
     var shouldFocusNewIngredient by remember { mutableStateOf(false) }
@@ -107,6 +129,9 @@ fun AddMealScreen(
             
             ingredients.clear()
             entry.ingredients?.let { ingredients.addAll(it) }
+            
+            selectedAllergenIds.clear()
+            entry.allergens?.let { selectedAllergenIds.addAll(it) }
         },
         onReminderTimeFound = { reminderTime = it }
     )
@@ -137,7 +162,8 @@ fun AddMealScreen(
             hasReminder = setReminder,
             reminderId = existingEntry?.reminderId,
             durationMinutes = existingEntry?.durationMinutes,
-            ingredients = if (ingredients.isEmpty()) null else ingredients.toList()
+            ingredients = if (ingredients.isEmpty()) null else ingredients.toList(),
+            allergens = if (selectedAllergenIds.isEmpty()) null else selectedAllergenIds.toList()
         )
     }
 
@@ -192,8 +218,71 @@ fun AddMealScreen(
                     keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                if (currentVisibleAllergenIds.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = stringResource(R.string.allergens),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
 
+            itemsIndexed(currentVisibleAllergenIds) { index, allergenId ->
+                val allergen = Allergen.fromId(allergenId) ?: return@itemsIndexed
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Checkbox(
+                        checked = allergenId in selectedAllergenIds,
+                        onCheckedChange = {
+                            if (it) selectedAllergenIds.add(allergenId) else selectedAllergenIds.remove(allergenId)
+                        }
+                    )
+                    Text(
+                        text = stringResource(allergen.displayRes),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    IconButton(
+                        onClick = {
+                            if (index > 0) {
+                                val newList = currentVisibleAllergenIds.toMutableList()
+                                val temp = newList[index]
+                                newList[index] = newList[index - 1]
+                                newList[index - 1] = temp
+                                currentVisibleAllergenIds = newList
+                                viewModel.setAllergenOrder(newList)
+                            }
+                        },
+                        enabled = index > 0,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(Icons.Default.ArrowUpward, contentDescription = null, modifier = Modifier.size(16.dp))
+                    }
+                    IconButton(
+                        onClick = {
+                            if (index < currentVisibleAllergenIds.size - 1) {
+                                val newList = currentVisibleAllergenIds.toMutableList()
+                                val temp = newList[index]
+                                newList[index] = newList[index + 1]
+                                newList[index + 1] = temp
+                                currentVisibleAllergenIds = newList
+                                viewModel.setAllergenOrder(newList)
+                            }
+                        },
+                        enabled = index < currentVisibleAllergenIds.size - 1,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(Icons.Default.ArrowDownward, contentDescription = null, modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
                 Text(
                     text = stringResource(R.string.ingredients_label),
                     style = MaterialTheme.typography.titleMedium,

@@ -31,5 +31,8 @@ data class HealthEntry(
     val reminderId: Long? = null,
     val durationMinutes: Int? = null,
     val isFinished: Boolean = false,
-    val ingredients: List<Ingredient>? = null
+    val ingredients: List<Ingredient>? = null,
+    val isAlcoholic: Boolean? = null,
+    val isCaffeinated: Boolean? = null,
+    val allergens: List<String>? = null
 )

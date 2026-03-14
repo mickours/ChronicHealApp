@@ -179,3 +179,13 @@ Goal: Interactive tools and notifications.
 - **Settings Integration**: Added a collapsible "**My Profile**" section in the Settings screen to view and edit this information anytime.
 - **Data Persistence**: Integrated profile fields into the `SettingsRepository` using encrypted DataStore preferences.
 - **Chronic Conditions Management**: Interactive chip-based UI for adding and removing multiple chronic diseases.
+
+## Phase 35: Enhanced Dietary Tracking (Completed)
+- **Beverage Enhancements**: Added checkboxes for Alcoholic and Caffeinated traits in beverage entries.
+- **Allergen Tracking**: 
+    - Added comprehensive allergen checkboxes (Gluten, Lactose, etc.) in meal entries.
+    - Implemented a reorderable allergen list with persistence in `SettingsRepository`.
+    - Meal entries now display selected allergens in the timeline with high-visibility (Error color).
+- **Localization**: Full translation of allergens into French.
+- **Customization**: Added a management section in Settings to deactivate irrelevant allergens. Deactivated allergens are hidden from the entry creation checklist.
+- **Data Model Migration**: Updated `HealthEntry` to include `isAlcoholic`, `isCaffeinated`, and `allergens`. Incremented DB version to 7. Removed `fallbackToDestructiveMigration` to protect user data.

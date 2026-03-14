@@ -64,4 +64,14 @@ class Converters {
     fun toIngredientList(value: String?): List<Ingredient>? {
         return value?.let { Json.decodeFromString(it) }
     }
+
+    @TypeConverter
+    fun fromStringList(value: List<String>?): String? {
+        return value?.let { Json.encodeToString(it) }
+    }
+
+    @TypeConverter
+    fun toStringList(value: String?): List<String>? {
+        return value?.let { Json.decodeFromString(it) }
+    }
 }

@@ -887,6 +887,19 @@ fun EntryItem(
                     )
                 }
 
+                // Alcohol/Caffeine (for Beverages)
+                if (entry.type == EntryType.BEVERAGE && (entry.isAlcoholic == true || entry.isCaffeinated == true)) {
+                    val traits = mutableListOf<String>()
+                    if (entry.isAlcoholic == true) traits.add(stringResource(R.string.is_alcoholic))
+                    if (entry.isCaffeinated == true) traits.add(stringResource(R.string.is_caffeinated))
+                    Text(
+                        text = traits.joinToString(", "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+
                 // Duration
                 entry.durationMinutes?.let { duration ->
                     if (duration > 0) {
@@ -904,6 +917,17 @@ fun EntryItem(
                             modifier = Modifier.padding(top = 4.dp)
                         )
                     }
+                }
+
+                // Allergens (for Meals)
+                if (!entry.allergens.isNullOrEmpty()) {
+                    Text(
+                        text = stringResource(R.string.allergens) + ": " + entry.allergens.joinToString(", "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
                 }
 
                 // Ingredients (for Meals)

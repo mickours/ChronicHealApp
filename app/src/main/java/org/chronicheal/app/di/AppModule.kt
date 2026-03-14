@@ -24,8 +24,11 @@ object AppModule {
             AppDatabase::class.java,
             "chronicheal_db"
         )
-        .addMigrations(AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6)
-        .fallbackToDestructiveMigration()
+        .addMigrations(
+            AppDatabase.MIGRATION_4_5,
+            AppDatabase.MIGRATION_5_6,
+            AppDatabase.MIGRATION_6_7
+        )
         .build()
     }
 

@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.NoFood
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Security
@@ -43,6 +44,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -79,6 +81,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.chronicheal.app.R
+import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.EntryType
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -91,7 +94,7 @@ fun WelcomeWizardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { 5 })
+    val pagerState = rememberPagerState(pageCount = { 6 })
 
     LaunchedEffect(uiState.isCompleted) {
         if (uiState.isCompleted) {
@@ -122,17 +125,21 @@ fun WelcomeWizardScreen(
                     onAddDisease = viewModel::addChronicDisease,
                     onRemoveDisease = viewModel::toggleChronicDisease
                 )
-                2 -> PrivacyPage(
+                2 -> AllergenActivationPage(
+                    deactivatedAllergenIds = uiState.deactivatedAllergens,
+                    onToggleAllergen = viewModel::toggleAllergenDeactivation
+                )
+                3 -> PrivacyPage(
                     isBiometricEnabled = uiState.isBiometricLockEnabled,
                     onBiometricToggled = viewModel::setBiometricLockEnabled
                 )
-                3 -> NotificationPermissionPage(
+                4 -> NotificationPermissionPage(
                     isCheckupEnabled = uiState.isCheckupReminderEnabled,
                     onCheckupToggled = viewModel::setCheckupReminder,
                     checkupTime = uiState.checkupReminderTime,
                     onCheckupTimeChange = viewModel::setCheckupReminderTime
                 )
-                4 -> FavoriteEntryTypesPage(
+                5 -> FavoriteEntryTypesPage(
                     selectedTypes = uiState.favoriteTypes,
                     onToggleType = viewModel::toggleFavorite
                 )
@@ -157,13 +164,13 @@ fun WelcomeWizardScreen(
             }
 
             Button(onClick = {
-                if (pagerState.currentPage < 4) {
+                if (pagerState.currentPage < 5) {
                     scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                 } else {
                     viewModel.completeWizard()
                 }
             }) {
-                Text(if (pagerState.currentPage == 4) stringResource(R.string.get_started) else stringResource(R.string.next))
+                Text(if (pagerState.currentPage == 5) stringResource(R.string.get_started) else stringResource(R.string.next))
             }
         }
     }
@@ -352,6 +359,59 @@ fun ProfilePage(
                     onClick = { onRemoveDisease(disease) },
                     label = { Text(disease) },
                     trailingIcon = { Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun AllergenActivationPage(
+    deactivatedAllergenIds: Set<String>,
+    onToggleAllergen: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.NoFood,
+            contentDescription = null,
+            modifier = Modifier.size(80.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = stringResource(R.string.allergens),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.step_allergens_desc),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Allergen.entries.forEach { allergen ->
+                val isDeactivated = allergen.id in deactivatedAllergenIds
+                FilterChip(
+                    selected = !isDeactivated,
+                    onClick = { onToggleAllergen(allergen.id) },
+                    label = { Text(stringResource(allergen.displayRes)) }
                 )
             }
         }

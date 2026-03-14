@@ -13,6 +13,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.repository.SettingsRepository
 import javax.inject.Inject
@@ -38,6 +40,10 @@ class SettingsRepositoryImpl @Inject constructor(
         val USER_WEIGHT = floatPreferencesKey("user_weight")
         val USER_HEIGHT = intPreferencesKey("user_height")
         val CHRONIC_DISEASES = stringSetPreferencesKey("chronic_diseases")
+        
+        // Allergens
+        val ALLERGEN_ORDER = stringPreferencesKey("allergen_order")
+        val DEACTIVATED_ALLERGENS = stringSetPreferencesKey("deactivated_allergens")
     }
 
     override val isWelcomeWizardCompleted: Flow<Boolean> = context.settingsDataStore.data
@@ -145,5 +151,27 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setChronicDiseases(diseases: Set<String>) {
         context.settingsDataStore.edit { preferences -> preferences[PreferencesKeys.CHRONIC_DISEASES] = diseases }
+    }
+
+    // Allergens implementation
+    override val allergenOrder: Flow<List<String>> = context.settingsDataStore.data
+        .map { preferences ->
+            val json = preferences[PreferencesKeys.ALLERGEN_ORDER]
+            if (json != null) Json.decodeFromString(json) else emptyList()
+        }
+
+    override suspend fun setAllergenOrder(order: List<String>) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.ALLERGEN_ORDER] = Json.encodeToString(order)
+        }
+    }
+
+    override val deactivatedAllergens: Flow<Set<String>> = context.settingsDataStore.data
+        .map { preferences -> preferences[PreferencesKeys.DEACTIVATED_ALLERGENS] ?: emptySet() }
+
+    override suspend fun setDeactivatedAllergens(allergens: Set<String>) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.DEACTIVATED_ALLERGENS] = allergens
+        }
     }
 }

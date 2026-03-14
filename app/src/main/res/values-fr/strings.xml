@@ -184,6 +184,18 @@
     <string name="quantity">Qté</string>
     <string name="unit">Unité</string>
     <string name="advanced_options">Options avancées</string>
+    <string name="is_alcoholic">Alcoolisé</string>
+    <string name="is_caffeinated">Caféiné</string>
+    <string name="allergens">Allergènes</string>
+    <string name="allergen_gluten">Gluten</string>
+    <string name="allergen_lactose">Lactose</string>
+    <string name="allergen_nuts">Fruits à coque</string>
+    <string name="allergen_shellfish">Crustacés</string>
+    <string name="allergen_eggs">Œufs</string>
+    <string name="allergen_fish">Poisson</string>
+    <string name="allergen_soy">Soja</string>
+    <string name="allergen_wheat">Blé</string>
+    <string name="step_allergens_desc">Sélectionnez les allergènes que vous souhaitez suivre dans vos repas. Vous pouvez modifier cela à tout moment dans les Paramètres.</string>
     
     <!-- Calendar Screen -->
     <string name="calendar_title">Calendrier</string>
@@ -328,7 +340,7 @@
     <string name="data_control_title">Vos Données, Votre Contrôle</string>
     <string name="data_control_desc">ChronicHeal est construit avec la vie privée au cœur. Vos informations de santé ne quittent jamais votre téléphone sauf si vous choisissez de les exporter.</string>
     <string name="stay_on_track_title">Restez à Jour</string>
-    <string name="stay_on_track_desc">Accordez les permissions de notification pour recevoir des rappels haute précision pour vos médicaments, rendez-vous et bilans quotidiens.</string>
+    <string name="stay_on_track_desc">Accordez les permissions de notification pour receive des rappels haute précision pour vos médicaments, rendez-vous et bilans quotidiens.</string>
     <string name="checkup_reminder_title">Rappel Bilan Quotidien</string>
     <string name="checkup_reminder_desc">Une invite pour noter votre humeur, douleur, sommeil et médicaments chaque jour</string>
     <string name="reminder_time_label">Heure du Rappel</string>

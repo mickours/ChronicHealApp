@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.NoFood
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,6 +39,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,6 +73,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
+import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -89,6 +92,7 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     
     var isProfileExpanded by remember { mutableStateOf(false) }
+    var isAllergensExpanded by remember { mutableStateOf(false) }
 
     // Launcher for saving JSON file
     val createJsonLauncher = rememberLauncherForActivityResult(
@@ -283,6 +287,54 @@ fun SettingsScreen(
                                         onClick = { viewModel.setChronicDiseases(uiState.chronicDiseases - disease) },
                                         label = { Text(disease) },
                                         trailingIcon = { Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ALLERGENS SECTION
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isAllergensExpanded = !isAllergensExpanded },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.NoFood, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(12.dp))
+                            Text(text = stringResource(R.string.allergens), style = MaterialTheme.typography.titleMedium)
+                        }
+                        Icon(
+                            imageVector = if (isAllergensExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null
+                        )
+                    }
+                    
+                    AnimatedVisibility(visible = isAllergensExpanded) {
+                        Column(modifier = Modifier.padding(top = 16.dp)) {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Allergen.entries.forEach { allergen ->
+                                    val isDeactivated = allergen.id in uiState.deactivatedAllergens
+                                    FilterChip(
+                                        selected = !isDeactivated,
+                                        onClick = {
+                                            val current = uiState.deactivatedAllergens
+                                            val next = if (isDeactivated) current - allergen.id else current + allergen.id
+                                            viewModel.setDeactivatedAllergens(next)
+                                        },
+                                        label = { Text(stringResource(allergen.displayRes)) }
                                     )
                                 }
                             }
