@@ -631,6 +631,7 @@ fun BodySilhouette(
         val allBounds = RectF()
         paths.forEach { 
             val pBounds = RectF()
+            @Suppress("DEPRECATION")
             it.path.computeBounds(pBounds, true)
             allBounds.union(pBounds)
         }
@@ -704,7 +705,7 @@ fun BodySilhouette(
                                         val diff = pointerChange.position - down.position
                                         if (abs(diff.x) > viewConfiguration.touchSlop || abs(diff.y) > viewConfiguration.touchSlop) {
                                             isScrolling = true
-                                            intensityJob?.cancel()
+                                            intensityJob.cancel()
                                         }
                                     }
                                 }
@@ -768,6 +769,7 @@ fun BodySilhouette(
                 
                 if (intensity > 0) {
                     val pBounds = RectF()
+                    @Suppress("DEPRECATION")
                     svgPath.path.computeBounds(pBounds, true)
                     drawCircle(
                         color = Color.Red.copy(alpha = 0.8f),
@@ -811,7 +813,7 @@ fun formatId(context: Context, id: String): String {
         "thigh-l" -> R.string.body_region_thigh_L
         "pelvis" -> R.string.body_region_pelvis
         "torso" -> R.string.body_region_torso
-        "helbow-r" -> R.string.body_region_helbow_R
+        "elbow-r" -> R.string.body_region_helbow_R
         "wrist-r" -> R.string.body_region_wrist_R
         "arm-r-path" -> R.string.body_region_arm_R_path
         "forearm-r" -> R.string.body_region_forearm_R
@@ -830,7 +832,7 @@ fun formatId(context: Context, id: String): String {
         "head-part" -> R.string.body_region_head_part
         "forehead" -> R.string.body_region_forehead
         "ear-r" -> R.string.body_region_ear_R
-        "ear-r-5" -> R.string.body_region_ear_R_5
+        "ear-l" -> R.string.body_region_ear_R_5
         "eye-r" -> R.string.body_region_eye_R
         "eye-l" -> R.string.body_region_eye_L
         else -> null

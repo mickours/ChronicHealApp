@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-   width="142.14293mm"
-   height="379.03851mm"
-   viewBox="0 0 142.14293 379.03851"
+   width="134.43129mm"
+   height="374.95291mm"
+   viewBox="0 0 134.43129 374.95291"
    version="1.1"
    id="body-shape"
    sodipodi:docname="body-shape.svg"
@@ -49,11 +49,11 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="3.8191249"
-     inkscape:cx="244.55864"
-     inkscape:cy="109.97284"
+     inkscape:zoom="2.4927106"
+     inkscape:cx="225.2568"
+     inkscape:cy="141.21174"
      inkscape:window-width="1920"
-     inkscape:window-height="1011"
+     inkscape:window-height="1043"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
@@ -65,178 +65,314 @@
      fill="#a7c7d4"
      id="rect1"
      inkscape:label="backgroud"
-     x="0"
-     y="0"
+     x="2.3074045"
+     y="-2.0038378"
      style="display:none" />
   <g
      id="body"
-     transform="translate(-21.974979,8.5666716)"
+     transform="translate(-19.667574,6.5628338)"
      fill="#ffffff"
      stroke="#ffb77c"
      stroke-width="1">
     <g
-       id="leg-R">
+       id="leg-R"
+       style="stroke-linejoin:round;stroke-linecap:round">
       <path
-         d="m 97.013437,345.65416 8.038813,25.1254 13.15317,-11.39648 -9.96549,-13.46256 c -4.61016,4.8425 -8.08339,3.20434 -11.226493,-0.26636 z"
-         id="foot-R" />
-      <ellipse
-         id="ankle-R"
-         cx="102.72306"
-         cy="342.18515"
-         rx="6.5405936"
-         ry="6.6935892" />
-      <path
-         d="m 112.27754,267.61625 c 8.62175,24.11358 -0.79578,48.04682 -3.82833,72.1604 -2.01979,-4.94571 -9.384953,-4.86523 -11.478753,-0.52177 -1.76976,-23.30559 -7.232054,-46.02633 -2.254484,-71.31643 4.99188,6.64687 11.885507,6.48665 17.561567,-0.3222 z"
-         id="tibia-R" />
+         d="m 112.27754,267.61625 c 8.62175,24.11358 -0.79578,48.04682 -3.82833,72.1604 -2.01979,-4.94571 -10.151354,-4.1685 -12.245154,0.17496 -1.76976,-23.30559 -6.465653,-46.72306 -1.488083,-72.01316 6.524687,5.74112 13.139617,4.25712 17.561567,-0.3222 z"
+         id="tibia-R"
+         sodipodi:nodetypes="ccccc"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <ellipse
          id="knee-R"
          cx="103.43635"
          cy="261.8978"
          rx="9.9077826"
-         ry="10.139543" />
+         ry="10.139543"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 117.0442,168.08988 c 3.48204,17.04956 11.74029,22.66454 -5.17515,87.85213 -4.92431,-3.6439 -9.98125,-6.49198 -16.594872,0 -1.228099,-18.26033 -9.210174,-39.86858 -2.57785,-53.65137 z"
-         id="thigh-R" />
+         id="thigh-R"
+         style="stroke-linejoin:round;stroke-linecap:round" />
     </g>
     <g
-       id="leg-L">
+       id="leg-L"
+       style="stroke-linejoin:round;stroke-linecap:round">
       <path
-         d="m 77.161751,345.50082 -7.718445,25.04531 -13.153139,-11.39648 9.484966,-13.2223 c 4.610138,4.8425 8.243517,3.04417 11.386618,-0.42653 z"
-         id="foot-L" />
+         d="m 77.649461,344.10736 c -1.597414,9.21487 -5.882525,15.39676 -9.878303,22.39775 -1.466796,0.91701 -13.07259,2.43819 -13.153139,-5.54397 2.812903,-4.58181 9.064734,-12.77412 9.903003,-17.8207 4.610138,4.8425 9.985338,4.43762 13.128439,0.96692 z"
+         id="foot-L"
+         sodipodi:nodetypes="ccccc"
+         style="stroke-linejoin:round;stroke-linecap:round" />
+      <path
+         d="m 96.395164,344.73776 c 1.59742,9.21487 5.882526,15.39676 9.878306,22.39775 1.4668,0.91701 13.07259,2.43819 13.15314,-5.54397 -2.81291,-4.58181 -9.06474,-12.77412 -9.903,-17.8207 -4.61014,4.8425 -9.985346,4.43762 -13.128446,0.96692 z"
+         id="foot-L-2"
+         sodipodi:nodetypes="ccccc"
+         style="stroke-linejoin:round;stroke-linecap:round" />
+      <path
+         d="m 61.548931,267.08708 c -8.621746,24.11358 0.795774,48.04682 3.828333,72.1604 2.019783,-4.94571 9.785371,-4.86523 11.879175,-0.52177 1.769756,-23.30559 6.83162,-46.02633 1.854054,-71.31643 -4.991879,6.64687 -11.885499,6.48665 -17.561562,-0.3222 z"
+         id="tibia-L"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <ellipse
          id="ankle-L"
          cx="71.401016"
          cy="342.18515"
          rx="6.5405936"
-         ry="6.6935892" />
-      <path
-         d="m 61.548931,267.08708 c -8.621746,24.11358 0.795774,48.04682 3.828333,72.1604 2.019783,-4.94571 9.785371,-4.86523 11.879175,-0.52177 1.769756,-23.30559 6.83162,-46.02633 1.854054,-71.31643 -4.991879,6.64687 -11.885499,6.48665 -17.561562,-0.3222 z"
-         id="tibia-L" />
+         ry="6.6935892"
+         style="stroke-linejoin:round;stroke-linecap:round" />
+      <ellipse
+         id="ankle-L-7"
+         cx="102.51749"
+         cy="342.6153"
+         rx="6.5405936"
+         ry="6.6935892"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <ellipse
          id="knee-L"
          cx="70.613228"
          cy="261.8978"
          rx="9.9077826"
-         ry="10.139543" />
+         ry="10.139543"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 56.700171,167.87702 c -3.482038,17.04956 -11.583327,22.70572 5.332106,87.89331 7.645613,-5.88598 12.342635,-3.42368 16.59487,0 1.550323,-17.29364 10.176862,-40.35192 4.188996,-52.84579 z"
-         id="thigh-L" />
+         id="thigh-L"
+         style="stroke-linejoin:round;stroke-linecap:round" />
     </g>
     <path
        d="m 56.882975,167.92742 25.863946,34.83601 9.666913,-0.16112 24.480846,-34.70358 z"
-       id="pelvis" />
+       id="pelvis"
+       style="stroke-linecap:round;stroke-linejoin:round" />
     <path
-       d="m 57.174415,108.45125 c 4.115879,20.56372 0.364761,39.67443 -0.405595,59.32198 l 60.25453,-0.0242 c -1.25366,-19.55792 -3.35288,-39.05746 0.36646,-58.61538 z"
-       id="torso" />
+       d="m 57.174415,108.45125 c 4.115879,20.56372 0.364761,39.67443 -0.405595,59.32198 l 60.25453,-0.0242 c -1.25366,-19.55792 -3.49223,-39.05746 0.22711,-58.61538 z"
+       id="torso"
+       sodipodi:nodetypes="ccccc"
+       style="stroke-linejoin:round;stroke-linecap:round" />
     <g
        id="arm-R"
-       transform="matrix(-1,0,0,1,173.76644,-0.09735657)">
+       transform="matrix(-1,0,0,1,173.76644,-0.09735657)"
+       style="stroke-linejoin:round;stroke-linecap:round">
       <ellipse
          id="helbow-R"
          cx="38.320686"
          cy="122.54654"
          rx="7.508615"
-         ry="7.6842546" />
+         ry="7.6842546"
+         inkscape:label="elbow-R"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <ellipse
          id="wrist-R"
          cx="34.410854"
          cy="178.47554"
          rx="5.2216988"
-         ry="5.3438435" />
+         ry="5.3438435"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 42.352027,59.107231 c -16.504935,14.449056 -9.380305,40.202167 -11.106692,60.218599 3.367932,-5.68401 10.76581,-5.70214 14.115162,0.51013 4.188846,-16.64886 9.609777,-33.082746 6.308972,-49.731604 -6.259494,1.949177 -12.402121,-4.345076 -9.317442,-10.997125 z"
-         id="arm-R-path" />
+         id="arm-R-path"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 30.827325,124.43133 c -5.798987,18.30696 -1.364831,35.8914 -1.634981,53.02378 1.553869,-5.66553 8.776567,-5.77303 10.591219,0 2.711609,-17.0616 7.124422,-35.2927 5.663009,-51.48492 -4.376021,6.04085 -10.816275,5.79697 -14.619247,-1.53886 z"
-         id="forearm-R" />
+         id="forearm-R"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 28.996713,179.41981 -8.409849,9.83767 17.824094,4.00539 0.628676,-12.3262 c -2.670882,4.36978 -8.07097,3.37317 -10.042921,-1.51686 z"
-         id="palm-R" />
+         id="palm-R"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 20.523277,189.49163 2.953839,13.62863 8.81359,1.8272 6.043858,-11.43215 z"
-         id="fingers-R" />
+         id="fingers-R"
+         style="stroke-linejoin:round;stroke-linecap:round" />
     </g>
     <ellipse
        id="shoulder-R"
        cx="124.8527"
        cy="62.838337"
        rx="7.508615"
-       ry="7.6842546" />
+       ry="7.6842546"
+       style="stroke-linejoin:round;stroke-linecap:round" />
     <g
-       id="arm-L">
+       id="arm-L"
+       style="stroke-linejoin:round;stroke-linecap:round">
       <ellipse
          id="elbow-L"
          cx="38.320686"
          cy="122.54654"
          rx="7.508615"
-         ry="7.6842546" />
+         ry="7.6842546"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <ellipse
          id="wrist-L"
          cx="34.410854"
          cy="178.47554"
          rx="5.2216988"
-         ry="5.3438435" />
+         ry="5.3438435"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 42.352027,59.107231 c -16.504935,14.449056 -9.380305,40.202167 -11.106692,60.218599 3.367932,-5.68401 10.76581,-5.70214 14.115162,0.51013 4.188846,-16.64886 9.609777,-33.082746 6.308972,-49.731604 -6.259494,1.949177 -12.402121,-4.345076 -9.317442,-10.997125 z"
-         id="arm-L-path" />
+         id="arm-L-path"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 30.827325,124.43133 c -5.798987,18.30696 -1.364831,35.8914 -1.634981,53.02378 1.553869,-5.66553 8.776567,-5.77303 10.591219,0 2.711609,-17.0616 7.124422,-35.2927 5.663009,-51.48492 -4.376021,6.04085 -10.816275,5.79697 -14.619247,-1.53886 z"
-         id="forearm-L" />
+         id="forearm-L"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 28.996713,179.41981 -8.409849,9.83767 17.824094,4.00539 0.628676,-12.3262 c -2.670882,4.36978 -8.07097,3.37317 -10.042921,-1.51686 z"
-         id="palm-L" />
+         id="palm-L"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 20.523277,189.49163 2.953839,13.62863 8.81359,1.8272 6.043858,-11.43215 z"
-         id="fingers-L" />
+         id="fingers-L"
+         style="stroke-linejoin:round;stroke-linecap:round" />
     </g>
     <ellipse
        id="shoulder-L"
        cx="48.964233"
        cy="62.838337"
        rx="7.508615"
-       ry="7.6842546" />
+       ry="7.6842546"
+       style="stroke-linejoin:round;stroke-linecap:round" />
     <path
-       d="m 50.391074,55.383727 c 26.812051,-8.95921 44.943539,-9.255905 74.003156,-0.103659 -9.69367,1.622854 -8.62337,13.188965 -2.17583,15.070456 0.33068,0.0965 -2.02122,7.397408 -0.68342,16.735007 0.60352,4.212468 -1.75735,16.915979 -3.71624,22.256919 L 57.239443,108.72649 C 55.215007,101.52174 51.412478,93.985317 52.646758,86.449145 53.502564,81.22383 51.511441,70.474711 52.066668,70.187365 57.892629,67.172269 58.675032,57.529263 50.391074,55.383727 Z"
-       id="brest" />
+       d="m 50.391074,55.383727 c 26.812051,-8.95921 44.943539,-9.255905 74.003156,-0.103659 -9.69367,1.622854 -8.62337,13.188965 -2.17583,15.070456 0.33068,0.0965 -2.02122,7.397408 -0.68342,16.735007 0.60352,4.212468 -2.31473,16.358599 -4.27362,21.699539 l -60.021917,-0.0586 C 55.215007,101.52174 51.412478,93.985317 52.646758,86.449145 53.502564,81.22383 51.511441,70.474711 52.066668,70.187365 57.892629,67.172269 58.675032,57.529263 50.391074,55.383727 Z"
+       id="brest"
+       sodipodi:nodetypes="ccssccssc"
+       style="stroke-linejoin:round;stroke-linecap:round" />
     <path
-       d="m 96.198364,36.164287 4.471906,13.741209 C 90.922363,48.348247 84.270069,48.07427 73.813773,49.718769 l 4.029408,-13.387368 c 5.917118,3.439377 11.591428,5.706548 18.355183,-0.16709 z"
-       id="neck" />
+       d="m 96.198364,36.164287 4.471906,13.392845 c -9.747907,-1.557249 -16.400201,-1.69188 -26.856497,-0.04738 l 4.029408,-13.17835 c 5.917118,3.439377 11.591428,5.706548 18.355183,-0.16709 z"
+       id="neck"
+       sodipodi:nodetypes="ccccsc"
+       style="stroke-linejoin:round;stroke-linecap:round" />
     <g
        id="head"
-       transform="translate(0.48495151)">
+       transform="translate(0.48495151)"
+       style="stroke-linejoin:round;stroke-linecap:round">
       <ellipse
          id="head-part"
          ry="23.031557"
          rx="15.830748"
          cy="16.968723"
          cx="86.539833"
-         style="fill:url(#radialGradient12);opacity:1"
+         style="opacity:1;fill:url(#radialGradient12);stroke-linejoin:round;stroke-linecap:round"
          inkscape:label="head" />
       <path
-         d="m 70.410271,16.99755 c 11.278064,2.685242 21.911677,2.792676 31.900819,0.322231"
+         d="m 70.410271,16.99755 c 5.92481,1.410663 11.671764,2.109899 17.240858,2.097698 5.031854,-0.01102 9.918508,-0.602844 14.659961,-1.775467"
          id="forehead"
-         style="fill:none" />
+         style="fill:none;stroke-width:0.253;stroke-dasharray:none;stroke-linejoin:round;stroke-linecap:round"
+         sodipodi:nodetypes="csc" />
       <path
-         d="M 86.682908,-6.3641591 V 39.875914"
-         id="head-center" />
+         d="M 86.828556,-6.319474 V 39.920599"
+         id="head-center"
+         style="stroke-width:0.253;stroke-dasharray:none;stroke-linejoin:round;stroke-linecap:round"
+         sodipodi:nodetypes="cc" />
       <path
          d="m 87.411202,23.88637 c 2.004698,-0.535674 2.085813,1.273812 2.007542,2.514629 -0.491126,3.614215 -2.097535,6.465968 -3.556929,9.815905 -0.420153,0.475018 -0.832412,0.31615 -1.032923,0.129114 z"
          id="ear-R"
-         transform="translate(15.468368,-7.00862)" />
+         transform="translate(15.468368,-7.00862)"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <path
          d="m 70.073422,16.814841 c -2.00469,-0.535674 -2.08581,1.273812 -2.00754,2.514629 0.49113,3.614215 2.09754,6.465968 3.55693,9.815905 0.42015,0.475018 0.83241,0.31615 1.03292,0.129114 z"
-         id="ear-R-5" />
+         id="ear-R-5"
+         inkscape:label="ear-L"
+         style="stroke-linejoin:round;stroke-linecap:round" />
       <g
          id="eyes"
          transform="translate(-0.52656237)"
-         fill="#ffb77c">
+         fill="#ffb77c"
+         style="stroke-linejoin:round;stroke-linecap:round">
         <path
-           d="m 75.101357,17.735131 c 0.455012,-1.504624 0.409604,-3.562842 3.617965,-3.617965 3.295628,0.210564 4.048716,2.328033 4.740783,4.491267 z"
-           id="eye-R" />
+           d="m 99.388915,17.636458 c -0.455012,-1.504624 -0.591456,-3.744694 -3.799817,-3.799817 -3.295628,0.210564 -3.594085,2.600811 -4.286152,4.764045 z"
+           id="eye-L"
+           sodipodi:nodetypes="cccc"
+           style="stroke-linejoin:round;stroke-linecap:round" />
         <path
-           d="m 99.031434,17.591773 c -0.455012,-1.504624 -0.409604,-3.562842 -3.617965,-3.617965 -3.295628,0.210564 -4.048716,2.328033 -4.740783,4.491267 z"
-           id="eye-L" />
+           d="m 75.321322,17.43116 c 0.455012,-1.504624 0.591456,-3.744694 3.799817,-3.799817 3.295628,0.210564 3.594085,2.600811 4.286152,4.764045 z"
+           id="eye-L-1"
+           sodipodi:nodetypes="cccc"
+           style="stroke-linejoin:round;stroke-linecap:round" />
       </g>
     </g>
+    <g
+       id="g4"
+       transform="translate(0,0.80569)"
+       style="stroke-linejoin:round;stroke-linecap:round">
+      <path
+         style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+         d="m 100.43975,166.86691 9.94492,-15.76634"
+         id="path1" />
+      <path
+         style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+         d="m 106.74628,155.95175 -0.48511,-27.65173"
+         id="path2" />
+      <path
+         style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+         d="m 114.75073,126.84466 -8.48956,1.94047 -16.008902,-11.15771"
+         id="path3" />
+    </g>
+    <g
+       id="g3"
+       style="stroke-linejoin:round;stroke-linecap:round">
+      <path
+         style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+         d="m 74.114582,167.6726 -9.94492,-15.76634"
+         id="path1-2" />
+      <path
+         style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+         d="m 67.808052,156.75744 0.48511,-27.65173"
+         id="path2-8" />
+      <path
+         style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+         d="m 59.803602,127.65035 8.48956,1.94047 16.008902,-11.15771"
+         id="path3-9" />
+    </g>
+    <path
+       style="fill:none;stroke:#ffb77c;stroke-width:0.245268;stroke-linecap:round;stroke-linejoin:round"
+       d="m 54.343865,56.439517 27.869131,-0.431765 2.341946,2.806464"
+       id="path5" />
+    <path
+       style="fill:none;stroke:#ffb77c;stroke-width:0.253;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="M 120.0928,56.720901 91.033755,56.254203 89.649991,59.054406"
+       id="path6" />
+    <path
+       style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+       d="m 87.385606,40.00851 0.05529,127.33594"
+       id="path7"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+       d="m 52.975639,81.200334 c 23.08538,2.409317 45.774822,2.75803 67.961901,0.672891"
+       id="path8"
+       sodipodi:nodetypes="cc" />
+    <ellipse
+       style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+       id="path9"
+       cx="87.461258"
+       cy="152.57568"
+       rx="1.850448"
+       ry="2.3551154" />
+    <g
+       id="g14"
+       transform="translate(0.54368779,0.52916662)"
+       style="stroke-linejoin:round;stroke-linecap:round">
+      <path
+         style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+         d="m 85.042329,24.167091 v 1.220777"
+         id="path13" />
+      <path
+         style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+         d="m 88.409993,24.124993 v 1.262875"
+         id="path14" />
+    </g>
+    <path
+       style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+       d="m 82.184994,33.933312 c 3.524325,1.227214 6.98555,0.816513 10.39766,-0.312795"
+       id="path15"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#ffb77c;stroke-width:0.264583;stroke-linecap:round;stroke-linejoin:round"
+       d="m 81.081823,42.356793 1.905961,10.588665"
+       id="path16" />
+    <path
+       style="fill:none;stroke:#ffb77c;stroke-width:0.265;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none"
+       d="M 93.101172,42.547345 91.246943,52.52191"
+       id="path17"
+       sodipodi:nodetypes="cc" />
   </g>
 </svg>

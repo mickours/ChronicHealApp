@@ -179,7 +179,7 @@ fun WelcomePage() {
         verticalArrangement = Arrangement.Center
     ) {
         AsyncImage(
-            model = "file:///android_asset/logo.svg",
+            model = "file:///android_asset/Body-hello.svg",
             contentDescription = stringResource(R.string.app_name) + " Logo",
             modifier = Modifier.size(180.dp)
         )
