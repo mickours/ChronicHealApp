@@ -74,7 +74,7 @@ class TimelineViewModel @Inject constructor(
                 entry.name?.contains(query, ignoreCase = true) == true ||
                 entry.location?.contains(query, ignoreCase = true) == true ||
                 entry.origin?.contains(query, ignoreCase = true) == true ||
-                entry.note?.contains(query, ignoreCase = true) == true
+                    entry.note.contains(query, ignoreCase = true) == true
             
             val matchesType = selectedTypes.isEmpty() || entry.type in selectedTypes
             
@@ -236,6 +236,9 @@ class TimelineViewModel @Inject constructor(
     val deactivatedAllergens: StateFlow<Set<String>> = settingsRepository.deactivatedAllergens
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
 
+    val deactivatedFodmaps: StateFlow<Set<String>> = settingsRepository.deactivatedFodmaps
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
@@ -387,14 +390,6 @@ class TimelineViewModel @Inject constructor(
     fun setAllergenOrder(order: List<String>) {
         viewModelScope.launch {
             settingsRepository.setAllergenOrder(order)
-        }
-    }
-
-    fun toggleAllergenDeactivation(allergen: String) {
-        viewModelScope.launch {
-            val current = settingsRepository.deactivatedAllergens.first()
-            val next = if (allergen in current) current - allergen else current + allergen
-            settingsRepository.setDeactivatedAllergens(next)
         }
     }
 }

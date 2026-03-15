@@ -15,7 +15,9 @@ import kotlinx.coroutines.flow.stateIn
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.EntryType
+import org.chronicheal.app.domain.model.Fodmap
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.repository.SettingsRepository
 import org.chronicheal.app.domain.usecase.ExportPdfUseCase
 import org.chronicheal.app.domain.usecase.GetEntriesUseCase
 import java.io.OutputStream
@@ -46,12 +48,19 @@ sealed class CorrelationMetric {
         override val labelRes: Int = allergen.displayRes
         override val id: String = "allergen_${allergen.id}"
     }
+
+    data class FodmapMetric(val fodmap: Fodmap) : CorrelationMetric() {
+        override val emoji: String = "🍎"
+        override val labelRes: Int = fodmap.displayRes
+        override val id: String = "fodmap_${fodmap.id}"
+    }
 }
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
     getEntriesUseCase: GetEntriesUseCase,
-    private val exportPdfUseCase: ExportPdfUseCase
+    private val exportPdfUseCase: ExportPdfUseCase,
+    settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private val _timeRange = MutableStateFlow(TimeRange.WEEK)
@@ -81,14 +90,28 @@ class AnalyticsViewModel @Inject constructor(
     private val _selectedSymptoms = MutableStateFlow<Set<String>>(emptySet())
     val selectedSymptoms = _selectedSymptoms.asStateFlow()
 
-    val availableMetrics = EntryType.entries
-        .filter { it != EntryType.VOICE_LOGGING }
-        .map { CorrelationMetric.Type(it) } +
-        listOf(
-            CorrelationMetric.BeverageAttribute("alcoholic", "🍷", R.string.is_alcoholic),
-            CorrelationMetric.BeverageAttribute("caffeinated", "☕", R.string.is_caffeinated)
-        ) +
-        Allergen.entries.map { CorrelationMetric.AllergenMetric(it) }
+    val availableMetrics: StateFlow<List<CorrelationMetric>> = combine(
+        settingsRepository.deactivatedAllergens,
+        settingsRepository.deactivatedFodmaps
+    ) { deactivatedAllergens, deactivatedFodmaps ->
+        val baseMetrics = EntryType.entries
+            .filter { it != EntryType.VOICE_LOGGING }
+            .map { CorrelationMetric.Type(it) } +
+                listOf(
+                    CorrelationMetric.BeverageAttribute("alcoholic", "🍷", R.string.is_alcoholic),
+                    CorrelationMetric.BeverageAttribute("caffeinated", "☕", R.string.is_caffeinated)
+                )
+
+        val activeAllergens = Allergen.entries
+            .filter { it.id !in deactivatedAllergens }
+            .map { CorrelationMetric.AllergenMetric(it) }
+
+        val activeFodmaps = Fodmap.entries
+            .filter { it.id !in deactivatedFodmaps }
+            .map { CorrelationMetric.FodmapMetric(it) }
+
+        baseMetrics + activeAllergens + activeFodmaps
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val uiState: StateFlow<AnalyticsUiState> = combine(
         getEntriesUseCase(),
@@ -309,6 +332,12 @@ class AnalyticsViewModel @Inject constructor(
                 }
                 is CorrelationMetric.AllergenMetric -> {
                     val mealEntries = entries.filter { it.type == EntryType.MEAL && it.allergens?.contains(metric.allergen.id) == true }
+                    aggregateData(mealEntries, range, start) { it.size }
+                }
+
+                is CorrelationMetric.FodmapMetric -> {
+                    val mealEntries =
+                        entries.filter { it.type == EntryType.MEAL && it.fodmaps?.contains(metric.fodmap.id) == true }
                     aggregateData(mealEntries, range, start) { it.size }
                 }
             }

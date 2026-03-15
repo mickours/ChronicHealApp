@@ -196,6 +196,14 @@
     <string name="allergen_fish">Poisson</string>
     <string name="allergen_soy">Soja</string>
     <string name="allergen_wheat">Blé</string>
+    <string name="fodmaps">FODMAPs</string>
+    <string name="fodmap_fructans">Fructanes</string>
+    <string name="fodmap_gos">GOS</string>
+    <string name="fodmap_fructose">Fructose (excès)</string>
+    <string name="fodmap_sorbitol">Sorbitol</string>
+    <string name="fodmap_mannitol">Mannitol</string>
+    <string name="fodmap_lactose">Lactose</string>
+    <string name="step_fodmaps_desc">Sélectionnez les FODMAPs que vous souhaitez suivre pour vos repas. Vous pouvez modifier cela à tout moment dans les Paramètres.</string>
     <string name="step_allergens_desc">Sélectionnez les allergènes que vous souhaitez suivre dans vos repas. Vous pouvez modifier cela à tout moment dans les Paramètres.</string>
     <string name="unit_cup">tasse</string>
     <string name="unit_ml">mL</string>
@@ -349,7 +357,7 @@
     <string name="stay_on_track_title">Restez à Jour</string>
     <string name="stay_on_track_desc">Accordez les permissions de notification pour receive des rappels haute précision pour vos médicaments, rendez-vous et bilans quotidiens.</string>
     <string name="checkup_reminder_title">Rappel Bilan Quotidien</string>
-    <string name="checkup_reminder_desc">Une invite pour noter votre humeur, douleur, sommeil et médicaments chaque jour</string>
+    <string name="checkup_reminder_desc">Une invite pour noter votre mood, douleur, sommeil et médicaments chaque jour</string>
     <string name="reminder_time_label">Heure du Rappel</string>
     <string name="personalize_title">Personnalisez Votre Experience</string>
     <string name="personalize_desc">Sélectionnez les types d\'entrées que vous utiliserez le plus souvent pour les épingler sur votre journal.</string>

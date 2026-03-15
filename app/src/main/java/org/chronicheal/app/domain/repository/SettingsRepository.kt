@@ -41,4 +41,8 @@ interface SettingsRepository {
 
     val deactivatedAllergens: Flow<Set<String>>
     suspend fun setDeactivatedAllergens(allergens: Set<String>)
+
+    // FODMAPs
+    val deactivatedFodmaps: Flow<Set<String>>
+    suspend fun setDeactivatedFodmaps(fodmaps: Set<String>)
 }

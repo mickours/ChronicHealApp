@@ -196,6 +196,14 @@
     <string name="allergen_fish">Fish</string>
     <string name="allergen_soy">Soy</string>
     <string name="allergen_wheat">Wheat</string>
+    <string name="fodmaps">FODMAPs</string>
+    <string name="fodmap_fructans">Fructans</string>
+    <string name="fodmap_gos">GOS</string>
+    <string name="fodmap_fructose">Fructose (Excess)</string>
+    <string name="fodmap_sorbitol">Sorbitol</string>
+    <string name="fodmap_mannitol">Mannitol</string>
+    <string name="fodmap_lactose">Lactose</string>
+    <string name="step_fodmaps_desc">Select which FODMAPs you want to track on your meals. You can change this anytime in Settings.</string>
     <string name="step_allergens_desc">Select which allergens you want to track in your meals. You can change this anytime in Settings.</string>
     <string name="unit_cup">cup</string>
     <string name="unit_ml">mL</string>

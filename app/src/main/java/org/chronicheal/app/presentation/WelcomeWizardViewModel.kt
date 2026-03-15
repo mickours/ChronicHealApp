@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.chronicheal.app.data.notification.ReminderScheduler
+import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.EntryType
+import org.chronicheal.app.domain.model.Fodmap
 import org.chronicheal.app.domain.model.Reminder
 import org.chronicheal.app.domain.repository.ReminderRepository
 import org.chronicheal.app.domain.repository.SecurityRepository
@@ -30,9 +32,12 @@ data class WelcomeWizardUiState(
     val userWeight: String = "",
     val userHeight: String = "",
     val chronicDiseases: Set<String> = emptySet(),
-    
-    // Allergens
-    val deactivatedAllergens: Set<String> = emptySet()
+
+    // Allergens (Default: All disabled/deactivated)
+    val deactivatedAllergens: Set<String> = Allergen.allIds.toSet(),
+
+    // FODMAPs (Default: All disabled/deactivated)
+    val deactivatedFodmaps: Set<String> = Fodmap.allIds.toSet()
 )
 
 @HiltViewModel
@@ -99,6 +104,14 @@ class WelcomeWizardViewModel @Inject constructor(
         }
     }
 
+    fun toggleFodmapDeactivation(fodmap: String) {
+        _uiState.update { state ->
+            val current = state.deactivatedFodmaps
+            val next = if (fodmap in current) current - fodmap else current + fodmap
+            state.copy(deactivatedFodmaps = next)
+        }
+    }
+
     fun completeWizard() {
         viewModelScope.launch {
             if (_uiState.value.isCheckupReminderEnabled) {
@@ -124,6 +137,9 @@ class WelcomeWizardViewModel @Inject constructor(
             
             // Save Allergens
             settingsRepository.setDeactivatedAllergens(_uiState.value.deactivatedAllergens)
+
+            // Save FODMAPs
+            settingsRepository.setDeactivatedFodmaps(_uiState.value.deactivatedFodmaps)
 
             settingsRepository.setWelcomeWizardCompleted(true)
             _uiState.update { it.copy(isCompleted = true) }

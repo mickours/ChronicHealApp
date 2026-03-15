@@ -103,6 +103,7 @@ fun AnalyticsScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val metric1 by viewModel.correlationMetric1.collectAsState()
     val metric2 by viewModel.correlationMetric2.collectAsState()
+    val availableMetrics by viewModel.availableMetrics.collectAsState()
     val selectedPainLocations by viewModel.selectedPainLocations.collectAsState()
     val selectedSymptoms by viewModel.selectedSymptoms.collectAsState()
 
@@ -245,7 +246,7 @@ fun AnalyticsScreen(
             CorrelationSelectors(
                 metric1 = metric1,
                 metric2 = metric2,
-                availableMetrics = viewModel.availableMetrics,
+                availableMetrics = availableMetrics,
                 onMetricsChange = viewModel::setCorrelationMetrics
             )
 
@@ -333,10 +334,14 @@ fun EvolutionChart(
                     labelRotationDegrees = 45f,
                     itemPlacer = AxisItemPlacer.Horizontal.default(spacing = 1, offset = 0)
                 ),
-                modifier = Modifier.fillMaxWidth().height(200.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
             )
         } else {
-            Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp), contentAlignment = Alignment.Center) {
                 Text(stringResource(R.string.select_items_legend), style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center)
             }
         }

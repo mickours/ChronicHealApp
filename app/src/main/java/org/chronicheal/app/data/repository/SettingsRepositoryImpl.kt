@@ -44,6 +44,9 @@ class SettingsRepositoryImpl @Inject constructor(
         // Allergens
         val ALLERGEN_ORDER = stringPreferencesKey("allergen_order")
         val DEACTIVATED_ALLERGENS = stringSetPreferencesKey("deactivated_allergens")
+
+        // FODMAPs
+        val DEACTIVATED_FODMAPS = stringSetPreferencesKey("deactivated_fodmaps")
     }
 
     override val isWelcomeWizardCompleted: Flow<Boolean> = context.settingsDataStore.data
@@ -62,7 +65,7 @@ class SettingsRepositoryImpl @Inject constructor(
             val types = preferences[PreferencesKeys.FAVORITE_ENTRY_TYPES]?.mapNotNull {
                 try {
                     EntryType.valueOf(it)
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     null
                 }
             }?.toSet()
@@ -172,6 +175,16 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setDeactivatedAllergens(allergens: Set<String>) {
         context.settingsDataStore.edit { preferences ->
             preferences[PreferencesKeys.DEACTIVATED_ALLERGENS] = allergens
+        }
+    }
+
+    // FODMAPs implementation
+    override val deactivatedFodmaps: Flow<Set<String>> = context.settingsDataStore.data
+        .map { preferences -> preferences[PreferencesKeys.DEACTIVATED_FODMAPS] ?: emptySet() }
+
+    override suspend fun setDeactivatedFodmaps(fodmaps: Set<String>) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.DEACTIVATED_FODMAPS] = fodmaps
         }
     }
 }

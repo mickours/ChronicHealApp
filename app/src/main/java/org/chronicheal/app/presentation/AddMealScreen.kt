@@ -59,6 +59,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.EntryType
+import org.chronicheal.app.domain.model.Fodmap
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Ingredient
 import java.time.LocalDate
@@ -85,6 +86,7 @@ fun AddMealScreen(
 
     val ingredients = remember { mutableStateListOf<Ingredient>() }
     val selectedAllergenIds = remember { mutableStateListOf<String>() }
+    val selectedFodmapIds = remember { mutableStateListOf<String>() }
 
     var setReminder by rememberSaveable { mutableStateOf(false) }
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
@@ -93,8 +95,10 @@ fun AddMealScreen(
     val nameSuggestions by viewModel.mealSuggestions.collectAsState()
     val allergenOrderFromSettings by viewModel.allergenOrder.collectAsState()
     val deactivatedAllergenIds by viewModel.deactivatedAllergens.collectAsState()
+    val deactivatedFodmapIds by viewModel.deactivatedFodmaps.collectAsState()
     
     var currentVisibleAllergenIds by remember { mutableStateOf(emptyList<String>()) }
+    var currentVisibleFodmapIds by remember { mutableStateOf(emptyList<String>()) }
     
     LaunchedEffect(allergenOrderFromSettings, deactivatedAllergenIds) {
         val baseOrder = if (allergenOrderFromSettings.isEmpty()) {
@@ -104,8 +108,11 @@ fun AddMealScreen(
             val extras = Allergen.allIds.filter { it !in saved }
             saved + extras
         }
-        // STRICTLY show only activated allergens as requested
         currentVisibleAllergenIds = baseOrder.filter { it !in deactivatedAllergenIds }
+    }
+
+    LaunchedEffect(deactivatedFodmapIds) {
+        currentVisibleFodmapIds = Fodmap.allIds.filter { it !in deactivatedFodmapIds }
     }
 
     val focusManager = LocalFocusManager.current
@@ -132,6 +139,9 @@ fun AddMealScreen(
             
             selectedAllergenIds.clear()
             entry.allergens?.let { selectedAllergenIds.addAll(it) }
+
+            selectedFodmapIds.clear()
+            entry.fodmaps?.let { selectedFodmapIds.addAll(it) }
         },
         onReminderTimeFound = { reminderTime = it }
     )
@@ -140,7 +150,7 @@ fun AddMealScreen(
         if (shouldFocusNewIngredient && ingredients.isNotEmpty()) {
             try {
                 lastItemFocusRequester.requestFocus()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Focus request might fail if not attached yet
             }
             shouldFocusNewIngredient = false
@@ -163,7 +173,8 @@ fun AddMealScreen(
             reminderId = existingEntry?.reminderId,
             durationMinutes = existingEntry?.durationMinutes,
             ingredients = if (ingredients.isEmpty()) null else ingredients.toList(),
-            allergens = if (selectedAllergenIds.isEmpty()) null else selectedAllergenIds.toList()
+            allergens = if (selectedAllergenIds.isEmpty()) null else selectedAllergenIds.toList(),
+            fodmaps = if (selectedFodmapIds.isEmpty()) null else selectedFodmapIds.toList()
         )
     }
 
@@ -229,54 +240,100 @@ fun AddMealScreen(
                 }
             }
 
-            itemsIndexed(currentVisibleAllergenIds) { index, allergenId ->
-                val allergen = Allergen.fromId(allergenId) ?: return@itemsIndexed
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Checkbox(
-                        checked = allergenId in selectedAllergenIds,
-                        onCheckedChange = {
-                            if (it) selectedAllergenIds.add(allergenId) else selectedAllergenIds.remove(allergenId)
+            if (currentVisibleAllergenIds.isNotEmpty()) {
+                itemsIndexed(currentVisibleAllergenIds) { index, allergenId ->
+                    val allergen = Allergen.fromId(allergenId) ?: return@itemsIndexed
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Checkbox(
+                            checked = allergenId in selectedAllergenIds,
+                            onCheckedChange = {
+                                if (it) selectedAllergenIds.add(allergenId) else selectedAllergenIds.remove(
+                                    allergenId
+                                )
+                            }
+                        )
+                        Text(
+                            text = stringResource(allergen.displayRes),
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        IconButton(
+                            onClick = {
+                                if (index > 0) {
+                                    val newList = currentVisibleAllergenIds.toMutableList()
+                                    val temp = newList[index]
+                                    newList[index] = newList[index - 1]
+                                    newList[index - 1] = temp
+                                    currentVisibleAllergenIds = newList
+                                    viewModel.setAllergenOrder(newList)
+                                }
+                            },
+                            enabled = index > 0,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.ArrowUpward,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
                         }
-                    )
-                    Text(
-                        text = stringResource(allergen.displayRes),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    IconButton(
-                        onClick = {
-                            if (index > 0) {
-                                val newList = currentVisibleAllergenIds.toMutableList()
-                                val temp = newList[index]
-                                newList[index] = newList[index - 1]
-                                newList[index - 1] = temp
-                                currentVisibleAllergenIds = newList
-                                viewModel.setAllergenOrder(newList)
-                            }
-                        },
-                        enabled = index > 0,
-                        modifier = Modifier.size(24.dp)
-                    ) {
-                        Icon(Icons.Default.ArrowUpward, contentDescription = null, modifier = Modifier.size(16.dp))
+                        IconButton(
+                            onClick = {
+                                if (index < currentVisibleAllergenIds.size - 1) {
+                                    val newList = currentVisibleAllergenIds.toMutableList()
+                                    val temp = newList[index]
+                                    newList[index] = newList[index + 1]
+                                    newList[index + 1] = temp
+                                    currentVisibleAllergenIds = newList
+                                    viewModel.setAllergenOrder(newList)
+                                }
+                            },
+                            enabled = index < currentVisibleAllergenIds.size - 1,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.ArrowDownward,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
-                    IconButton(
-                        onClick = {
-                            if (index < currentVisibleAllergenIds.size - 1) {
-                                val newList = currentVisibleAllergenIds.toMutableList()
-                                val temp = newList[index]
-                                newList[index] = newList[index + 1]
-                                newList[index + 1] = temp
-                                currentVisibleAllergenIds = newList
-                                viewModel.setAllergenOrder(newList)
-                            }
-                        },
-                        enabled = index < currentVisibleAllergenIds.size - 1,
-                        modifier = Modifier.size(24.dp)
+                }
+            }
+
+            if (currentVisibleFodmapIds.isNotEmpty()) {
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = stringResource(R.string.fodmaps),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                itemsIndexed(currentVisibleFodmapIds) { _, fodmapId ->
+                    val fodmap = Fodmap.fromId(fodmapId) ?: return@itemsIndexed
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.ArrowDownward, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Checkbox(
+                            checked = fodmapId in selectedFodmapIds,
+                            onCheckedChange = {
+                                if (it) selectedFodmapIds.add(fodmapId) else selectedFodmapIds.remove(
+                                    fodmapId
+                                )
+                            }
+                        )
+                        Text(
+                            text = stringResource(fodmap.displayRes),
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
                     }
                 }
             }
@@ -315,7 +372,6 @@ fun AddMealScreen(
                 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Advanced Options Card (Moved to bottom)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
@@ -393,7 +449,9 @@ fun IngredientItem(
             modifier = Modifier.fillMaxWidth()
         ) {
             val nameModifier = if (nameFocusRequester != null) {
-                Modifier.weight(2f).focusRequester(nameFocusRequester)
+                Modifier
+                    .weight(2f)
+                    .focusRequester(nameFocusRequester)
             } else {
                 Modifier.weight(2f)
             }

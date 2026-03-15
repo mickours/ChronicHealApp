@@ -36,7 +36,8 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.userWeight,
         settingsRepository.userHeight,
         settingsRepository.chronicDiseases,
-        settingsRepository.deactivatedAllergens
+        settingsRepository.deactivatedAllergens,
+        settingsRepository.deactivatedFodmaps
     ) { params ->
         val isLoading = params[0] as Boolean
         val message = params[1] as String?
@@ -51,6 +52,9 @@ class SettingsViewModel @Inject constructor(
         @Suppress("UNCHECKED_CAST")
         val deactivatedAllergens = params[9] as Set<String>
 
+        @Suppress("UNCHECKED_CAST")
+        val deactivatedFodmaps = params[10] as Set<String>
+
         SettingsUiState(
             isLoading = isLoading,
             message = message,
@@ -61,7 +65,8 @@ class SettingsViewModel @Inject constructor(
             userWeight = userWeight,
             userHeight = userHeight,
             chronicDiseases = chronicDiseases,
-            deactivatedAllergens = deactivatedAllergens
+            deactivatedAllergens = deactivatedAllergens,
+            deactivatedFodmaps = deactivatedFodmaps
         )
     }.stateIn(
         scope = viewModelScope,
@@ -139,6 +144,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setDeactivatedFodmaps(fodmaps: Set<String>) {
+        viewModelScope.launch {
+            settingsRepository.setDeactivatedFodmaps(fodmaps)
+        }
+    }
+
     fun clearMessage() {
         _message.value = null
     }
@@ -156,5 +167,6 @@ data class SettingsUiState(
     val userWeight: Float = 0f,
     val userHeight: Int = 0,
     val chronicDiseases: Set<String> = emptySet(),
-    val deactivatedAllergens: Set<String> = emptySet()
+    val deactivatedAllergens: Set<String> = emptySet(),
+    val deactivatedFodmaps: Set<String> = emptySet()
 )

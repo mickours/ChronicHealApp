@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -83,6 +82,7 @@ import kotlinx.coroutines.launch
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.EntryType
+import org.chronicheal.app.domain.model.Fodmap
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -94,7 +94,7 @@ fun WelcomeWizardScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { 6 })
+    val pagerState = rememberPagerState(pageCount = { 7 })
 
     LaunchedEffect(uiState.isCompleted) {
         if (uiState.isCompleted) {
@@ -102,7 +102,9 @@ fun WelcomeWizardScreen(
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .statusBarsPadding()) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -129,17 +131,24 @@ fun WelcomeWizardScreen(
                     deactivatedAllergenIds = uiState.deactivatedAllergens,
                     onToggleAllergen = viewModel::toggleAllergenDeactivation
                 )
-                3 -> PrivacyPage(
+                3 -> FodmapActivationPage(
+                    deactivatedFodmapIds = uiState.deactivatedFodmaps,
+                    onToggleFodmap = viewModel::toggleFodmapDeactivation
+                )
+
+                4 -> PrivacyPage(
                     isBiometricEnabled = uiState.isBiometricLockEnabled,
                     onBiometricToggled = viewModel::setBiometricLockEnabled
                 )
-                4 -> NotificationPermissionPage(
+
+                5 -> NotificationPermissionPage(
                     isCheckupEnabled = uiState.isCheckupReminderEnabled,
                     onCheckupToggled = viewModel::setCheckupReminder,
                     checkupTime = uiState.checkupReminderTime,
                     onCheckupTimeChange = viewModel::setCheckupReminderTime
                 )
-                5 -> FavoriteEntryTypesPage(
+
+                6 -> FavoriteEntryTypesPage(
                     selectedTypes = uiState.favoriteTypes,
                     onToggleType = viewModel::toggleFavorite
                 )
@@ -164,13 +173,17 @@ fun WelcomeWizardScreen(
             }
 
             Button(onClick = {
-                if (pagerState.currentPage < 5) {
+                if (pagerState.currentPage < 6) {
                     scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) }
                 } else {
                     viewModel.completeWizard()
                 }
             }) {
-                Text(if (pagerState.currentPage == 5) stringResource(R.string.get_started) else stringResource(R.string.next))
+                Text(
+                    if (pagerState.currentPage == 6) stringResource(R.string.get_started) else stringResource(
+                        R.string.next
+                    )
+                )
             }
         }
     }
@@ -282,7 +295,9 @@ fun ProfilePage(
                             onClick = { onSexChange(option) },
                             shape = CircleShape,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.size(40.dp).padding(4.dp)
+                            modifier = Modifier
+                                .size(40.dp)
+                                .padding(4.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
@@ -329,7 +344,9 @@ fun ProfilePage(
         )
         
         Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
@@ -418,6 +435,57 @@ fun AllergenActivationPage(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun FodmapActivationPage(
+    deactivatedFodmapIds: Set<String>,
+    onToggleFodmap: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "🍎",
+            fontSize = 64.sp
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = stringResource(R.string.fodmaps),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.step_fodmaps_desc),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Fodmap.entries.forEach { fodmap ->
+                val isDeactivated = fodmap.id in deactivatedFodmapIds
+                FilterChip(
+                    selected = !isDeactivated,
+                    onClick = { onToggleFodmap(fodmap.id) },
+                    label = { Text(stringResource(fodmap.displayRes)) }
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun PrivacyPage(
     isBiometricEnabled: Boolean,
@@ -487,7 +555,10 @@ fun PrivacyPage(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                .background(
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                    RoundedCornerShape(12.dp)
+                )
                 .padding(16.dp)
         ) {
             Column {
@@ -684,7 +755,9 @@ fun FavoriteEntryTypesPage(
                                     Icons.Default.Check,
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(16.dp).align(Alignment.BottomEnd)
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .align(Alignment.BottomEnd)
                                 )
                             }
                         }

@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -74,6 +73,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.Allergen
+import org.chronicheal.app.domain.model.Fodmap
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -93,6 +93,7 @@ fun SettingsScreen(
     
     var isProfileExpanded by remember { mutableStateOf(false) }
     var isAllergensExpanded by remember { mutableStateOf(false) }
+    var isFodmapsExpanded by remember { mutableStateOf(false) }
 
     // Launcher for saving JSON file
     val createJsonLauncher = rememberLauncherForActivityResult(
@@ -214,7 +215,9 @@ fun SettingsScreen(
                                                 onClick = { viewModel.setUserSex(option) },
                                                 shape = CircleShape,
                                                 color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                                modifier = Modifier.size(40.dp).padding(4.dp)
+                                                modifier = Modifier
+                                                    .size(40.dp)
+                                                    .padding(4.dp)
                                             ) {
                                                 Box(contentAlignment = Alignment.Center) {
                                                     Text(
@@ -343,6 +346,62 @@ fun SettingsScreen(
                 }
             }
 
+            // FODMAPs SECTION
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                        alpha = 0.5f
+                    )
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { isFodmapsExpanded = !isFodmapsExpanded },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(text = "🍎", fontSize = 20.sp)
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = stringResource(R.string.fodmaps),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
+                        Icon(
+                            imageVector = if (isFodmapsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = null
+                        )
+                    }
+
+                    AnimatedVisibility(visible = isFodmapsExpanded) {
+                        Column(modifier = Modifier.padding(top = 16.dp)) {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Fodmap.entries.forEach { fodmap ->
+                                    val isDeactivated = fodmap.id in uiState.deactivatedFodmaps
+                                    FilterChip(
+                                        selected = !isDeactivated,
+                                        onClick = {
+                                            val current = uiState.deactivatedFodmaps
+                                            val next =
+                                                if (isDeactivated) current - fodmap.id else current + fodmap.id
+                                            viewModel.setDeactivatedFodmaps(next)
+                                        },
+                                        label = { Text(stringResource(fodmap.displayRes)) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             HorizontalDivider()
 
             Text(text = stringResource(R.string.settings_security), style = MaterialTheme.typography.titleMedium)
@@ -414,7 +473,9 @@ fun SettingsScreen(
 
             // BACKUP DIRECTORY SELECTION
             if (uiState.isAutoBackupEnabled) {
-                Column(modifier = Modifier.fillMaxWidth().padding(start = 16.dp)) {
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp)) {
                     Text(
                         text = stringResource(R.string.backup_directory),
                         style = MaterialTheme.typography.labelMedium,

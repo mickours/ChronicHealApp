@@ -141,7 +141,7 @@ Goal: Interactive tools and notifications.
 
 ## Phase 23: Unified Assessment and Voice Prioritization (Completed)
 - **Voice Entry Prioritization**: Moved Voice Logging to the top of entry selection.
-- **Unified Check-in**: Merged Body Scan and Full Check-in into a single scrollable assessment.
+- **Unified Check-in**: Merged Body Scan and Full Check-in into a single scroll assessment.
 
 ## Phase 24: Intelligent Defaults and Localization (Completed)
 - **Intelligent Sleep Defaults**: Duration defaults based on time of day.
@@ -206,3 +206,25 @@ Goal: Interactive tools and notifications.
 - **Beverage Attributes**: Users can now correlate health outcomes with **Alcoholic** or **Caffeinated** drink intake (summing quantities).
 - **Allergen Analysis**: Implemented correlation support for individual **Allergens** (Gluten, Lactose, etc.), tracking their occurrence frequency in meals.
 - **Unified Selector**: Introduced a `CorrelationMetric` abstraction to seamlessly switch between entry types, beverage traits, and allergens in the `AnalyticsScreen`.
+
+## Phase 38: FODMAP Tracking and Correlation (Completed)
+
+- **FODMAP Data Model**: Added `fodmaps` list to `HealthEntry` and created a `Fodmap` enum.
+- **Database Migration**: Incremented DB version to 9 and added migration to add `fodmaps` column to
+  the `health_entries` table.
+- **Meal Logging UI**: Added a FODMAP selection section to the `AddMealScreen`, allowing users to
+  track the presence of Fructans, GOS, Fructose, etc., in their meals.
+- **Correlation Analytics**: Updated `AnalyticsViewModel` to include FODMAPs as correlation metrics,
+  enabling users to find relationships between FODMAP intake and symptoms.
+- **Localization**: Fully translated FODMAP labels into French.
+
+## Phase 39: Dietary Opt-in and UI Filtering (Completed)
+
+- **Opt-in Onboarding**: Updated the `WelcomeWizard` to disable all Allergens and FODMAPs by
+  default, requiring users to explicitly enable the ones they track.
+- **Dynamic Meal Forms**: The `AddMealScreen` now automatically hides the Allergen and FODMAP
+  sections if no items are activated in Settings, reducing UI clutter.
+- **Analytics Filtering**: The correlation metric list in the `AnalyticsScreen` now only displays
+  activated Allergens and FODMAPs.
+- **Management UI**: Added a dedicated FODMAP activation section to the `SettingsScreen`, matching
+  the existing Allergen management.

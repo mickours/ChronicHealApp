@@ -23,7 +23,8 @@ follow these general rules:
 - if you loop on actions (e.g. read, edit, read, edit on the same file): stop and ask for guidance 
 - when somebody ask you a question, don't modify the code, just answer
 - If you change data schema, make sure that you create a migration make some test to avoid any data loss
-- When you add a entry in strings.xml, make sure that they are all translated
-- do not use `import package.*` notation, use full import
-- avoid Experimental features if there is a simple not-Experimental alternative
+- When you add a entry in strings.xml, make sure that they are all translated and spell correctly in
+  all languages
+- do not use `import package.*` notation, use full import and remove unused imports
+- avoid Experimental or Deprecated features if there is a simple alternative
 - Avoid leaving unused imports and variables
