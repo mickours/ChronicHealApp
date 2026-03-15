@@ -771,7 +771,7 @@ fun EntryItem(
         }
     }
 
-    val mainParameter = entry.name ?: displayedLocation ?: ""
+    val mainParameter = entry.name ?: entry.origin ?: displayedLocation ?: ""
 
     Card(
         modifier = modifier
@@ -851,10 +851,9 @@ fun EntryItem(
                     }
                 }
                 
-                // If both name and location exist, we already showed one in the title. 
+                // If both name/origin and location exist, we already showed one in the title. 
                 // Show the other one here if it wasn't the one highlighted.
-                // We only show location if it's NOT NULL and NOT BLANK.
-                if (entry.name != null && !displayedLocation.isNullOrBlank()) {
+                if ((entry.name != null || entry.origin != null) && !displayedLocation.isNullOrBlank() && displayedLocation != mainParameter) {
                     Text(
                         text = stringResource(R.string.location_label_format, displayedLocation),
                         style = MaterialTheme.typography.bodyMedium,
