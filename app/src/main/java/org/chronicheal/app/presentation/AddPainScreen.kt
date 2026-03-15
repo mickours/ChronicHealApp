@@ -42,6 +42,7 @@ fun AddPainScreen(
 ) {
     var intensity by rememberSaveable { mutableFloatStateOf(5f) }
     var location by rememberSaveable { mutableStateOf(locationString ?: "") }
+    var origin by rememberSaveable { mutableStateOf("") }
     var note by rememberSaveable { mutableStateOf("") }
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
@@ -49,6 +50,7 @@ fun AddPainScreen(
     var isNewFromTemplate by remember { mutableStateOf(false) }
 
     val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
+    val originSuggestions by remember(location) { viewModel.getPainOriginSuggestions(location) }.collectAsState(initial = emptyList())
 
     LogNowEffect(
         id = id, 
@@ -59,6 +61,7 @@ fun AddPainScreen(
             isNewFromTemplate = fromTemplate
             intensity = entry.intensity?.toFloat() ?: 5f
             location = entry.location ?: ""
+            origin = entry.origin ?: ""
             note = entry.note
             if (!isNewFromTemplate) {
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
@@ -74,6 +77,7 @@ fun AddPainScreen(
             type = EntryType.PAIN,
             intensity = intensity.roundToInt(),
             location = location.trim(),
+            origin = origin.trim(),
             note = note,
             durationMinutes = existingEntry?.durationMinutes
         )
@@ -124,6 +128,15 @@ fun AddPainScreen(
                 onValueChange = { location = it },
                 suggestions = locationSuggestions,
                 label = stringResource(R.string.location_label)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            AutoCompleteTextField(
+                value = origin,
+                onValueChange = { origin = it },
+                suggestions = originSuggestions,
+                label = stringResource(R.string.pain_origin_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))

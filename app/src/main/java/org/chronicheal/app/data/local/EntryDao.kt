@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 
 @Dao
@@ -19,6 +20,9 @@ interface EntryDao {
 
     @Query("SELECT * FROM health_entries WHERE reminderId = :reminderId LIMIT 1")
     suspend fun getEntryByReminderId(reminderId: Long): HealthEntry?
+
+    @Query("SELECT * FROM health_entries WHERE type = :type AND name = :name ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLastEntryByTypeAndName(type: EntryType, name: String): HealthEntry?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntry(entry: HealthEntry)

@@ -73,6 +73,7 @@ class TimelineViewModel @Inject constructor(
             val matchesQuery = query.isBlank() || 
                 entry.name?.contains(query, ignoreCase = true) == true ||
                 entry.location?.contains(query, ignoreCase = true) == true ||
+                entry.origin?.contains(query, ignoreCase = true) == true ||
                 entry.note?.contains(query, ignoreCase = true) == true
             
             val matchesType = selectedTypes.isEmpty() || entry.type in selectedTypes
@@ -172,6 +173,22 @@ class TimelineViewModel @Inject constructor(
         filter = { it.type == EntryType.PAIN || it.type == EntryType.SYMPTOM },
         selector = { it.location }
     )
+
+    fun getPainOriginSuggestions(location: String): StateFlow<List<String>> {
+        return getEntriesUseCase()
+            .map { entries ->
+                entries
+                    .filter { it.type == EntryType.PAIN && (location.isBlank() || it.location == location) }
+                    .mapNotNull { it.origin }
+                    .filter { it.isNotBlank() }
+                    .groupBy { it }
+                    .mapValues { it.value.size }
+                    .toList()
+                    .sortedByDescending { it.second }
+                    .map { it.first }
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    }
 
     val drugSuggestions: StateFlow<List<String>> = createSortedSuggestions(
         filter = { it.type == EntryType.DRUG },
@@ -343,6 +360,10 @@ class TimelineViewModel @Inject constructor(
 
     suspend fun getEntryByReminderId(reminderId: Long): HealthEntry? {
         return entryRepository.getEntryByReminderId(reminderId)
+    }
+
+    suspend fun getLastEntryByTypeAndName(type: EntryType, name: String): HealthEntry? {
+        return entryRepository.getLastEntryByTypeAndName(type, name)
     }
 
     suspend fun getReminderById(id: Long): Reminder? {

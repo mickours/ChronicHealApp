@@ -83,7 +83,12 @@ fun BodyScanScreen(
 
     // Pain State (Temporary Bottom Sheet State)
     var painIntensity by remember { mutableFloatStateOf(5f) }
+    var painOrigin by remember { mutableStateOf("") }
     var painNote by remember { mutableStateOf("") }
+
+    val originSuggestions by remember(selectedRegionId) { 
+        viewModel.getPainOriginSuggestions(selectedRegionId ?: "") 
+    }.collectAsState(initial = emptyList())
 
     var currentHoldRegionId by remember { mutableStateOf<String?>(null) }
     var currentHoldIntensity by remember { mutableFloatStateOf(1f) }
@@ -149,9 +154,11 @@ fun BodyScanScreen(
                             
                             if (existing != null) {
                                 existingEntryId = existing.id
+                                painOrigin = existing.origin ?: ""
                                 painNote = existing.note
                             } else {
                                 existingEntryId = null
+                                painOrigin = ""
                                 painNote = ""
                             }
                             
@@ -210,6 +217,7 @@ fun BodyScanScreen(
                                 type = EntryType.PAIN,
                                 intensity = painIntensity.toInt(),
                                 location = selectedRegionId, // Save technical ID
+                                origin = painOrigin.trim(),
                                 note = painNote,
                                 timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
                             )
@@ -255,6 +263,16 @@ fun BodyScanScreen(
                     Spacer(Modifier.height(16.dp))
                     Text(stringResource(R.string.intensity_label, painIntensity.roundToInt()))
                     Slider(value = painIntensity, onValueChange = { painIntensity = it }, valueRange = 1f..10f, steps = 8)
+                    
+                    AutoCompleteTextField(
+                        value = painOrigin,
+                        onValueChange = { painOrigin = it },
+                        suggestions = originSuggestions,
+                        label = stringResource(R.string.pain_origin_label)
+                    )
+                    
+                    Spacer(Modifier.height(16.dp))
+                    
                     VoiceEnabledTextField(value = painNote, onValueChange = { painNote = it }, label = stringResource(R.string.notes_label))
                     Spacer(Modifier.height(32.dp))
                 }

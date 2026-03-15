@@ -189,3 +189,14 @@ Goal: Interactive tools and notifications.
 - **Localization**: Full translation of allergens into French.
 - **Customization**: Added a management section in Settings to deactivate irrelevant allergens. Deactivated allergens are hidden from the entry creation checklist.
 - **Data Model Migration**: Updated `HealthEntry` to include `isAlcoholic`, `isCaffeinated`, and `allergens`. Incremented DB version to 7. Removed `fallbackToDestructiveMigration` to protect user data.
+
+## Phase 36: Pain Origin Tracking (Completed)
+- **Data Model Update**: Added `origin` field to `HealthEntry`.
+- **Database Migration**: Incremented DB version to 8 and added migration to add `origin` column.
+- **Contextual Autocomplete**:
+    - Implemented `getPainOriginSuggestions(location)` in `TimelineViewModel`.
+    - Suggestions for the "Origin" field are now filtered based on the selected "Location" (body part).
+- **UI Integration**:
+    - Added "Pain Origin" autocomplete field to `AddPainScreen`.
+    - Added "Pain Origin" autocomplete field for each pain entry in the `Checkup` (formerly Complete Check-in) screen.
+- **Search Support**: Added the `origin` field to the global timeline search.

@@ -341,7 +341,8 @@ fun AddCompleteEntryScreen(
                 note = painNote,
                 onNoteChange = { painNote = it },
                 logDate = logDate,
-                startTime = startTime
+                startTime = startTime,
+                viewModel = viewModel
             )
 
             SectionHeader(type = EntryType.SYMPTOM, title = stringResource(R.string.type_symptom))
@@ -396,7 +397,8 @@ fun PainSection(
     note: String,
     onNoteChange: (String) -> Unit,
     logDate: LocalDate,
-    startTime: LocalTime
+    startTime: LocalTime,
+    viewModel: TimelineViewModel
 ) {
     val context = LocalContext.current
     var currentHoldRegionId by remember { mutableStateOf<String?>(null) }
@@ -445,21 +447,37 @@ fun PainSection(
 
             if (pains.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                pains.forEach { pain ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        val locationName = formatId(context, pain.location ?: "")
-                        val intensityValue = (pain.intensity ?: 0).toLong()
-                        Text(
-                            text = stringResource(R.string.pain_item_format, locationName, intensityValue),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        IconButton(onClick = { pains.remove(pain) }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                pains.forEachIndexed { index, pain ->
+                    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            val locationName = formatId(context, pain.location ?: "")
+                            val intensityValue = (pain.intensity ?: 0).toLong()
+                            Text(
+                                text = stringResource(R.string.pain_item_format, locationName, intensityValue),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            IconButton(onClick = { pains.removeAt(index) }, modifier = Modifier.size(24.dp)) {
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                            }
                         }
+                        
+                        val originSuggestions by remember(pain.location) { 
+                            viewModel.getPainOriginSuggestions(pain.location ?: "") 
+                        }.collectAsState(initial = emptyList())
+                        
+                        AutoCompleteTextField(
+                            value = pain.origin ?: "",
+                            onValueChange = { newOrigin ->
+                                pains[index] = pain.copy(origin = newOrigin)
+                            },
+                            suggestions = originSuggestions,
+                            label = stringResource(R.string.pain_origin_label)
+                        )
                     }
                 }
                 Spacer(Modifier.height(8.dp))

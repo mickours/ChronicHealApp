@@ -1,23 +1,34 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
@@ -38,10 +49,10 @@ fun AddDrugScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
     
     var name by rememberSaveable { mutableStateOf("") }
-    var dosage by rememberSaveable { mutableStateOf("") }
+    var value by rememberSaveable { mutableStateOf("") }
+    var selectedUnit by rememberSaveable { mutableStateOf(context.getString(R.string.unit_pills)) }
     var note by rememberSaveable { mutableStateOf("") }
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
@@ -53,6 +64,14 @@ fun AddDrugScreen(
 
     val nameSuggestions by viewModel.drugSuggestions.collectAsState()
 
+    val unitOptions = listOf(
+        stringResource(R.string.unit_pills),
+        stringResource(R.string.unit_mg),
+        stringResource(R.string.unit_g),
+        stringResource(R.string.unit_spoon)
+    )
+    var unitMenuExpanded by remember { mutableStateOf(false) }
+
     LogNowEffect(
         id = id,
         reminderId = reminderId,
@@ -61,7 +80,12 @@ fun AddDrugScreen(
             existingEntry = entry
             isNewFromTemplate = fromTemplate
             name = entry.name ?: ""
-            dosage = entry.unit ?: ""
+            if (entry.value != null) {
+                value = if (entry.value == entry.value.toLong().toDouble()) entry.value.toLong().toString() else entry.value.toString()
+                selectedUnit = entry.unit ?: context.getString(R.string.unit_pills)
+            } else {
+                value = entry.unit ?: ""
+            }
             note = entry.note
             if (!isNewFromTemplate) {
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
@@ -72,13 +96,28 @@ fun AddDrugScreen(
         onReminderTimeFound = { reminderTime = it }
     )
 
+    // Auto-fill dosage from last entry when name matches
+    LaunchedEffect(name) {
+        if (name.isNotBlank() && value.isBlank() && existingEntry == null && !isNewFromTemplate) {
+            val lastEntry = viewModel.getLastEntryByTypeAndName(EntryType.DRUG, name.trim())
+            lastEntry?.let {
+                val lastValue = it.value?.let { v -> if (v == v.toLong().toDouble()) v.toLong().toString() else v.toString() } ?: ""
+                if (lastValue.isNotEmpty()) {
+                    value = lastValue
+                    it.unit?.let { u -> selectedUnit = u }
+                }
+            }
+        }
+    }
+
     val createEntry = {
         HealthEntry(
             id = if (isNewFromTemplate) 0 else (existingEntry?.id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.DRUG,
             name = name.trim(),
-            unit = dosage.trim(),
+            value = value.replace(",", ".").toDoubleOrNull(),
+            unit = selectedUnit,
             note = note,
             hasReminder = setReminder,
             reminderId = existingEntry?.reminderId,
@@ -136,11 +175,49 @@ fun AddDrugScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            VoiceEnabledTextField(
-                value = dosage,
-                onValueChange = { dosage = it },
-                label = stringResource(R.string.dosage_label)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { value = it },
+                    label = { Text(stringResource(R.string.dosage_label)) },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true
+                )
+
+                ExposedDropdownMenuBox(
+                    expanded = unitMenuExpanded,
+                    onExpandedChange = { unitMenuExpanded = !unitMenuExpanded },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = selectedUnit,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.unit)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitMenuExpanded) },
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = unitMenuExpanded,
+                        onDismissRequest = { unitMenuExpanded = false }
+                    ) {
+                        unitOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    selectedUnit = option
+                                    unitMenuExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -161,7 +238,5 @@ fun AddDrugScreen(
                 isUpdate = existingEntry?.hasReminder == true
             )
         }
-        
-        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(innerPadding))
     }
 }

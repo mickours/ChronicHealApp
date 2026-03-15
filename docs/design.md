@@ -38,7 +38,14 @@ A unified `Event` or `Entry` system to handle diverse data types while maintaini
     - `SymptomEntry`: Symptom name, Severity, Duration.
     - `ActivityEntry`: Type, Duration, Intensity.
     - `MealEntry`: Description, Potential triggers.
+    - `DiseaseEntry`: Name, Severity, Duration.
+    - `PeriodEntry`: Duration, Type.
+    - `BeverageEntry`: Name, Value, Unit.
     - `MedicalAppointment`: Doctor name, Purpose, Outcome.
+    - `SleepEntry`: Duration, Quality.
+    - `ExternalFactorEntry`: Name, Value.
+    - `JournalEntry`: Title, Content.
+    - `StoolEntry`: Type, Aspect.
 
 ## 6. Key Features Design
 
@@ -49,7 +56,7 @@ Instead of a generic form, specialized input screens for each type (e.g., a slid
 - **Monthly View**: High-level overview with icons/dots indicating activity.
 - **Daily View/Timeline**: Detailed list of events for a specific day.
 
-### 6.3. Symptom Body Scan
+### 6.3. Pain Body Scan
 An interactive SVG or Canvas-based human silhouette allowing users to tap on specific body regions to log pain or symptoms.
 
 ### 6.4. Analytics & Graphs
@@ -62,5 +69,5 @@ An interactive SVG or Canvas-based human silhouette allowing users to tap on spe
 
 ## 7. Security & Privacy
 - **Local-only**: The `data` layer has no network access by default.
-- **Encryption**: Optional biometric lock for the app.
+- **Privacy**: Optional biometric lock for the app.
 - **Explicit Consent**: Any data movement (export/sync) must be user-initiated.

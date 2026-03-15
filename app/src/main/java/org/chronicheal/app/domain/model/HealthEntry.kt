@@ -25,6 +25,7 @@ data class HealthEntry(
     val intensity: Int? = null,
     val location: String? = null,
     val name: String? = null,
+    val origin: String? = null,
     val value: Double? = null,
     val unit: String? = null,
     val hasReminder: Boolean = false,

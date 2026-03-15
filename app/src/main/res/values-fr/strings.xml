@@ -97,6 +97,7 @@
     <string name="intensity_short_label">Intensité</string>
     <string name="location_label">Localisation</string>
     <string name="location_label_format">Localisation : %1$s</string>
+    <string name="pain_origin_label">Origine de la douleur (ex: Muscle, Nerf, Articulation)</string>
     <string name="name_label">Nom</string>
     <string name="name_label_format">Nom : %1$s</string>
     <string name="duration_label">Durée</string>
@@ -196,6 +197,12 @@
     <string name="allergen_soy">Soja</string>
     <string name="allergen_wheat">Blé</string>
     <string name="step_allergens_desc">Sélectionnez les allergènes que vous souhaitez suivre dans vos repas. Vous pouvez modifier cela à tout moment dans les Paramètres.</string>
+    <string name="unit_cup">tasse</string>
+    <string name="unit_ml">mL</string>
+    <string name="unit_pills">comprimés</string>
+    <string name="unit_mg">mg</string>
+    <string name="unit_g">g</string>
+    <string name="unit_spoon">cuillère</string>
     
     <!-- Calendar Screen -->
     <string name="calendar_title">Calendrier</string>
