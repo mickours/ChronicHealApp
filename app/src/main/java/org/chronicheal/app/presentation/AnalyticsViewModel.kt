@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import org.chronicheal.app.R
+import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.usecase.ExportPdfUseCase
@@ -24,6 +25,28 @@ import java.time.temporal.WeekFields
 import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.sqrt
+
+sealed class CorrelationMetric {
+    abstract val emoji: String
+    abstract val labelRes: Int
+    abstract val id: String
+
+    data class Type(val entryType: EntryType) : CorrelationMetric() {
+        override val emoji: String = entryType.emoji
+        override val labelRes: Int = entryType.displayRes
+        override val id: String = "type_${entryType.name}"
+    }
+
+    data class BeverageAttribute(val attribute: String, override val emoji: String, override val labelRes: Int) : CorrelationMetric() {
+        override val id: String = "beverage_$attribute"
+    }
+
+    data class AllergenMetric(val allergen: Allergen) : CorrelationMetric() {
+        override val emoji: String = "🚫"
+        override val labelRes: Int = allergen.displayRes
+        override val id: String = "allergen_${allergen.id}"
+    }
+}
 
 @HiltViewModel
 class AnalyticsViewModel @Inject constructor(
@@ -46,11 +69,11 @@ class AnalyticsViewModel @Inject constructor(
     private val _pdfExportSuccess = MutableSharedFlow<Uri>()
     val pdfExportSuccess = _pdfExportSuccess.asSharedFlow()
 
-    private val _correlationType1 = MutableStateFlow(EntryType.PAIN)
-    val correlationType1 = _correlationType1.asStateFlow()
+    private val _correlationMetric1 = MutableStateFlow<CorrelationMetric>(CorrelationMetric.Type(EntryType.PAIN))
+    val correlationMetric1 = _correlationMetric1.asStateFlow()
 
-    private val _correlationType2 = MutableStateFlow(EntryType.SLEEP)
-    val correlationType2 = _correlationType2.asStateFlow()
+    private val _correlationMetric2 = MutableStateFlow<CorrelationMetric>(CorrelationMetric.Type(EntryType.SLEEP))
+    val correlationMetric2 = _correlationMetric2.asStateFlow()
 
     private val _selectedPainLocations = MutableStateFlow<Set<String>>(emptySet())
     val selectedPainLocations = _selectedPainLocations.asStateFlow()
@@ -58,13 +81,22 @@ class AnalyticsViewModel @Inject constructor(
     private val _selectedSymptoms = MutableStateFlow<Set<String>>(emptySet())
     val selectedSymptoms = _selectedSymptoms.asStateFlow()
 
+    val availableMetrics = EntryType.entries
+        .filter { it != EntryType.VOICE_LOGGING }
+        .map { CorrelationMetric.Type(it) } +
+        listOf(
+            CorrelationMetric.BeverageAttribute("alcoholic", "🍷", R.string.is_alcoholic),
+            CorrelationMetric.BeverageAttribute("caffeinated", "☕", R.string.is_caffeinated)
+        ) +
+        Allergen.entries.map { CorrelationMetric.AllergenMetric(it) }
+
     val uiState: StateFlow<AnalyticsUiState> = combine(
         getEntriesUseCase(),
         _timeRange,
         _startDate,
-        _correlationType1,
-        _correlationType2
-    ) { entries, range, start, type1, type2 ->
+        _correlationMetric1,
+        _correlationMetric2
+    ) { entries, range, start, metric1, metric2 ->
         val filteredEntries = filterEntries(entries, range, start)
         val painData = getPainData(filteredEntries, range, start)
         val symptomData = getSymptomData(filteredEntries, range, start)
@@ -75,7 +107,7 @@ class AnalyticsViewModel @Inject constructor(
         AnalyticsUiState(
             painData = painData,
             symptomEvolutionData = symptomData,
-            correlationData = getCorrelationData(filteredEntries, range, start, type1, type2)
+            correlationData = getCorrelationData(filteredEntries, range, start, metric1, metric2)
         )
     }.stateIn(
         scope = viewModelScope,
@@ -88,9 +120,9 @@ class AnalyticsViewModel @Inject constructor(
         resetStartDate()
     }
 
-    fun setCorrelationTypes(type1: EntryType, type2: EntryType) {
-        _correlationType1.value = type1
-        _correlationType2.value = type2
+    fun setCorrelationMetrics(metric1: CorrelationMetric, metric2: CorrelationMetric) {
+        _correlationMetric1.value = metric1
+        _correlationMetric2.value = metric2
     }
 
     fun togglePainLocation(location: String) {
@@ -238,33 +270,52 @@ class AnalyticsViewModel @Inject constructor(
         entries: List<HealthEntry>,
         range: TimeRange,
         start: LocalDate,
-        type1: EntryType,
-        type2: EntryType
+        metric1: CorrelationMetric,
+        metric2: CorrelationMetric
     ): CorrelationData {
         
-        fun getValues(type: EntryType): Map<String, Int> {
-            val typeEntries = entries.filter { it.type == type }
-            return aggregateData(typeEntries, range, start) { dayEntries ->
-                when (type) {
-                    EntryType.SLEEP -> {
-                        dayEntries.mapNotNull { it.intensity?.toFloat() ?: it.durationMinutes?.toFloat()?.div(60f) }.average().toInt()
+        fun getValues(metric: CorrelationMetric): Map<String, Int> {
+            return when (metric) {
+                is CorrelationMetric.Type -> {
+                    val typeEntries = entries.filter { it.type == metric.entryType }
+                    aggregateData(typeEntries, range, start) { dayEntries ->
+                        when (metric.entryType) {
+                            EntryType.SLEEP -> {
+                                dayEntries.mapNotNull { it.intensity?.toFloat() ?: it.durationMinutes?.toFloat()?.div(60f) }.average().toInt()
+                            }
+                            EntryType.PAIN, EntryType.SYMPTOM, EntryType.DISEASE, EntryType.EXTERNAL_FACTOR, EntryType.PERIOD, EntryType.MOOD -> {
+                                dayEntries.mapNotNull { it.intensity?.toFloat() }.average().toInt()
+                            }
+                            EntryType.BEVERAGE -> {
+                                dayEntries.sumOf { it.value ?: 0.0 }.toInt()
+                            }
+                            EntryType.DRUG, EntryType.MEAL, EntryType.ACTIVITY, EntryType.MEDICAL_APPOINTMENT, EntryType.JOURNAL, EntryType.STOOL, EntryType.VOICE_LOGGING -> {
+                                if (metric.entryType == EntryType.ACTIVITY) dayEntries.sumOf { it.durationMinutes ?: 0 } / 60
+                                else dayEntries.size
+                            }
+                        }
                     }
-                    EntryType.PAIN, EntryType.SYMPTOM, EntryType.DISEASE, EntryType.EXTERNAL_FACTOR, EntryType.PERIOD, EntryType.MOOD -> {
-                        dayEntries.mapNotNull { it.intensity?.toFloat() }.average().toInt()
+                }
+                is CorrelationMetric.BeverageAttribute -> {
+                    val bevEntries = entries.filter { it.type == EntryType.BEVERAGE }
+                    val filteredBevs = when (metric.attribute) {
+                        "alcoholic" -> bevEntries.filter { it.isAlcoholic == true }
+                        "caffeinated" -> bevEntries.filter { it.isCaffeinated == true }
+                        else -> bevEntries
                     }
-                    EntryType.BEVERAGE -> {
+                    aggregateData(filteredBevs, range, start) { dayEntries ->
                         dayEntries.sumOf { it.value ?: 0.0 }.toInt()
                     }
-                    EntryType.DRUG, EntryType.MEAL, EntryType.ACTIVITY, EntryType.MEDICAL_APPOINTMENT, EntryType.JOURNAL, EntryType.STOOL, EntryType.VOICE_LOGGING -> {
-                        if (type == EntryType.ACTIVITY) dayEntries.sumOf { it.durationMinutes ?: 0 } / 60
-                        else dayEntries.size
-                    }
+                }
+                is CorrelationMetric.AllergenMetric -> {
+                    val mealEntries = entries.filter { it.type == EntryType.MEAL && it.allergens?.contains(metric.allergen.id) == true }
+                    aggregateData(mealEntries, range, start) { it.size }
                 }
             }
         }
 
-        val data1 = getValues(type1)
-        val data2 = getValues(type2)
+        val data1 = getValues(metric1)
+        val data2 = getValues(metric2)
         val labels = data1.keys.toList()
         val series1 = data1.values.map { it.toFloat() }
         val series2 = data2.values.map { it.toFloat() }

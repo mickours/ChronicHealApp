@@ -84,7 +84,6 @@ import com.patrykandpatrick.vico.core.entry.entryModelOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.chronicheal.app.R
-import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -102,8 +101,8 @@ fun AnalyticsScreen(
     val timeRange by viewModel.timeRange.collectAsState()
     val startDate by viewModel.startDate.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val type1 by viewModel.correlationType1.collectAsState()
-    val type2 by viewModel.correlationType2.collectAsState()
+    val metric1 by viewModel.correlationMetric1.collectAsState()
+    val metric2 by viewModel.correlationMetric2.collectAsState()
     val selectedPainLocations by viewModel.selectedPainLocations.collectAsState()
     val selectedSymptoms by viewModel.selectedSymptoms.collectAsState()
 
@@ -130,7 +129,6 @@ fun AnalyticsScreen(
     ) { uri ->
         uri?.let {
             scope.launch {
-                // Ensure outputStream is closed AFTER the async operation completes
                 context.contentResolver.openOutputStream(it).use { outputStream ->
                     if (outputStream != null) {
                         viewModel.onPdfExportRequested(outputStream, it)
@@ -217,7 +215,6 @@ fun AnalyticsScreen(
 
             HorizontalDivider()
 
-            // 1. Pain Evolution
             EvolutionChart(
                 title = stringResource(R.string.pain_evolution),
                 data = uiState.painData,
@@ -230,7 +227,6 @@ fun AnalyticsScreen(
 
             HorizontalDivider()
 
-            // 2. Symptoms Evolution
             EvolutionChart(
                 title = stringResource(R.string.symptom_evolution),
                 data = uiState.symptomEvolutionData,
@@ -243,19 +239,20 @@ fun AnalyticsScreen(
 
             HorizontalDivider()
 
-            // 3. Correlation Analysis
+            // Correlation Analysis
             Text(text = stringResource(R.string.correlation_analysis), style = MaterialTheme.typography.titleLarge)
             
             CorrelationSelectors(
-                type1 = type1,
-                type2 = type2,
-                onTypesChange = viewModel::setCorrelationTypes
+                metric1 = metric1,
+                metric2 = metric2,
+                availableMetrics = viewModel.availableMetrics,
+                onMetricsChange = viewModel::setCorrelationMetrics
             )
 
             CorrelationChart(
                 correlationData = uiState.correlationData,
-                type1 = type1,
-                type2 = type2,
+                metric1 = metric1,
+                metric2 = metric2,
                 color1 = palette[0],
                 color2 = palette[1],
                 axisLabelColor = axisLabelColor
@@ -283,7 +280,6 @@ fun EvolutionChart(
         if (visibleKeys.isNotEmpty()) {
             val labels = data.values.first().keys.toList()
             
-            // Manually calculate stacked series
             val stackedSeries = remember(data, visibleKeys) {
                 val result = mutableListOf<List<FloatEntry>>()
                 visibleKeys.forEachIndexed { i, key ->
@@ -345,7 +341,6 @@ fun EvolutionChart(
             }
         }
 
-        // Clickable Legend
         FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -390,8 +385,8 @@ fun EvolutionChart(
 @Composable
 fun CorrelationChart(
     correlationData: CorrelationData,
-    type1: EntryType,
-    type2: EntryType,
+    metric1: CorrelationMetric,
+    metric2: CorrelationMetric,
     color1: Color,
     color2: Color,
     axisLabelColor: Color
@@ -420,13 +415,13 @@ fun CorrelationChart(
             model = model,
             startAxis = rememberStartAxis(
                 label = textComponent(color = color1),
-                title = stringResource(R.string.scale_label, type1.emoji),
+                title = stringResource(R.string.scale_label, metric1.emoji),
                 titleComponent = textComponent(color = color1),
                 itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 6)
             ),
             endAxis = rememberEndAxis(
                 label = textComponent(color = color2),
-                title = stringResource(R.string.scale_label, type2.emoji),
+                title = stringResource(R.string.scale_label, metric2.emoji),
                 titleComponent = textComponent(color = color2),
                 itemPlacer = AxisItemPlacer.Vertical.default(maxItemCount = 6)
             ),
@@ -446,12 +441,11 @@ fun CorrelationChart(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LegendItem(color = color1, label = "${type1.emoji} ${stringResource(type1.displayRes)}")
+            LegendItem(color = color1, label = "${metric1.emoji} ${stringResource(metric1.labelRes)}")
             Spacer(Modifier.width(16.dp))
-            LegendItem(color = color2, label = "${type2.emoji} ${stringResource(type2.displayRes)}")
+            LegendItem(color = color2, label = "${metric2.emoji} ${stringResource(metric2.labelRes)}")
         }
 
-        // Correlation Score and Insight
         correlationData.pearsonCorrelation?.let { score ->
             val (strength, color) = when {
                 score > 0.7 -> stringResource(R.string.strong_pos_corr) to Color(0xFF2E7D32)
@@ -475,13 +469,15 @@ fun CorrelationChart(
                         fontWeight = FontWeight.Bold,
                         color = color
                     )
+                    
+                    val formattedScore = String.format(Locale.getDefault(), "%.2f", score)
                     Text(
-                        text = "$strength (${String.format(Locale.getDefault(), "%.2f", score)})",
+                        text = strength + " (" + formattedScore + ")",
                         style = MaterialTheme.typography.bodyMedium
                     )
                     
-                    val name1 = stringResource(type1.displayRes).lowercase()
-                    val name2 = stringResource(type2.displayRes).lowercase()
+                    val name1 = stringResource(metric1.labelRes).lowercase()
+                    val name2 = stringResource(metric2.labelRes).lowercase()
                     
                     val insight = when {
                         score > 0.5 -> stringResource(R.string.insight_increase_increase, name1, name2)
@@ -516,25 +512,28 @@ fun LegendItem(color: Color, label: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CorrelationSelectors(
-    type1: EntryType,
-    type2: EntryType,
-    onTypesChange: (EntryType, EntryType) -> Unit
+    metric1: CorrelationMetric,
+    metric2: CorrelationMetric,
+    availableMetrics: List<CorrelationMetric>,
+    onMetricsChange: (CorrelationMetric, CorrelationMetric) -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        TypeDropdown(
-            selectedType = type1,
-            onTypeSelected = { onTypesChange(it, type2) },
+        MetricDropdown(
+            selectedMetric = metric1,
+            availableMetrics = availableMetrics,
+            onMetricSelected = { onMetricsChange(it, metric2) },
             modifier = Modifier.weight(1f),
             label = stringResource(R.string.metric_1)
         )
         Icon(Icons.AutoMirrored.Filled.CompareArrows, contentDescription = null)
-        TypeDropdown(
-            selectedType = type2,
-            onTypeSelected = { onTypesChange(type1, it) },
+        MetricDropdown(
+            selectedMetric = metric2,
+            availableMetrics = availableMetrics,
+            onMetricSelected = { onMetricsChange(metric1, it) },
             modifier = Modifier.weight(1f),
             label = stringResource(R.string.metric_2)
         )
@@ -543,9 +542,10 @@ fun CorrelationSelectors(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TypeDropdown(
-    selectedType: EntryType,
-    onTypeSelected: (EntryType) -> Unit,
+fun MetricDropdown(
+    selectedMetric: CorrelationMetric,
+    availableMetrics: List<CorrelationMetric>,
+    onMetricSelected: (CorrelationMetric) -> Unit,
     modifier: Modifier = Modifier,
     label: String
 ) {
@@ -557,7 +557,7 @@ fun TypeDropdown(
         modifier = modifier
     ) {
         OutlinedTextField(
-            value = "${selectedType.emoji} ${stringResource(selectedType.displayRes)}",
+            value = "${selectedMetric.emoji} ${stringResource(selectedMetric.labelRes)}",
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -570,11 +570,11 @@ fun TypeDropdown(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            EntryType.entries.forEach { type ->
+            availableMetrics.forEach { metric ->
                 DropdownMenuItem(
-                    text = { Text("${type.emoji} ${stringResource(type.displayRes)}") },
+                    text = { Text("${metric.emoji} ${stringResource(metric.labelRes)}") },
                     onClick = {
-                        onTypeSelected(type)
+                        onMetricSelected(metric)
                         expanded = false
                     }
                 )

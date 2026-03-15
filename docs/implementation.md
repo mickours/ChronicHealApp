@@ -200,3 +200,9 @@ Goal: Interactive tools and notifications.
     - Added "Pain Origin" autocomplete field to `AddPainScreen`.
     - Added "Pain Origin" autocomplete field for each pain entry in the `Checkup` (formerly Complete Check-in) screen.
 - **Search Support**: Added the `origin` field to the global timeline search.
+
+## Phase 37: Deep Correlation Analysis (Completed)
+- **Granular Metrics**: Expanded correlation analysis to support specific attributes beyond entry types.
+- **Beverage Attributes**: Users can now correlate health outcomes with **Alcoholic** or **Caffeinated** drink intake (summing quantities).
+- **Allergen Analysis**: Implemented correlation support for individual **Allergens** (Gluten, Lactose, etc.), tracking their occurrence frequency in meals.
+- **Unified Selector**: Introduced a `CorrelationMetric` abstraction to seamlessly switch between entry types, beverage traits, and allergens in the `AnalyticsScreen`.
