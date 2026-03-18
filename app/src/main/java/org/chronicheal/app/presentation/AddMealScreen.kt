@@ -1,5 +1,11 @@
 package org.chronicheal.app.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,20 +26,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -55,7 +71,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.launch
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.EntryType
@@ -77,6 +95,7 @@ fun AddMealScreen(
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var name by rememberSaveable { mutableStateOf("") }
     var note by rememberSaveable { mutableStateOf("") }
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
@@ -92,6 +111,7 @@ fun AddMealScreen(
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var advancedOptionsExpanded by rememberSaveable { mutableStateOf(false) }
 
+    val uiState by viewModel.uiState.collectAsState()
     val nameSuggestions by viewModel.mealSuggestions.collectAsState()
     val allergenOrderFromSettings by viewModel.allergenOrder.collectAsState()
     val deactivatedAllergenIds by viewModel.deactivatedAllergens.collectAsState()
@@ -99,7 +119,27 @@ fun AddMealScreen(
     
     var currentVisibleAllergenIds by remember { mutableStateOf(emptyList<String>()) }
     var currentVisibleFodmapIds by remember { mutableStateOf(emptyList<String>()) }
-    
+
+    // AI State
+    var isAnalyzing by remember { mutableStateOf(false) }
+    var showDownloadDialog by remember { mutableStateOf(false) }
+    var showMeteredWarning by remember { mutableStateOf(false) }
+    val isDownloading by viewModel.isDownloadingModel.collectAsState()
+    val downloadProgress by viewModel.modelDownloadProgress.collectAsState()
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) viewModel.downloadModel()
+    }
+
+    LaunchedEffect(uiState.message) {
+        uiState.message?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessage()
+        }
+    }
+
     LaunchedEffect(allergenOrderFromSettings, deactivatedAllergenIds) {
         val baseOrder = if (allergenOrderFromSettings.isEmpty()) {
             Allergen.allIds
@@ -178,7 +218,7 @@ fun AddMealScreen(
         )
     }
 
-    val handleSave = {
+    val handleSave: () -> Unit = {
         handleEntrySave(
             viewModel = viewModel,
             existingEntry = existingEntry,
@@ -188,6 +228,192 @@ fun AddMealScreen(
             reminderTime = reminderTime,
             reminderTitle = name.trim().ifBlank { context.getString(R.string.type_meal) },
             onSaveSuccess = onSaveSuccess
+        )
+    }
+
+    val startDownloadProcess = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                viewModel.downloadModel()
+            } else {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        } else {
+            viewModel.downloadModel()
+        }
+    }
+
+    val handleAiAssist: () -> Unit = {
+        if (viewModel.isModelPresent) {
+            scope.launch {
+                isAnalyzing = true
+                val analysis = viewModel.analyzeMeal(note.ifBlank { name })
+                if (analysis != null) {
+                    if (name.isBlank()) name = analysis.name ?: ""
+                    analysis.ingredients?.let { aiIngs ->
+                        aiIngs.forEach { aiIng ->
+                            if (ingredients.none {
+                                    it.name.equals(
+                                        aiIng.name,
+                                        ignoreCase = true
+                                    )
+                                }) {
+                                ingredients.add(Ingredient(aiIng.name, aiIng.quantity, aiIng.unit))
+                            }
+                        }
+                    }
+                    analysis.allergens?.let { aiAllergens ->
+                        aiAllergens.forEach {
+                            if (it !in selectedAllergenIds) selectedAllergenIds.add(
+                                it
+                            )
+                        }
+                    }
+                    analysis.fodmaps?.let { aiFodmaps ->
+                        aiFodmaps.forEach { if (it !in selectedFodmapIds) selectedFodmapIds.add(it) }
+                    }
+                } else {
+                    viewModel.showMessage(context.getString(R.string.ai_error_parsing))
+                }
+                isAnalyzing = false
+            }
+        } else {
+            showDownloadDialog = true
+        }
+    }
+
+    if (showDownloadDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isDownloading) showDownloadDialog = false },
+            title = { Text(stringResource(R.string.ai_download_now_confirm)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.ai_download_model_desc))
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Info,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    stringResource(R.string.ai_model_info_title),
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                stringResource(R.string.ai_model_name),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                stringResource(R.string.ai_model_source),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                stringResource(R.string.ai_model_license),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text(
+                                stringResource(R.string.ai_model_url),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+
+                    if (isDownloading) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        if (downloadProgress >= 0) {
+                            LinearProgressIndicator(
+                                progress = { downloadProgress },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Text(
+                                text = stringResource(
+                                    R.string.ai_downloading,
+                                    (downloadProgress * 100).toInt()
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.align(Alignment.End)
+                            )
+                        } else {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            Text(
+                                text = stringResource(R.string.ai_downloading_indeterminate),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.align(Alignment.End)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                if (!isDownloading) {
+                    Button(onClick = {
+                        if (viewModel.isMeteredConnection()) {
+                            showMeteredWarning = true
+                        } else {
+                            startDownloadProcess()
+                        }
+                    }) {
+                        Text(stringResource(R.string.ai_download_now))
+                    }
+                }
+            },
+            dismissButton = {
+                if (!isDownloading) {
+                    TextButton(onClick = { }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            }
+        )
+    }
+
+    if (showMeteredWarning) {
+        AlertDialog(
+            onDismissRequest = { showMeteredWarning = false },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text("Mobile Data Warning")
+                }
+            },
+            text = { Text("You are on a metered connection (Mobile Data). This download is large (~1GB) and may incur charges. Do you want to proceed?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showMeteredWarning = false
+                        startDownloadProcess()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Download anyway")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showMeteredWarning = false }) {
+                    Text("Wait for Wi-Fi")
+                }
+            }
         )
     }
 
@@ -220,14 +446,41 @@ fun AddMealScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                AutoCompleteTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    suggestions = nameSuggestions,
-                    label = stringResource(R.string.meal_name_label),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) })
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AutoCompleteTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        suggestions = nameSuggestions,
+                        label = stringResource(R.string.meal_name_label),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        keyboardActions = KeyboardActions(onNext = {
+                            focusManager.moveFocus(
+                                FocusDirection.Down
+                            )
+                        }),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    IconButton(
+                        onClick = handleAiAssist,
+                        enabled = !isAnalyzing && (name.isNotBlank() || note.isNotBlank())
+                    ) {
+                        if (isAnalyzing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.AutoAwesome,
+                                contentDescription = stringResource(R.string.ai_assist),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
 
                 if (currentVisibleAllergenIds.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(24.dp))

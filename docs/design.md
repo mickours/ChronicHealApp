@@ -67,6 +67,18 @@ An interactive SVG or Canvas-based human silhouette allowing users to tap on spe
 - **JSON**: Raw data export for interoperability and personal backups.
 - **PDF**: Formatted report tailored for medical professionals, including summary graphs and chronological logs.
 
+### 6.6. Optional and Local-Only AI
+
+To minimize the friction of manual entry, the app provides an optional AI assistant that runs
+entirely on-device.
+
+- **Meal Analysis**: Extracting ingredients, allergens (Gluten, Dairy, etc.), FODMAPs, and estimated
+  nutritional values (Carbs, Sugar, Fat) from natural language descriptions.
+- **Privacy Guarantee**: No data ever leaves the device. The AI model is executed locally using the
+  device's NPU/GPU.
+- **User Control**: The AI feature is a separate, opt-in download to keep the initial app size
+  small.
+
 ## 7. Security & Privacy
 - **Local-only**: The `data` layer has no network access by default.
 - **Privacy**: Optional biometric lock for the app.

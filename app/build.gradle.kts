@@ -101,6 +101,9 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
 
+    // MediaPipe LLM Inference
+    implementation(libs.mediapipe.tasks.genai)
+
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.coroutines.test)

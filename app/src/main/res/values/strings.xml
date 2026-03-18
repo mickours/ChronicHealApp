@@ -191,7 +191,7 @@
     <string name="allergen_gluten">Gluten</string>
     <string name="allergen_lactose">Lactose</string>
     <string name="allergen_nuts">Nuts</string>
-    <string name="allergen_shellfish">Shellfish</string>
+    <string name="allergen_shellfish">Crustacés</string>
     <string name="allergen_eggs">Eggs</string>
     <string name="allergen_fish">Fish</string>
     <string name="allergen_soy">Soy</string>
@@ -286,10 +286,10 @@
     <string name="mood_very_bad">Very Bad</string>
     <string name="mood_bad">Bad</string>
     <string name="mood_poor">Poor</string>
-    <string name="mood_somewhat_poor">Somewhat Poor</string>
+    <string name="mood_somewhat_poor">Assez médiocre</string>
     <string name="mood_neutral">Neutral</string>
     <string name="mood_good">Good</string>
-    <string name="mood_very_good">Very Good</string>
+    <string name="mood_very_good">Très Bon</string>
     <string name="mood_great">Great</string>
     <string name="mood_excellent">Excellent</string>
     <string name="mood_amazing">Amazing</string>
@@ -331,7 +331,7 @@
     <string name="body_region_fingers_L">Fingers (Left)</string>
     <string name="body_region_shoulder_L">Shoulder (Left)</string>
     <string name="body_region_brest">Chest</string>
-    <string name="body_region_neck">Neck</string>
+    <string name="body_region_neck">Cou</string>
     <string name="body_region_head_part">Head</string>
     <string name="body_region_forehead">Forehead</string>
     <string name="body_region_ear_R">Ear (Right)</string>
@@ -344,7 +344,7 @@
     <string name="welcome_subtitle">Your privacy-first chronic health companion.</string>
     <string name="step_privacy_title">Privacy First</string>
     <string name="step_privacy_desc">All your data is stored locally on your device. No cloud, no tracking, no account needed.</string>
-    <string name="step_privacy_desc_short">Your data stays on your device.</string>
+    <string name="step_privacy_desc_short">Vos données reste sur votre appareil.</string>
     <string name="step_logging_title">Easy Logging</string>
     <string name="step_logging_desc">Quickly log pain, symptoms, medication, and more with specialized screens.</string>
     <string name="step_logging_desc_short">Specialized screens for every health event.</string>
@@ -402,4 +402,20 @@
     <string name="notification_reminder_message">It\'s time for your scheduled activity.</string>
     <string name="notification_action_log_now">Log Now</string>
     <string name="notification_action_skip">Skip Today</string>
+
+    <!-- AI Integration -->
+    <string name="ai_assist">AI Assist</string>
+    <string name="ai_analyzing">Analyzing meal description…</string>
+    <string name="ai_model_required">AI model required</string>
+    <string name="ai_download_model_desc">To analyze meal descriptions locally, an AI model must be downloaded (~1GB). This works entirely offline and respects your privacy.</string>
+    <string name="ai_download_now">Download Model</string>
+    <string name="ai_downloading">Downloading model… %1$d%%</string>
+    <string name="ai_downloading_indeterminate">Downloading model…</string>
+    <string name="ai_download_now_confirm">Download AI Model</string>
+    <string name="ai_model_info_title">Model Information</string>
+    <string name="ai_model_name">Model: Gemma 2b 4-bit</string>
+    <string name="ai_model_source">Source: Hugging Face</string>
+    <string name="ai_model_license">License: Gemma Terms of Use</string>
+    <string name="ai_model_url">URL: https://huggingface.co/google/gemma-2b-it-gpu-int4</string>
+    <string name="ai_error_parsing">Error analyzing description. Please try again.</string>
 </resources>

@@ -11,7 +11,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.chronicheal.app.data.ai.LlmManager
 import org.chronicheal.app.data.notification.ReminderScheduler
+import org.chronicheal.app.domain.model.AiMealAnalysis
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
@@ -39,7 +41,8 @@ class TimelineViewModel @Inject constructor(
     private val entryRepository: EntryRepository,
     private val reminderRepository: ReminderRepository,
     private val reminderScheduler: ReminderScheduler,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val llmManager: LlmManager
 ) : ViewModel() {
 
     private var recentlyDeletedEntry: HealthEntry? = null
@@ -115,6 +118,27 @@ class TimelineViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    val isModelPresent: Boolean get() = llmManager.isModelPresent()
+    val isDownloadingModel: StateFlow<Boolean> = llmManager.isDownloading
+    val modelDownloadProgress: StateFlow<Float> = llmManager.downloadProgress
+
+    fun isMeteredConnection(): Boolean = llmManager.isMeteredConnection()
+
+    fun downloadModel() {
+        viewModelScope.launch {
+            try {
+                llmManager.downloadModel()
+                _message.value = "AI model downloaded successfully"
+            } catch (e: Exception) {
+                _message.value = "Failed to download: ${e.message}"
+            }
+        }
+    }
+
+    suspend fun analyzeMeal(description: String): AiMealAnalysis? {
+        return llmManager.analyzeMeal(description)
+    }
 
     private fun calculateWeeklyStats(entries: List<HealthEntry>): WeeklyStats? {
         val now = Instant.now()

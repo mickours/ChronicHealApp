@@ -62,7 +62,7 @@
     <string name="voice_keywords_activity">activité,exercice,couru,marché,entraînement,sport,gym</string>
     <string name="voice_keywords_disease">maladie,diagnostiqué,affection,pathologie</string>
     <string name="voice_keywords_appointment">rendez-vous,docteur,médecin,visite,clinique,hôpital,dentiste</string>
-    <string name="voice_keywords_factor">météo,facteur,stress,pollution,humidité,froid,chaud</string>
+    <string name="voice_keywords_factor">météo,facteur,stress,pollution,humidity,froid,chaud</string>
     <string name="voice_keywords_period">règles,menstruation,flux,saignement,cycle</string>
     <string name="voice_keywords_stool">selle,selles,caca,constipation,diarrhée</string>
     
@@ -353,14 +353,14 @@
     <string name="step_insights_desc_short">Voir les tendances et les corrélations dans le temps.</string>
     <string name="get_started">Commencer</string>
     <string name="data_control_title">Vos Données, Votre Contrôle</string>
-    <string name="data_control_desc">ChronicHeal est construit avec la vie privée au cœur. Vos informations de santé ne quittent jamais votre téléphone sauf si vous choisissez de les exporter.</string>
+    <string name="data_control_desc">ChronicHeal est built avec la vie privée au cœur. Vos informations de santé ne quittent jamais votre téléphone sauf si vous choisissez de les exporter.</string>
     <string name="stay_on_track_title">Restez à Jour</string>
     <string name="stay_on_track_desc">Accordez les permissions de notification pour receive des rappels haute précision pour vos médicaments, rendez-vous et bilans quotidiens.</string>
     <string name="checkup_reminder_title">Rappel Bilan Quotidien</string>
     <string name="checkup_reminder_desc">Une invite pour noter votre mood, douleur, sommeil et médicaments chaque jour</string>
     <string name="reminder_time_label">Heure du Rappel</string>
     <string name="personalize_title">Personnalisez Votre Experience</string>
-    <string name="personalize_desc">Sélectionnez les types d\'entrées que vous utiliserez le plus souvent pour les épingler sur votre journal.</string>
+    <string name="personalize_desc">Sélectionnez les types d\'entrées que vous utiliserez le plus often pour les épingler sur votre journal.</string>
     <string name="backup_portability_title">Sauvegarde &amp; Portabilité</string>
     <string name="backup_portability_desc">Vous pouvez créer des sauvegardes chiffrées ou exporter vos données en JSON/PDF à tout moment depuis les Paramètres.</string>
 
@@ -399,7 +399,23 @@
 
     <!-- Notifications -->
     <string name="notification_reminder_title_format">Rappel : %1$s</string>
-    <string name="notification_reminder_message">C\'est l\'heure de votre activité programmée.</string>
+    <string name="notification_reminder_message">C\'s l\'heure de votre activité programmée.</string>
     <string name="notification_action_log_now">Noter maintenant</string>
     <string name="notification_action_skip">Passer aujourd\'hui</string>
+
+    <!-- AI Integration -->
+    <string name="ai_assist">Aide IA</string>
+    <string name="ai_analyzing">Analyse de la description du repas…</string>
+    <string name="ai_model_required">Modèle IA requis</string>
+    <string name="ai_download_model_desc">Pour analyser les descriptions de repas localement, un modèle IA doit être téléchargé (~1Go). Cela fonctionnera entièrement hors ligne et respectera votre vie privée.</string>
+    <string name="ai_download_now">Télécharger le modèle</string>
+    <string name="ai_downloading">Téléchargement du modèle… %1$d%%</string>
+    <string name="ai_downloading_indeterminate">Téléchargement du modèle…</string>
+    <string name="ai_download_now_confirm">Télécharger le modèle IA</string>
+    <string name="ai_model_info_title">Informations sur le modèle</string>
+    <string name="ai_model_name">Modèle : Gemma 2b 4-bit</string>
+    <string name="ai_model_source">Source : Hugging Face</string>
+    <string name="ai_model_license">Licence : Gemma Terms of Use</string>
+    <string name="ai_model_url">URL : https://huggingface.co/google/gemma-2b-it-gpu-int4</string>
+    <string name="ai_error_parsing">Erreur lors de l\'analyse de la description. Veuillez réessayer.</string>
 </resources>

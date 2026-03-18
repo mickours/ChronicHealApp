@@ -228,3 +228,47 @@ Goal: Interactive tools and notifications.
   activated Allergens and FODMAPs.
 - **Management UI**: Added a dedicated FODMAP activation section to the `SettingsScreen`, matching
   the existing Allergen management.
+
+## Phase 40: Local AI Integration (Completed)
+
+### On-Device LLM Inference
+
+For meal description analysis, we implemented the **MediaPipe LLM Inference API** with the **Gemma
+2b 4-bit** quantized model.
+
+**Key Features:**
+
+1. **Privacy-First**: Fully on-device inference. Meal descriptions never leave the device.
+2. **AI-Powered Auto-fill**: A single tap on the "AI Assist" button parses a meal description to
+   automatically fill the meal name, ingredients (with quantities and units), allergens, and
+   FODMAPs.
+3. **Model Management**: Integrated download manager with progress tracking to fetch the ~1GB model
+   file only when needed.
+4. **Offline Capability**: Once downloaded, the AI features work without any internet connection.
+
+**Technical Implementation:**
+
+- `LlmManager`: Singleton class managing the MediaPipe `LlmInference` lifecycle and model
+  downloading.
+- `AiMealAnalysis`: Domain model for structured JSON output from the LLM.
+- `AddMealScreen`: Updated with an "AI Assist" button and a model download dialog.
+- `TimelineViewModel`: Integrated with `LlmManager` to expose model status and analysis functions.
+
+## Phase 43: Gemma 3 Compatibility and StableHLO Support (Completed)
+
+### MediaPipe Modernization
+
+Goal: Fix the `STABLEHLO_COMPOSITE` opcode error when using the new Gemma 3 model.
+
+**Accomplishments:**
+
+- **MediaPipe Upgrade**: Updated `com.google.mediapipe:tasks-genai` from `0.10.14` to `0.10.32` in
+  `libs.versions.toml`. This newer version includes the necessary TFLite ops for StableHLO, which is
+  required by Gemma 3.
+- **API Adaptation**:
+    - Removed `.setTopK(40)` and `.setTemperature(0.1f)` from `LlmInferenceOptions` in
+      `LlmManager.kt` as these methods were removed/moved in the newer MediaPipe version.
+    - Verified that the basic model initialization and inference cycle remains compatible with the
+      upgraded library.
+- **Build Stabilization**: Successfully ran a full Gradle build to confirm the dependency update and
+  API changes didn't break the application.
