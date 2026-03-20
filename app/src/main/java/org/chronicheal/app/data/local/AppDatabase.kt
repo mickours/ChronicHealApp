@@ -8,7 +8,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
 
-@Database(entities = [HealthEntry::class, Reminder::class], version = 9, exportSchema = true)
+@Database(entities = [HealthEntry::class, Reminder::class], version = 10, exportSchema = true)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun entryDao(): EntryDao
@@ -45,6 +45,14 @@ abstract class AppDatabase : RoomDatabase() {
         val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE health_entries ADD COLUMN fodmaps TEXT")
+            }
+        }
+
+        val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE health_entries ADD COLUMN proteins REAL")
+                db.execSQL("ALTER TABLE health_entries ADD COLUMN carbohydrates REAL")
+                db.execSQL("ALTER TABLE health_entries ADD COLUMN lipids REAL")
             }
         }
     }

@@ -36,5 +36,8 @@ data class HealthEntry(
     val isAlcoholic: Boolean? = null,
     val isCaffeinated: Boolean? = null,
     val allergens: List<String>? = null,
-    val fodmaps: List<String>? = null
+    val fodmaps: List<String>? = null,
+    val proteins: Double? = null,
+    val carbohydrates: Double? = null,
+    val lipids: Double? = null
 )

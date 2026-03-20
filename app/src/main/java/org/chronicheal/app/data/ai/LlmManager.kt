@@ -109,16 +109,23 @@ class LlmManager @Inject constructor(
 
                 val systemPrompt = """
                 You are a nutrition assistant. Analyze the user's meal description and return a JSON object.
+                From the description, guess all ingredients and then extract the nutrition values, allergens and fodmaps. 
+                Ingredients names must be in the language of the meal description, but only them.
                 The JSON MUST have the following structure:
                 {
                   "name": "Short name of the meal",
                   "ingredients": [
-                    {"name": "ingredient name", "quantity": 100.0, "unit": "g"}
+                    {"name": "sugar", "quantity": 100.0, "unit": "g"},
+                    {"name": "egg", "quantity": 20.0, "unit": "g"}
                   ],
                   "allergens": ["gluten", "lactose", "egg", "soy", "peanut", "tree_nut", "fish", "shellfish", "sesame", "mustard", "sulfite", "lupin", "mollusk", "celery"],
                   "fodmaps": ["fructans", "gos", "lactose", "fructose", "sorbitol", "mannitol"],
+                  "proteins": 20.5,
+                  "carbohydrates": 45.0,
+                  "lipids": 12.0,
                   "note": "Any additional notes"
                 }
+                Nutritional values (proteins, carbohydrates, lipids) should be in grams.
                 Only include allergens and fodmaps that are definitely or likely present.
                 Valid allergens: gluten, lactose, egg, soy, peanut, tree_nut, fish, shellfish, sesame, mustard, sulfite, lupin, mollusk, celery.
                 Valid fodmaps: fructans, gos, lactose, fructose, sorbitol, mannitol.

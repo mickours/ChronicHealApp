@@ -174,6 +174,7 @@
     <string name="disease_name_label">Nom de la pathologie</string>
     <string name="symptom_name_label">Nom du symptôme (ex: Fatigue, Nausée)</string>
     <string name="meal_name_label">Nom du repas (ex: Petit-déjeuner, Déjeuner)</string>
+    <string name="meal_description_label">Description du repas (ex: Lasagnes maison avec salade verte)</string>
     <string name="activity_name_label">Nom de l\'activité (ex: Marche, Yoga)</string>
     <string name="appointment_name_label">Nom du médecin ou de la clinique</string>
     <string name="factor_name_label">Facteur (ex: Météo, Stress, Pollution)</string>
@@ -211,6 +212,11 @@
     <string name="unit_mg">mg</string>
     <string name="unit_g">g</string>
     <string name="unit_spoon">cuillère</string>
+
+    <string name="nutrition_label">Nutrition (Estimée)</string>
+    <string name="proteins_label">Protéines</string>
+    <string name="carbohydrates_label">Glucides</string>
+    <string name="lipids_label">Lipides</string>
     
     <!-- Calendar Screen -->
     <string name="calendar_title">Calendrier</string>
@@ -399,8 +405,8 @@
 
     <!-- Notifications -->
     <string name="notification_reminder_title_format">Rappel : %1$s</string>
-    <string name="notification_reminder_message">C\'s l\'heure de votre activité programmée.</string>
-    <string name="notification_action_log_now">Noter maintenant</string>
+    <string name="notification_reminder_message">C\'est l\'heure !</string>
+    <string name="notification_action_log_now">Noter</string>
     <string name="notification_action_skip">Passer aujourd\'hui</string>
 
     <!-- AI Integration -->

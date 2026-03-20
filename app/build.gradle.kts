@@ -21,6 +21,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    androidResources {
+        localeFilters += listOf("en", "fr")
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -31,6 +35,18 @@ android {
             )
         }
     }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "**/META-INF/*.{kotlin_module,kotlin_metadata}"
+            excludes += "**/META-INF/MANIFEST.MF"
+            excludes += "**/META-INF/NOTICE"
+            excludes += "**/META-INF/LICENSE"
+            excludes += "**/META-INF/DEPENDENCIES"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

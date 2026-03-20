@@ -107,12 +107,15 @@ fun AddMealScreen(
     val selectedAllergenIds = remember { mutableStateListOf<String>() }
     val selectedFodmapIds = remember { mutableStateListOf<String>() }
 
+    var proteins by rememberSaveable { mutableStateOf<Double?>(null) }
+    var carbohydrates by rememberSaveable { mutableStateOf<Double?>(null) }
+    var lipids by rememberSaveable { mutableStateOf<Double?>(null) }
+
     var setReminder by rememberSaveable { mutableStateOf(false) }
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var advancedOptionsExpanded by rememberSaveable { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsState()
-    val nameSuggestions by viewModel.mealSuggestions.collectAsState()
     val allergenOrderFromSettings by viewModel.allergenOrder.collectAsState()
     val deactivatedAllergenIds by viewModel.deactivatedAllergens.collectAsState()
     val deactivatedFodmapIds by viewModel.deactivatedFodmaps.collectAsState()
@@ -173,6 +176,9 @@ fun AddMealScreen(
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
             setReminder = entry.hasReminder
+            proteins = entry.proteins
+            carbohydrates = entry.carbohydrates
+            lipids = entry.lipids
             
             ingredients.clear()
             entry.ingredients?.let { ingredients.addAll(it) }
@@ -214,7 +220,10 @@ fun AddMealScreen(
             durationMinutes = existingEntry?.durationMinutes,
             ingredients = if (ingredients.isEmpty()) null else ingredients.toList(),
             allergens = if (selectedAllergenIds.isEmpty()) null else selectedAllergenIds.toList(),
-            fodmaps = if (selectedFodmapIds.isEmpty()) null else selectedFodmapIds.toList()
+            fodmaps = if (selectedFodmapIds.isEmpty()) null else selectedFodmapIds.toList(),
+            proteins = proteins,
+            carbohydrates = carbohydrates,
+            lipids = lipids
         )
     }
 
@@ -251,9 +260,13 @@ fun AddMealScreen(
         if (viewModel.isModelPresent) {
             scope.launch {
                 isAnalyzing = true
-                val analysis = viewModel.analyzeMeal(note.ifBlank { name })
+                val analysis = viewModel.analyzeMeal(name.ifBlank { note })
                 if (analysis != null) {
                     if (name.isBlank()) name = analysis.name ?: ""
+                    proteins = analysis.proteins
+                    carbohydrates = analysis.carbohydrates
+                    lipids = analysis.lipids
+                    
                     analysis.ingredients?.let { aiIngs ->
                         aiIngs.forEach { aiIng ->
                             if (ingredients.none {
@@ -447,11 +460,11 @@ fun AddMealScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    AutoCompleteTextField(
+                    OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        suggestions = nameSuggestions,
-                        label = stringResource(R.string.meal_name_label),
+                        label = { Text(stringResource(R.string.meal_description_label)) },
+                        minLines = 2,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(onNext = {
                             focusManager.moveFocus(
@@ -480,6 +493,52 @@ fun AddMealScreen(
                             )
                         }
                     }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = stringResource(R.string.nutrition_label),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = proteins?.toString() ?: "",
+                        onValueChange = { proteins = it.toDoubleOrNull() },
+                        label = { Text(stringResource(R.string.proteins_label)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Next
+                        ),
+                        suffix = { Text("g") }
+                    )
+                    OutlinedTextField(
+                        value = carbohydrates?.toString() ?: "",
+                        onValueChange = { carbohydrates = it.toDoubleOrNull() },
+                        label = { Text(stringResource(R.string.carbohydrates_label)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Next
+                        ),
+                        suffix = { Text("g") }
+                    )
+                    OutlinedTextField(
+                        value = lipids?.toString() ?: "",
+                        onValueChange = { lipids = it.toDoubleOrNull() },
+                        label = { Text(stringResource(R.string.lipids_label)) },
+                        modifier = Modifier.weight(1f),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Decimal,
+                            imeAction = ImeAction.Next
+                        ),
+                        suffix = { Text("g") }
+                    )
                 }
 
                 if (currentVisibleAllergenIds.isNotEmpty()) {
