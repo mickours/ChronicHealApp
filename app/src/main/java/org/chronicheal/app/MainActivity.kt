@@ -20,17 +20,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import org.chronicheal.app.data.notification.NotificationHelper
+import org.chronicheal.app.data.worker.BackupManager
 import org.chronicheal.app.domain.model.EntryType
+import org.chronicheal.app.domain.repository.SettingsRepository
 import org.chronicheal.app.presentation.MainViewModel
 import org.chronicheal.app.presentation.SecurityViewModel
 import org.chronicheal.app.presentation.navigation.NavGraph
 import org.chronicheal.app.presentation.navigation.Screen
 import org.chronicheal.app.ui.theme.ChronicHealTheme
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -41,6 +45,12 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var notificationHelper: NotificationHelper
 
+    @Inject
+    lateinit var backupManager: BackupManager
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
     data class PendingAction(val type: String?, val reminderId: Long?, val isLogNow: Boolean)
     private val pendingEntryAction = MutableStateFlow<PendingAction?>(null)
 
@@ -49,6 +59,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         
         handleIntent(intent)
+
+        // Ensure daily backup is scheduled if enabled
+        lifecycleScope.launch {
+            if (settingsRepository.isAutoBackupEnabled.first()) {
+                backupManager.scheduleDailyBackup()
+            }
+        }
 
         setContent {
             ChronicHealTheme {

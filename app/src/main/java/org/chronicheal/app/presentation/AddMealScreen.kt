@@ -279,15 +279,27 @@ fun AddMealScreen(
                             }
                         }
                     }
-                    analysis.allergens?.let { aiAllergens ->
-                        aiAllergens.forEach {
-                            if (it !in selectedAllergenIds) selectedAllergenIds.add(
-                                it
-                            )
+
+                    // Only add allergens if they are currently visible/activated in settings
+                    if (currentVisibleAllergenIds.isNotEmpty()) {
+                        analysis.allergens?.let { aiAllergens ->
+                            aiAllergens.forEach { allergenId ->
+                                if (allergenId in currentVisibleAllergenIds && allergenId !in selectedAllergenIds) {
+                                    selectedAllergenIds.add(allergenId)
+                                }
+                            }
                         }
                     }
-                    analysis.fodmaps?.let { aiFodmaps ->
-                        aiFodmaps.forEach { if (it !in selectedFodmapIds) selectedFodmapIds.add(it) }
+
+                    // Only add fodmaps if they are currently visible/activated in settings
+                    if (currentVisibleFodmapIds.isNotEmpty()) {
+                        analysis.fodmaps?.let { aiFodmaps ->
+                            aiFodmaps.forEach { fodmapId ->
+                                if (fodmapId in currentVisibleFodmapIds && fodmapId !in selectedFodmapIds) {
+                                    selectedFodmapIds.add(fodmapId)
+                                }
+                            }
+                        }
                     }
                 } else {
                     viewModel.showMessage(context.getString(R.string.ai_error_parsing))
