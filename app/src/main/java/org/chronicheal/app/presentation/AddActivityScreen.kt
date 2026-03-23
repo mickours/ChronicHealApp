@@ -47,6 +47,7 @@ fun AddActivityScreen(
     dateString: String? = null,
     id: Long? = null,
     reminderId: Long? = null,
+    templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()

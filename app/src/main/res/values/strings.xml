@@ -409,6 +409,9 @@
     <string name="notification_action_log_now">Log Now</string>
     <string name="notification_action_skip">Skip Today</string>
 
+    <string name="notification_missing_entry_title">Did you forget something?</string>
+    <string name="notification_missing_entry_message">You usually log \"%1$s\" around this time. Would you like to add it now?</string>
+
     <!-- AI Integration -->
     <string name="ai_assist">AI Assist</string>
     <string name="ai_analyzing">Analyzing meal description…</string>

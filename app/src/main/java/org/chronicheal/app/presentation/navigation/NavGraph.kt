@@ -288,18 +288,21 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val location = backStackEntry.arguments?.getString("location")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddPainScreen(
                 dateString = date,
                 locationString = location,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -310,16 +313,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddDrugScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -330,18 +336,21 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val location = backStackEntry.arguments?.getString("location")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddSymptomScreen(
                 dateString = date,
                 locationString = location,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -352,16 +361,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddActivityScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -372,16 +384,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddMealScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -392,16 +407,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddSleepScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -412,16 +430,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddDiseaseScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -432,16 +453,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddMedicalAppointmentScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -452,16 +476,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddExternalFactorScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -472,16 +499,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddJournalScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -492,16 +522,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddPeriodScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -512,16 +545,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddBeverageScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -532,16 +568,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddStoolScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )
@@ -552,16 +591,19 @@ fun NavGraph(
                 navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("location") { type = NavType.StringType; nullable = true; defaultValue = null },
                 navArgument("id") { type = NavType.LongType; defaultValue = -1L },
-                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("reminderId") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("templateId") { type = NavType.LongType; defaultValue = -1L }
             )
         ) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             val reminderId = backStackEntry.arguments?.getLong("reminderId").takeIf { it != -1L }
+            val templateId = backStackEntry.arguments?.getLong("templateId").takeIf { it != -1L }
             AddMoodScreen(
                 dateString = date,
                 id = id,
                 reminderId = reminderId,
+                templateId = templateId,
                 onBackClick = { onCancel(id) },
                 onSaveSuccess = { onSaveSuccess(date, id != null) }
             )

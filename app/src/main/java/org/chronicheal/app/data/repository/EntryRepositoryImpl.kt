@@ -5,6 +5,7 @@ import org.chronicheal.app.data.local.EntryDao
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.repository.EntryRepository
+import java.time.Instant
 import javax.inject.Inject
 
 class EntryRepositoryImpl @Inject constructor(
@@ -25,6 +26,10 @@ class EntryRepositoryImpl @Inject constructor(
 
     override suspend fun getLastEntryByTypeAndName(type: EntryType, name: String): HealthEntry? {
         return dao.getLastEntryByTypeAndName(type, name)
+    }
+
+    override suspend fun getEntriesSince(since: Instant): List<HealthEntry> {
+        return dao.getEntriesSince(since)
     }
 
     override suspend fun insertEntry(entry: HealthEntry) {

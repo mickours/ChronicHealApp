@@ -44,6 +44,7 @@ fun AddDrugScreen(
     dateString: String? = null,
     id: Long? = null,
     reminderId: Long? = null,
+    templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -75,6 +76,7 @@ fun AddDrugScreen(
     LogNowEffect(
         id = id,
         reminderId = reminderId,
+        templateId = templateId,
         viewModel = viewModel,
         onEntryFound = { entry, fromTemplate ->
             existingEntry = entry

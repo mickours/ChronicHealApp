@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +30,7 @@ fun AddStoolScreen(
     dateString: String? = null,
     id: Long? = null,
     reminderId: Long? = null,
+    templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -45,31 +44,25 @@ fun AddStoolScreen(
 
     val aspectSuggestions by viewModel.stoolAspectSuggestions.collectAsState()
 
-    LaunchedEffect(id, reminderId) {
-        if (id != null) {
-            val entry = viewModel.getEntryById(id)
-            if (entry != null) {
-                existingEntry = entry
-                isNewFromTemplate = false
-                aspect = entry.name ?: ""
-                note = entry.note
+    LogNowEffect(
+        id = id,
+        reminderId = reminderId,
+        viewModel = viewModel,
+        onEntryFound = { entry, fromTemplate ->
+            existingEntry = entry
+            isNewFromTemplate = fromTemplate
+            aspect = entry.name ?: ""
+            note = entry.note
+            if (!isNewFromTemplate) {
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
-        } else if (reminderId != null) {
-            val entry = viewModel.getEntryByReminderId(reminderId)
-            if (entry != null) {
-                existingEntry = entry
-                isNewFromTemplate = true
-                aspect = entry.name ?: ""
-                note = entry.note
-            }
         }
-    }
+    )
 
     val createEntry = {
         HealthEntry(
-            id = if (isNewFromTemplate) 0 else (id ?: 0),
+            id = if (isNewFromTemplate) 0 else (existingEntry?.id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.STOOL,
             name = aspect.trim(),

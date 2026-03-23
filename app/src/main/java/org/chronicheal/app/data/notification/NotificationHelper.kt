@@ -27,6 +27,7 @@ class NotificationHelper @Inject constructor(
         
         const val EXTRA_ENTRY_TYPE = "extra_entry_type"
         const val EXTRA_REMINDER_ID = "extra_reminder_id"
+        const val EXTRA_TEMPLATE_ENTRY_ID = "extra_template_entry_id"
         const val EXTRA_IS_LOG_NOW = "extra_is_log_now"
         
         const val ACTION_SKIP = "org.chronicheal.app.ACTION_SKIP"
@@ -117,6 +118,52 @@ class NotificationHelper @Inject constructor(
             )
 
         notificationManager.notify(reminderId.toInt(), builder.build())
+    }
+
+    fun showMissingEntryNotification(
+        title: String,
+        message: String,
+        notificationId: Int,
+        entryType: EntryType,
+        templateEntryId: Long?
+    ) {
+        fun createActivityIntent(): Intent {
+            return Intent(context, MainActivity::class.java).apply {
+                action = Intent.ACTION_MAIN
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra(EXTRA_ENTRY_TYPE, entryType.name)
+                if (templateEntryId != null) {
+                    putExtra(EXTRA_TEMPLATE_ENTRY_ID, templateEntryId)
+                }
+                putExtra(EXTRA_IS_LOG_NOW, true)
+            }
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId,
+            createActivityIntent(),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val builder = NotificationCompat.Builder(context, REMINDER_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification_logo)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .addAction(
+                android.R.drawable.ic_menu_add,
+                context.getString(R.string.notification_action_log_now),
+                pendingIntent
+            )
+
+        notificationManager.notify(notificationId, builder.build())
     }
 
     fun cancelNotification(notificationId: Int) {

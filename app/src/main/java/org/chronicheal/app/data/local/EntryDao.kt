@@ -9,6 +9,7 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import java.time.Instant
 
 @Dao
 interface EntryDao {
@@ -23,6 +24,9 @@ interface EntryDao {
 
     @Query("SELECT * FROM health_entries WHERE type = :type AND name = :name ORDER BY timestamp DESC LIMIT 1")
     suspend fun getLastEntryByTypeAndName(type: EntryType, name: String): HealthEntry?
+
+    @Query("SELECT * FROM health_entries WHERE timestamp >= :since ORDER BY timestamp DESC")
+    suspend fun getEntriesSince(since: Instant): List<HealthEntry>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntry(entry: HealthEntry)

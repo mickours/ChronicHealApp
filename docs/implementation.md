@@ -46,7 +46,8 @@ Goal: Interactive tools and notifications.
 - **Notification Quick Actions**: Added "10 min" and "1 hour" snooze actions.
 
 ## Phase 5: Polish and Privacy (Completed)
-- **Enhanced Entry Model**: Added `durationMinutes` and `isFinished` properties.
+
+- **Enhanced Entry Model**: Added `durationMinutes` and `isFinished` property.
 - **Swipe-to-Action**: Implemented `SwipeToDismissBox` for deletion and completion.
 - **UI/UX Refinements**:
     - **Factorized Add Screens**: Introduced `AddEntryScaffold` to share common logic.
@@ -272,3 +273,17 @@ Goal: Fix the `STABLEHLO_COMPOSITE` opcode error when using the new Gemma 3 mode
       upgraded library.
 - **Build Stabilization**: Successfully ran a full Gradle build to confirm the dependency update and
   API changes didn't break the application.
+
+## Phase 44: Intelligent Habit Reminders (Completed)
+
+Goal: Notify the user if they forget a regular habit (meal, medication, etc.).
+
+**Accomplishments:**
+
+- **Habit Detection Logic**: Implemented `MissingEntryWorker` to analyze the last 14 days of data
+  and identify regular occurrences (4+ times) for specific types.
+- **Contextual Notifications**: Alerts trigger if a habit is missing today after its typical time.
+- **Template Integration**: Notifications include a "Log Now" action that pre-fills the entry screen
+  using the last recorded instance of that habit as a template.
+- **Smart Navigation**: Enhanced `MainActivity` and `NavGraph` to handle `EXTRA_TEMPLATE_ENTRY_ID`
+  for seamless contextual logging.
