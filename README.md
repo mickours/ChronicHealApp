@@ -35,6 +35,7 @@ Log everything that matters to your health journey using specialized, easy-to-us
 - **Symptom Body Scan:** Interactive human silhouette to quickly log pain or symptoms by body region.
 - **Smart Reminders:** High-precision reminders for medications, meals, appointments, and activities.
 - **Autocomplete:** Intelligent suggestions based on your history to reduce data entry friction.
+- **Voice commands**: for hands-free entry logging.
 
 ---
 
@@ -95,7 +96,6 @@ Run the following command in the project root:
 
 - [ ] Find correlation between symptoms and management events (e.g., Pain vs. Sleep).
 - [ ] Integration with wearables for automatic sleep and activity tracking.
-- [ ] Voice commands for hands-free entry logging.
 - [ ] Custom dashboard panels and graph configurations.
 - [ ] iOS application (KMP migration).
 

@@ -108,6 +108,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.setAutoBackupEnabled(enabled)
             if (enabled) {
                 backupManager.scheduleDailyBackup()
+                backupManager.triggerImmediateBackup()
             } else {
                 backupManager.cancelDailyBackup()
             }

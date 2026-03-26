@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -31,6 +33,18 @@ class BackupManager @Inject constructor(
         workManager.enqueueUniquePeriodicWork(
             BACKUP_WORK_NAME,
             ExistingPeriodicWorkPolicy.UPDATE,
+            backupRequest
+        )
+    }
+
+    fun triggerImmediateBackup() {
+        val backupRequest = OneTimeWorkRequestBuilder<BackupWorker>()
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 10, TimeUnit.MINUTES)
+            .build()
+
+        workManager.enqueueUniqueWork(
+            BACKUP_WORK_NAME + "_immediate",
+            ExistingWorkPolicy.REPLACE,
             backupRequest
         )
     }
