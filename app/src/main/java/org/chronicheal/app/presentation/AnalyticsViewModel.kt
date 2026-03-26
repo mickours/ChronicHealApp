@@ -21,8 +21,10 @@ import org.chronicheal.app.domain.repository.SettingsRepository
 import org.chronicheal.app.domain.usecase.ExportPdfUseCase
 import org.chronicheal.app.domain.usecase.GetEntriesUseCase
 import java.io.OutputStream
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.temporal.TemporalAdjusters
 import java.time.temporal.WeekFields
 import java.util.Locale
 import javax.inject.Inject
@@ -66,7 +68,8 @@ class AnalyticsViewModel @Inject constructor(
     private val _timeRange = MutableStateFlow(TimeRange.WEEK)
     val timeRange = _timeRange.asStateFlow()
 
-    private val _startDate = MutableStateFlow(LocalDate.now().minusDays(6))
+    private val _startDate =
+        MutableStateFlow(LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)))
     val startDate = _startDate.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
@@ -83,6 +86,9 @@ class AnalyticsViewModel @Inject constructor(
 
     private val _correlationMetric2 = MutableStateFlow<CorrelationMetric>(CorrelationMetric.Type(EntryType.SLEEP))
     val correlationMetric2 = _correlationMetric2.asStateFlow()
+
+    private val _heatmapMetric = MutableStateFlow<CorrelationMetric?>(null)
+    val heatmapMetric = _heatmapMetric.asStateFlow()
 
     private val _selectedPainLocations = MutableStateFlow<Set<String>>(emptySet())
     val selectedPainLocations = _selectedPainLocations.asStateFlow()
@@ -110,27 +116,60 @@ class AnalyticsViewModel @Inject constructor(
             .filter { it.id !in deactivatedFodmaps }
             .map { CorrelationMetric.FodmapMetric(it) }
 
-        baseMetrics + activeAllergens + activeFodmaps
+        val metrics = baseMetrics + activeAllergens + activeFodmaps
+        if (_heatmapMetric.value == null && metrics.isNotEmpty()) {
+            _heatmapMetric.value =
+                metrics.first { it is CorrelationMetric.Type && it.entryType == EntryType.PAIN }
+        }
+        metrics
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val uiState: StateFlow<AnalyticsUiState> = combine(
         getEntriesUseCase(),
-        _timeRange,
-        _startDate,
-        _correlationMetric1,
-        _correlationMetric2
-    ) { entries, range, start, metric1, metric2 ->
+        combine(_timeRange, _startDate) { range, start -> range to start },
+        combine(_correlationMetric1, _correlationMetric2) { m1, m2 -> m1 to m2 },
+        _heatmapMetric
+    ) { entries, rangeStart, metrics, hMetric ->
+        val (range, start) = rangeStart
+        val (metric1, metric2) = metrics
+        
         val filteredEntries = filterEntries(entries, range, start)
         val painData = getPainData(filteredEntries, range, start)
         val symptomData = getSymptomData(filteredEntries, range, start)
 
-        _selectedPainLocations.value = painData.keys
-        _selectedSymptoms.value = symptomData.keys
+        if (_selectedPainLocations.value.isEmpty()) {
+            _selectedPainLocations.value = painData.keys
+        }
+        if (_selectedSymptoms.value.isEmpty()) {
+            _selectedSymptoms.value = symptomData.keys
+        }
+
+        val effectiveStart: LocalDate
+        val effectiveEnd: LocalDate
+
+        if (range == TimeRange.ALL) {
+            val sortedDates =
+                entries.map { it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() }.sorted()
+            effectiveStart = sortedDates.firstOrNull() ?: LocalDate.now()
+            effectiveEnd = sortedDates.lastOrNull() ?: LocalDate.now()
+        } else {
+            effectiveStart = start
+            effectiveEnd = when (range) {
+                TimeRange.WEEK -> start.plusDays(6)
+                TimeRange.MONTH -> start.plusMonths(1).minusDays(1)
+                TimeRange.YEAR -> start.plusYears(1).minusDays(1)
+                else -> LocalDate.now()
+            }
+        }
 
         AnalyticsUiState(
             painData = painData,
             symptomEvolutionData = symptomData,
-            correlationData = getCorrelationData(filteredEntries, range, start, metric1, metric2)
+            correlationData = getCorrelationData(filteredEntries, range, start, metric1, metric2),
+            heatmapData = hMetric?.let { getDailyValues(entries, it, effectiveStart, effectiveEnd) }
+                ?: emptyMap(),
+            rangeStart = effectiveStart,
+            rangeEnd = effectiveEnd
         )
     }.stateIn(
         scope = viewModelScope,
@@ -148,6 +187,10 @@ class AnalyticsViewModel @Inject constructor(
         _correlationMetric2.value = metric2
     }
 
+    fun setHeatmapMetric(metric: CorrelationMetric) {
+        _heatmapMetric.value = metric
+    }
+
     fun togglePainLocation(location: String) {
         val current = _selectedPainLocations.value
         _selectedPainLocations.value = if (location in current) current - location else current + location
@@ -160,9 +203,11 @@ class AnalyticsViewModel @Inject constructor(
 
     private fun resetStartDate() {
         _startDate.value = when (_timeRange.value) {
-            TimeRange.WEEK -> LocalDate.now().minusDays(6)
-            TimeRange.MONTH -> LocalDate.now().minusMonths(1)
-            TimeRange.YEAR -> LocalDate.now().minusYears(1)
+            TimeRange.WEEK -> LocalDate.now()
+                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+
+            TimeRange.MONTH -> LocalDate.now().with(TemporalAdjusters.firstDayOfMonth())
+            TimeRange.YEAR -> LocalDate.now().with(TemporalAdjusters.firstDayOfYear())
             TimeRange.ALL -> LocalDate.of(2000, 1, 1)
         }
     }
@@ -209,6 +254,75 @@ class AnalyticsViewModel @Inject constructor(
             val entryDate = it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
             !entryDate.isBefore(start) && entryDate.isBefore(end)
         }
+    }
+
+    private fun getDailyValues(
+        entries: List<HealthEntry>,
+        metric: CorrelationMetric,
+        start: LocalDate,
+        end: LocalDate
+    ): Map<LocalDate, Float> {
+        val metricEntries = when (metric) {
+            is CorrelationMetric.Type -> entries.filter { it.type == metric.entryType }
+            is CorrelationMetric.BeverageAttribute -> {
+                val bevEntries = entries.filter { it.type == EntryType.BEVERAGE }
+                when (metric.attribute) {
+                    "alcoholic" -> bevEntries.filter { it.isAlcoholic == true }
+                    "caffeinated" -> bevEntries.filter { it.isCaffeinated == true }
+                    else -> bevEntries
+                }
+            }
+
+            is CorrelationMetric.AllergenMetric -> entries.filter {
+                it.type == EntryType.MEAL && it.allergens?.contains(
+                    metric.allergen.id
+                ) == true
+            }
+
+            is CorrelationMetric.FodmapMetric -> entries.filter {
+                it.type == EntryType.MEAL && it.fodmaps?.contains(
+                    metric.fodmap.id
+                ) == true
+            }
+        }
+
+        val dailyData = mutableMapOf<LocalDate, Float>()
+        var current = start
+        while (!current.isAfter(end)) {
+            val dayDate = current
+            val dayEntries = metricEntries.filter {
+                it.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() == dayDate
+            }
+
+            val value = if (dayEntries.isEmpty()) 0f else {
+                when (metric) {
+                    is CorrelationMetric.Type -> {
+                        when (metric.entryType) {
+                            EntryType.SLEEP -> dayEntries.mapNotNull {
+                                it.intensity?.toFloat() ?: it.durationMinutes?.toFloat()?.div(60f)
+                            }.sum()
+
+                            EntryType.PAIN, EntryType.SYMPTOM, EntryType.DISEASE, EntryType.EXTERNAL_FACTOR, EntryType.PERIOD, EntryType.MOOD -> dayEntries.mapNotNull { it.intensity?.toFloat() }
+                                .sum()
+
+                            EntryType.BEVERAGE -> dayEntries.sumOf { it.value ?: 0.0 }.toFloat()
+                            EntryType.ACTIVITY -> dayEntries.sumOf { it.durationMinutes ?: 0 }
+                                .toFloat() / 60f
+
+                            else -> dayEntries.size.toFloat()
+                        }
+                    }
+
+                    is CorrelationMetric.BeverageAttribute -> dayEntries.sumOf { it.value ?: 0.0 }
+                        .toFloat()
+
+                    else -> dayEntries.size.toFloat()
+                }
+            }
+            dailyData[dayDate] = value
+            current = current.plusDays(1)
+        }
+        return dailyData
     }
 
     private fun getPainData(entries: List<HealthEntry>, range: TimeRange, start: LocalDate): Map<String, Map<String, Int>> {
@@ -279,11 +393,33 @@ class AnalyticsViewModel @Inject constructor(
             TimeRange.ALL -> {
                 if (entries.isEmpty()) return emptyMap()
                 val sortedEntries = entries.sortedBy { it.timestamp }
-                val firstYear = sortedEntries.first().timestamp.atZone(ZoneId.systemDefault()).year
-                val lastYear = sortedEntries.last().timestamp.atZone(ZoneId.systemDefault()).year
-                (firstYear..lastYear).associate { year ->
-                    val yearEntries = entries.filter { it.timestamp.atZone(ZoneId.systemDefault()).year == year }
-                    year.toString() to if (yearEntries.isEmpty()) 0 else aggregator(yearEntries)
+                val firstDate =
+                    sortedEntries.first().timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+                val lastDate =
+                    sortedEntries.last().timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
+
+                val yearsBetween = lastDate.year - firstDate.year
+                if (yearsBetween < 1) {
+                    // Same year or less than a year span, aggregate by month
+                    (1..12).associate { i ->
+                        val targetMonth = LocalDate.of(firstDate.year, i, 1).month
+                        val monthEntries = entries.filter {
+                            it.timestamp.atZone(ZoneId.systemDefault())
+                                .toLocalDate().year == firstDate.year && it.timestamp.atZone(ZoneId.systemDefault())
+                                .toLocalDate().month == targetMonth
+                        }
+                        targetMonth.getDisplayName(
+                            java.time.format.TextStyle.SHORT,
+                            Locale.getDefault()
+                        ) to if (monthEntries.isEmpty()) 0 else aggregator(monthEntries)
+                    }
+                } else {
+                    // Spans multiple years, aggregate by year
+                    (firstDate.year..lastDate.year).associate { year ->
+                        val yearEntries =
+                            entries.filter { it.timestamp.atZone(ZoneId.systemDefault()).year == year }
+                        year.toString() to if (yearEntries.isEmpty()) 0 else aggregator(yearEntries)
+                    }
                 }
             }
         }
@@ -387,7 +523,10 @@ enum class TimeRange(val labelRes: Int) {
 data class AnalyticsUiState(
     val painData: Map<String, Map<String, Int>> = emptyMap(),
     val symptomEvolutionData: Map<String, Map<String, Int>> = emptyMap(),
-    val correlationData: CorrelationData = CorrelationData()
+    val correlationData: CorrelationData = CorrelationData(),
+    val heatmapData: Map<LocalDate, Float> = emptyMap(),
+    val rangeStart: LocalDate = LocalDate.now(),
+    val rangeEnd: LocalDate = LocalDate.now()
 )
 
 data class CorrelationData(

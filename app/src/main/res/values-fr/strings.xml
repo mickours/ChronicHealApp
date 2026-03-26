@@ -271,6 +271,10 @@
     <string name="insight_increase_increase">Quand %1$s augmente, %2$s a aussi tendance à augmenter.</string>
     <string name="insight_increase_decrease">Quand %1$s augmente, %2$s a tendance à diminuer.</string>
     <string name="insight_no_relationship">Aucune relation linéaire forte trouvée entre %1$s et %2$s pour cette période.</string>
+    <string name="heatmap_title">Carte thermique d\'intensité</string>
+    <string name="select_metric">Sélectionner la métrique</string>
+    <string name="less">Moins</string>
+    <string name="more">Plus</string>
 
     <!-- Complete Check-in -->
     <string name="section_mood">Comment vous sentez-vous ?</string>
@@ -408,6 +412,9 @@
     <string name="notification_reminder_message">C\'est l\'heure !</string>
     <string name="notification_action_log_now">Noter</string>
     <string name="notification_action_skip">Passer aujourd\'hui</string>
+
+    <string name="notification_missing_entry_title">Vous avez oublié quelque chose ?</string>
+    <string name="notification_missing_entry_message">Vous notez habituellement \"%1$s\" vers cette heure-ci. Souhaitez-vous l\'ajouter maintenant ?</string>
 
     <!-- AI Integration -->
     <string name="ai_assist">Aide IA</string>

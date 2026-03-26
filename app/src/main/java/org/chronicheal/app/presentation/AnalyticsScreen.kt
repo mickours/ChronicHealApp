@@ -4,6 +4,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -68,23 +70,27 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberEndAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
 import com.patrykandpatrick.vico.compose.chart.line.lineChart
+import com.patrykandpatrick.vico.compose.component.shapeComponent
 import com.patrykandpatrick.vico.compose.component.textComponent
 import com.patrykandpatrick.vico.core.axis.AxisItemPlacer
 import com.patrykandpatrick.vico.core.axis.AxisPosition
 import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
 import com.patrykandpatrick.vico.core.chart.line.LineChart
+import com.patrykandpatrick.vico.core.component.shape.Shapes
 import com.patrykandpatrick.vico.core.entry.FloatEntry
 import com.patrykandpatrick.vico.core.entry.entryModelOf
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.chronicheal.app.R
 import org.chronicheal.app.ui.theme.HeaderBlue
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -99,10 +105,10 @@ fun AnalyticsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val timeRange by viewModel.timeRange.collectAsState()
-    val startDate by viewModel.startDate.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val metric1 by viewModel.correlationMetric1.collectAsState()
     val metric2 by viewModel.correlationMetric2.collectAsState()
+    val heatmapMetric by viewModel.heatmapMetric.collectAsState()
     val availableMetrics by viewModel.availableMetrics.collectAsState()
     val selectedPainLocations by viewModel.selectedPainLocations.collectAsState()
     val selectedSymptoms by viewModel.selectedSymptoms.collectAsState()
@@ -180,7 +186,7 @@ fun AnalyticsScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = { createPdfLauncher.launch("chronicheal_report_${startDate}.pdf") },
+                        onClick = { createPdfLauncher.launch("chronicheal_report_${uiState.rangeStart}.pdf") },
                         enabled = !isLoading
                     ) {
                         Icon(Icons.Default.PictureAsPdf, contentDescription = stringResource(R.string.export_pdf))
@@ -205,7 +211,8 @@ fun AnalyticsScreen(
         ) {
             TimeRangeSelector(
                 timeRange = timeRange,
-                startDate = startDate,
+                startDate = uiState.rangeStart,
+                endDate = uiState.rangeEnd,
                 onRangeChange = viewModel::setTimeRange,
                 onMovePeriod = viewModel::movePeriod
             )
@@ -240,6 +247,30 @@ fun AnalyticsScreen(
 
             HorizontalDivider()
 
+            // Intensity Heatmap
+            Text(
+                text = stringResource(R.string.heatmap_title),
+                style = MaterialTheme.typography.titleLarge
+            )
+
+            heatmapMetric?.let { selected ->
+                MetricDropdown(
+                    selectedMetric = selected,
+                    availableMetrics = availableMetrics,
+                    onMetricSelected = viewModel::setHeatmapMetric,
+                    label = stringResource(R.string.select_metric),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            IntensityHeatmap(
+                data = uiState.heatmapData,
+                startDate = uiState.rangeStart,
+                timeRange = timeRange
+            )
+
+            HorizontalDivider()
+
             // Correlation Analysis
             Text(text = stringResource(R.string.correlation_analysis), style = MaterialTheme.typography.titleLarge)
             
@@ -258,6 +289,182 @@ fun AnalyticsScreen(
                 color2 = palette[1],
                 axisLabelColor = axisLabelColor
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun IntensityHeatmap(
+    data: Map<LocalDate, Float>,
+    startDate: LocalDate,
+    timeRange: TimeRange
+) {
+    if (data.isEmpty()) return
+
+    val maxIntensity = data.values.maxOrNull() ?: 1f
+    val baseColor = MaterialTheme.colorScheme.primary
+    var selectedPoint by remember { mutableStateOf<Pair<LocalDate, Float>?>(null) }
+    val dateFormatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM) }
+
+    // Reset selected point when data changes
+    LaunchedEffect(data) {
+        selectedPoint = null
+    }
+
+    fun getAlpha(intensity: Float): Float {
+        if (intensity <= 0) return 0.05f
+        if (maxIntensity <= 0) return 0.05f
+        val ratio = intensity / maxIntensity
+        return when {
+            ratio <= 0.25f -> 0.3f
+            ratio <= 0.5f -> 0.6f
+            ratio <= 0.75f -> 0.85f
+            else -> 1f
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        selectedPoint?.let { (date, value) ->
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = date.format(dateFormatter),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                    Text(
+                        text = String.format(Locale.getDefault(), "%.1f", value),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+
+        // Color Scale Legend
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                stringResource(R.string.less),
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray
+            )
+            Spacer(Modifier.width(4.dp))
+            listOf(0.05f, 0.3f, 0.6f, 0.85f, 1f).forEach { alpha ->
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(baseColor.copy(alpha = alpha))
+                )
+                Spacer(Modifier.width(2.dp))
+            }
+            Spacer(Modifier.width(2.dp))
+            Text(
+                stringResource(R.string.more),
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.Gray
+            )
+        }
+
+        when (timeRange) {
+            TimeRange.WEEK, TimeRange.MONTH -> {
+                // Calendar-like view
+                val daysToShow = if (timeRange == TimeRange.WEEK) 7 else startDate.lengthOfMonth()
+                val weekDays = remember {
+                    (1..7).map {
+                        DayOfWeek.of(it)
+                            .getDisplayName(java.time.format.TextStyle.NARROW, Locale.getDefault())
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    weekDays.forEach { day ->
+                        Text(
+                            text = day,
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                    }
+                }
+
+                val firstDayOffset = startDate.dayOfWeek.value - 1 // 0 for Monday
+                val totalSlots = daysToShow + firstDayOffset
+                val rows = ceil(totalSlots.toFloat() / 7f).toInt()
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    for (r in 0 until rows) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            for (c in 0 until 7) {
+                                val dayIdx = r * 7 + c - firstDayOffset
+                                if (dayIdx in 0 until daysToShow) {
+                                    val date = startDate.plusDays(dayIdx.toLong())
+                                    val intensity = data[date] ?: 0f
+                                    val alpha = getAlpha(intensity)
+
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .aspectRatio(1f)
+                                            .clip(RoundedCornerShape(4.dp))
+                                            .background(baseColor.copy(alpha = alpha))
+                                            .clickable { selectedPoint = date to intensity },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = date.dayOfMonth.toString(),
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.sp
+                                            ),
+                                            color = if (alpha > 0.5f && intensity > 0) Color.White else MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            TimeRange.YEAR, TimeRange.ALL -> {
+                // Simplified grid for longer ranges
+                val sortedDates = data.keys.sorted()
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    sortedDates.forEach { date ->
+                        val intensity = data[date] ?: 0f
+                        val alpha = getAlpha(intensity)
+                        Box(
+                            modifier = Modifier
+                                .size(18.dp)
+                                .clip(RoundedCornerShape(3.dp))
+                                .background(baseColor.copy(alpha = alpha))
+                                .clickable { selectedPoint = date to intensity }
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -315,6 +522,8 @@ fun EvolutionChart(
                         val color = palette[originalIndex % palette.size]
                         LineChart.LineSpec(
                             lineColor = color.toArgb(),
+                            point = shapeComponent(shape = Shapes.pillShape, color = color),
+                            pointSizeDp = 2f,
                             lineBackgroundShader = com.patrykandpatrick.vico.compose.component.shape.shader.verticalGradient(
                                 arrayOf(color.copy(alpha = 0.8f), color.copy(alpha = 0.8f))
                             )
@@ -413,8 +622,16 @@ fun CorrelationChart(
         Chart(
             chart = lineChart(
                 lines = listOf(
-                    LineChart.LineSpec(lineColor = color1.toArgb()),
-                    LineChart.LineSpec(lineColor = color2.toArgb())
+                    LineChart.LineSpec(
+                        lineColor = color1.toArgb(),
+                        pointSizeDp = 2f,
+                        point = shapeComponent(shape = Shapes.pillShape, color = color1)
+                    ),
+                    LineChart.LineSpec(
+                        lineColor = color2.toArgb(),
+                        pointSizeDp = 2f,
+                        point = shapeComponent(shape = Shapes.pillShape, color = color2)
+                    )
                 )
             ),
             model = model,
@@ -567,7 +784,9 @@ fun MetricDropdown(
             readOnly = true,
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
+            modifier = Modifier
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                .fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             textStyle = MaterialTheme.typography.bodySmall
         )
@@ -592,30 +811,37 @@ fun MetricDropdown(
 fun TimeRangeSelector(
     timeRange: TimeRange,
     startDate: LocalDate,
+    endDate: LocalDate,
     onRangeChange: (TimeRange) -> Unit,
     onMovePeriod: (Int) -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        if (timeRange != TimeRange.ALL) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
-            ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            if (timeRange != TimeRange.ALL) {
                 IconButton(onClick = { onMovePeriod(-1) }) {
                     Icon(Icons.Default.ChevronLeft, contentDescription = stringResource(R.string.previous))
                 }
-                
-                val formatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG) }
-                Text(
-                    text = "${startDate.format(formatter)} - ${getEndDate(startDate, timeRange).format(formatter)}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
+            } else {
+                Spacer(modifier = Modifier.size(48.dp))
+            }
 
+            val formatter = remember { DateTimeFormatter.ofLocalizedDate(FormatStyle.LONG) }
+            Text(
+                text = "${startDate.format(formatter)} - ${endDate.format(formatter)}",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            if (timeRange != TimeRange.ALL) {
                 IconButton(onClick = { onMovePeriod(1) }) {
                     Icon(Icons.Default.ChevronRight, contentDescription = stringResource(R.string.next))
                 }
+            } else {
+                Spacer(modifier = Modifier.size(48.dp))
             }
         }
 
@@ -631,14 +857,5 @@ fun TimeRangeSelector(
                 )
             }
         }
-    }
-}
-
-private fun getEndDate(start: LocalDate, range: TimeRange): LocalDate {
-    return when (range) {
-        TimeRange.WEEK -> start.plusDays(6)
-        TimeRange.MONTH -> start.plusMonths(1).minusDays(1)
-        TimeRange.YEAR -> start.plusYears(1).minusDays(1)
-        TimeRange.ALL -> LocalDate.now()
     }
 }

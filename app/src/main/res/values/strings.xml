@@ -271,6 +271,10 @@
     <string name="insight_increase_increase">When %1$s increases, %2$s also tends to increase.</string>
     <string name="insight_increase_decrease">When %1$s increases, %2$s tends to decrease.</string>
     <string name="insight_no_relationship">No strong linear relationship found between %1$s and %2$s for this period.</string>
+    <string name="heatmap_title">Intensity Heatmap</string>
+    <string name="select_metric">Select Metric</string>
+    <string name="less">Less</string>
+    <string name="more">More</string>
 
     <!-- Complete Check-in -->
     <string name="section_mood">How are you feeling?</string>
