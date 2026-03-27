@@ -142,8 +142,10 @@ fun AddCompleteEntryScreen(
 
     // Symptoms State
     val symptomEntries = remember { mutableStateListOf<SymptomEntryState>() }
-    if (symptomEntries.isEmpty()) {
-        symptomEntries.add(SymptomEntryState())
+    LaunchedEffect(Unit) {
+        if (symptomEntries.isEmpty()) {
+            symptomEntries.add(SymptomEntryState())
+        }
     }
 
     // General Note

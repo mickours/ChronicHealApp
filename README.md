@@ -33,6 +33,8 @@ Log everything that matters to your health journey using specialized, easy-to-us
 
 ### 🛠️ Specialized Tools
 - **Symptom Body Scan:** Interactive human silhouette to quickly log pain or symptoms by body region.
+- **Local AI Meal Analysis (Full version only):** Instantly extract ingredients, nutrients,
+  allergens, and FODMAPs from natural language meal descriptions using an on-device LLM (Gemma).
 - **Smart Reminders:** High-precision reminders for medications, meals, appointments, and activities.
 - **Autocomplete:** Intelligent suggestions based on your history to reduce data entry friction.
 - **Voice commands**: for hands-free entry logging.
@@ -51,7 +53,12 @@ Log everything that matters to your health journey using specialized, easy-to-us
    git clone https://github.com/mickours/ChronicHeal.git
    ```
 2. Open the project in Android Studio.
-3. Build and run on your device or emulator.
+3. Choose your build variant:
+    - **Lite**: Ultra-lightweight, privacy-first tracker without AI features. (Build with
+      `./gradlew assembleLiteDebug`)
+    - **Full**: Includes on-device AI for smart meal analysis (~1GB model downloaded on-demand). (
+      Build with `./gradlew assembleFullDebug`)
+4. Build and run on your device or emulator.
 
 ---
 
@@ -70,6 +77,7 @@ ChronicHeal follows **Clean Architecture** principles combined with the **MVVM/M
 - **Navigation:** Compose Navigation
 - **Charts:** Vico
 - **Background Tasks:** WorkManager
+- **AI/LLM (Full build):** MediaPipe LLM Inference API
 
 ---
 

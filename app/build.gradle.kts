@@ -25,6 +25,20 @@ android {
         localeFilters += listOf("en", "fr")
     }
 
+    flavorDimensions += "version"
+    productFlavors {
+        create("full") {
+            dimension = "version"
+            applicationIdSuffix = ".full"
+            versionNameSuffix = "-full"
+        }
+        create("lite") {
+            dimension = "version"
+            applicationIdSuffix = ".lite"
+            versionNameSuffix = "-lite"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -118,8 +132,8 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
 
-    // MediaPipe LLM Inference
-    implementation(libs.mediapipe.tasks.genai)
+    // MediaPipe LLM Inference (Full version only)
+    "fullImplementation"(libs.mediapipe.tasks.genai)
 
     testImplementation(libs.junit)
     testImplementation(libs.mockk)

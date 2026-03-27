@@ -93,7 +93,8 @@ class TimelineViewModel @Inject constructor(
             message = message,
             favorites = favorites,
             weeklyStats = weeklyStats,
-            hasShownVoiceRationale = hasShownVoiceRationale
+            hasShownVoiceRationale = hasShownVoiceRationale,
+            isAiEnabled = llmManager.isAiEnabled
         )
     }.stateIn(
         scope = viewModelScope,
@@ -440,5 +441,6 @@ data class TimelineUiState(
     val message: String? = null,
     val favorites: Set<EntryType> = emptySet(),
     val weeklyStats: WeeklyStats? = null,
-    val hasShownVoiceRationale: Boolean = false
+    val hasShownVoiceRationale: Boolean = false,
+    val isAiEnabled: Boolean = true
 )

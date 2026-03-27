@@ -57,7 +57,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -97,10 +96,12 @@ fun AddMealScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var name by rememberSaveable { mutableStateOf("") }
-    var note by rememberSaveable { mutableStateOf("") }
-    var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
-    var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
+    val uiState by viewModel.uiState.collectAsState()
+
+    var name by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+    var logDate by remember { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
+    var startTime by remember { mutableStateOf(LocalTime.now()) }
     var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
     var isNewFromTemplate by remember { mutableStateOf(false) }
 
@@ -108,15 +109,14 @@ fun AddMealScreen(
     val selectedAllergenIds = remember { mutableStateListOf<String>() }
     val selectedFodmapIds = remember { mutableStateListOf<String>() }
 
-    var proteins by rememberSaveable { mutableStateOf<Double?>(null) }
-    var carbohydrates by rememberSaveable { mutableStateOf<Double?>(null) }
-    var lipids by rememberSaveable { mutableStateOf<Double?>(null) }
+    var proteins by remember { mutableStateOf<Double?>(null) }
+    var carbohydrates by remember { mutableStateOf<Double?>(null) }
+    var lipids by remember { mutableStateOf<Double?>(null) }
 
-    var setReminder by rememberSaveable { mutableStateOf(false) }
-    var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
-    var advancedOptionsExpanded by rememberSaveable { mutableStateOf(false) }
+    var setReminder by remember { mutableStateOf(false) }
+    var reminderTime by remember { mutableStateOf(LocalTime.now()) }
+    var advancedOptionsExpanded by remember { mutableStateOf(false) }
 
-    val uiState by viewModel.uiState.collectAsState()
     val allergenOrderFromSettings by viewModel.allergenOrder.collectAsState()
     val deactivatedAllergenIds by viewModel.deactivatedAllergens.collectAsState()
     val deactivatedFodmapIds by viewModel.deactivatedFodmaps.collectAsState()
@@ -402,7 +402,7 @@ fun AddMealScreen(
             },
             dismissButton = {
                 if (!isDownloading) {
-                    TextButton(onClick = { }) {
+                    TextButton(onClick = { showDownloadDialog = false }) {
                         Text(stringResource(R.string.cancel))
                     }
                 }
@@ -488,23 +488,25 @@ fun AddMealScreen(
                         modifier = Modifier.weight(1f)
                     )
 
-                    Spacer(modifier = Modifier.width(8.dp))
+                    if (uiState.isAiEnabled) {
+                        Spacer(modifier = Modifier.width(8.dp))
 
-                    IconButton(
-                        onClick = handleAiAssist,
-                        enabled = !isAnalyzing && (name.isNotBlank() || note.isNotBlank())
-                    ) {
-                        if (isAnalyzing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                Icons.Default.AutoAwesome,
-                                contentDescription = stringResource(R.string.ai_assist),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                        IconButton(
+                            onClick = handleAiAssist,
+                            enabled = !isAnalyzing && (name.isNotBlank() || note.isNotBlank())
+                        ) {
+                            if (isAnalyzing) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.AutoAwesome,
+                                    contentDescription = stringResource(R.string.ai_assist),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }
