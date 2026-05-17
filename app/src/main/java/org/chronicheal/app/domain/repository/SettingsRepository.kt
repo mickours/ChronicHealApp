@@ -19,6 +19,9 @@ interface SettingsRepository {
     val backupDirectoryUri: Flow<String?>
     suspend fun setBackupDirectoryUri(uri: String?)
 
+    val isMissingEntryNotificationEnabled: Flow<Boolean>
+    suspend fun setMissingEntryNotificationEnabled(enabled: Boolean)
+
     // User Profile
     val userAge: Flow<Int>
     suspend fun setUserAge(age: Int)

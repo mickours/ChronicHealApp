@@ -1,7 +1,6 @@
 package org.chronicheal.app.presentation
 
 import android.content.Intent
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -70,6 +69,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.Allergen
@@ -364,6 +364,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
+                            @Suppress("DEPRECATION")
                             Text(text = "🍎", fontSize = 20.sp)
                             Spacer(Modifier.width(12.dp))
                             Text(
@@ -434,6 +435,35 @@ fun SettingsScreen(
 
             HorizontalDivider()
 
+            Text(
+                text = stringResource(R.string.notifications_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.missing_entry_notif),
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = stringResource(R.string.missing_entry_notif_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
+                Switch(
+                    checked = uiState.isMissingEntryNotificationEnabled,
+                    onCheckedChange = { viewModel.setMissingEntryNotificationEnabled(it) }
+                )
+            }
+
+            HorizontalDivider()
+
             Text(text = stringResource(R.string.onboarding), style = MaterialTheme.typography.titleMedium)
             
             Button(
@@ -441,6 +471,7 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer)
             ) {
+                @Suppress("DEPRECATION")
                 Text(stringResource(R.string.reset_wizard))
             }
 
@@ -484,7 +515,8 @@ fun SettingsScreen(
                     Text(
                         text = if (uiState.backupDirectoryUri == null) 
                             stringResource(R.string.backup_directory_default)
-                            else Uri.parse(uiState.backupDirectoryUri).path ?: uiState.backupDirectoryUri!!,
+                        else uiState.backupDirectoryUri!!.toUri().path
+                            ?: uiState.backupDirectoryUri!!,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -522,7 +554,8 @@ fun SettingsScreen(
             }
             
             Spacer(modifier = Modifier.height(24.dp))
-            
+
+            @Suppress("DEPRECATION")
             Text(
                 text = stringResource(R.string.app_version_info),
                 style = MaterialTheme.typography.bodySmall,

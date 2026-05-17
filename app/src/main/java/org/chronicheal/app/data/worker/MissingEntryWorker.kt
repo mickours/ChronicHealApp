@@ -6,9 +6,11 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.coroutines.flow.first
 import org.chronicheal.app.data.notification.NotificationHelper
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.repository.EntryRepository
+import org.chronicheal.app.domain.repository.SettingsRepository
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneId
@@ -19,10 +21,17 @@ class MissingEntryWorker @AssistedInject constructor(
     @Assisted private val context: Context,
     @Assisted workerParams: WorkerParameters,
     private val entryRepository: EntryRepository,
+    private val settingsRepository: SettingsRepository,
     private val notificationHelper: NotificationHelper
 ) : CoroutineWorker(context, workerParams) {
 
     override suspend fun doWork(): Result {
+        // Check if missing entry notifications are enabled in settings
+        val isEnabled = settingsRepository.isMissingEntryNotificationEnabled.first()
+        if (!isEnabled) {
+            return Result.success()
+        }
+
         val now = Instant.now()
         val zoneId = ZoneId.systemDefault()
         val localTimeNow = now.atZone(zoneId).toLocalTime()

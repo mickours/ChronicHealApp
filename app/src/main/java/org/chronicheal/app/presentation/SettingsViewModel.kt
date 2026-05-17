@@ -37,7 +37,8 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.userHeight,
         settingsRepository.chronicDiseases,
         settingsRepository.deactivatedAllergens,
-        settingsRepository.deactivatedFodmaps
+        settingsRepository.deactivatedFodmaps,
+        settingsRepository.isMissingEntryNotificationEnabled
     ) { params ->
         val isLoading = params[0] as Boolean
         val message = params[1] as String?
@@ -51,9 +52,9 @@ class SettingsViewModel @Inject constructor(
         val chronicDiseases = params[8] as Set<String>
         @Suppress("UNCHECKED_CAST")
         val deactivatedAllergens = params[9] as Set<String>
-
         @Suppress("UNCHECKED_CAST")
         val deactivatedFodmaps = params[10] as Set<String>
+        val isMissingEntryNotificationEnabled = params[11] as Boolean
 
         SettingsUiState(
             isLoading = isLoading,
@@ -66,7 +67,8 @@ class SettingsViewModel @Inject constructor(
             userHeight = userHeight,
             chronicDiseases = chronicDiseases,
             deactivatedAllergens = deactivatedAllergens,
-            deactivatedFodmaps = deactivatedFodmaps
+            deactivatedFodmaps = deactivatedFodmaps,
+            isMissingEntryNotificationEnabled = isMissingEntryNotificationEnabled
         )
     }.stateIn(
         scope = viewModelScope,
@@ -151,6 +153,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setMissingEntryNotificationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setMissingEntryNotificationEnabled(enabled)
+        }
+    }
+
     fun clearMessage() {
         _message.value = null
     }
@@ -169,5 +177,6 @@ data class SettingsUiState(
     val userHeight: Int = 0,
     val chronicDiseases: Set<String> = emptySet(),
     val deactivatedAllergens: Set<String> = emptySet(),
-    val deactivatedFodmaps: Set<String> = emptySet()
+    val deactivatedFodmaps: Set<String> = emptySet(),
+    val isMissingEntryNotificationEnabled: Boolean = false
 )

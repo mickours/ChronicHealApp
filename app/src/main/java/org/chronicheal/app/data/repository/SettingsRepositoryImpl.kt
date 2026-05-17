@@ -33,6 +33,8 @@ class SettingsRepositoryImpl @Inject constructor(
         val SHOWN_VOICE_PERMISSION_RATIONALE = booleanPreferencesKey("shown_voice_permission_rationale")
         val IS_AUTO_BACKUP_ENABLED = booleanPreferencesKey("is_auto_backup_enabled")
         val BACKUP_DIRECTORY_URI = stringPreferencesKey("backup_directory_uri")
+        val IS_MISSING_ENTRY_NOTIFICATION_ENABLED =
+            booleanPreferencesKey("is_missing_entry_notification_enabled")
         
         // Profile
         val USER_AGE = intPreferencesKey("user_age")
@@ -114,6 +116,17 @@ class SettingsRepositoryImpl @Inject constructor(
             } else {
                 preferences[PreferencesKeys.BACKUP_DIRECTORY_URI] = uri
             }
+        }
+    }
+
+    override val isMissingEntryNotificationEnabled: Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.IS_MISSING_ENTRY_NOTIFICATION_ENABLED] ?: false
+        }
+
+    override suspend fun setMissingEntryNotificationEnabled(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_MISSING_ENTRY_NOTIFICATION_ENABLED] = enabled
         }
     }
 
