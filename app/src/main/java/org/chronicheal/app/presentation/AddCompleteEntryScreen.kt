@@ -131,17 +131,30 @@ fun AddCompleteEntryScreen(
     val medicationTemplates = remember { mutableStateListOf<HealthEntry?>() }
     
     LaunchedEffect(drugReminders) {
+        // Only re-initialize checks and times if count changed
         if (medicationTaken.size != drugReminders.size) {
             medicationTaken.clear()
             medicationTimes.clear()
-            medicationTemplates.clear()
             drugReminders.forEach { reminder ->
                 medicationTaken.add(false)
                 medicationTimes.add(reminder.time)
-                val template = reminder.templateEntryId?.let { viewModel.getEntryById(it) }
-                medicationTemplates.add(template)
             }
         }
+
+        // Always refresh templates when reminders change to ensure we have dosage info
+        val newTemplates = mutableListOf<HealthEntry?>()
+        for (reminder in drugReminders) {
+            var template = reminder.templateEntryId?.let { viewModel.getEntryById(it) }
+            if (template == null) {
+                // Fallback: try to find the last entry with the name from title to get dosage
+                val drugName =
+                    reminder.title.removePrefix(context.getString(R.string.type_drug) + ": ").trim()
+                template = viewModel.getLastEntryByTypeAndName(EntryType.DRUG, drugName)
+            }
+            newTemplates.add(template)
+        }
+        medicationTemplates.clear()
+        medicationTemplates.addAll(newTemplates)
     }
 
     // Symptoms State
@@ -217,7 +230,8 @@ fun AddCompleteEntryScreen(
                         timestamp = logDate.atTime(medTime).atZone(ZoneId.systemDefault()).toInstant(),
                         type = EntryType.DRUG,
                         name = template?.name
-                            ?: reminder.title.removePrefix(context.getString(R.string.type_drug) + ": "),
+                            ?: reminder.title.removePrefix(context.getString(R.string.type_drug) + ": ")
+                                .trim(),
                         value = template?.value,
                         unit = template?.unit,
                         note = "",
@@ -619,6 +633,7 @@ fun MedicationCheckSection(
 
                 val drugName = template?.name
                     ?: reminder.title.removePrefix(context.getString(R.string.type_drug) + ": ")
+                        .trim()
                 val dosage = template?.let {
                     val valueStr = if (it.value != null) {
                         if (it.value == it.value.toLong().toDouble()) it.value.toLong()

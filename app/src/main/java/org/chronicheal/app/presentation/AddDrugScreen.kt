@@ -84,10 +84,10 @@ fun AddDrugScreen(
             name = entry.name ?: ""
             if (entry.value != null) {
                 value = if (entry.value == entry.value.toLong().toDouble()) entry.value.toLong().toString() else entry.value.toString()
-                selectedUnit = entry.unit ?: context.getString(R.string.unit_pills)
             } else {
-                value = entry.unit ?: ""
+                value = ""
             }
+            selectedUnit = entry.unit ?: context.getString(R.string.unit_pills)
             note = entry.note
             if (!isNewFromTemplate) {
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()

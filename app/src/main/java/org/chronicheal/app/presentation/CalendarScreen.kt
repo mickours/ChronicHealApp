@@ -35,7 +35,6 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material.icons.filled.Today
@@ -78,7 +77,6 @@ import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.ui.theme.HeaderBlue
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
@@ -103,7 +101,6 @@ data class AggregatedEntry(
 fun CalendarScreen(
     onBackClick: () -> Unit,
     onDateClick: (LocalDate) -> Unit,
-    onManageRemindersClick: () -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -181,9 +178,6 @@ fun CalendarScreen(
                             Icon(Icons.Default.Today, contentDescription = null)
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.today))
-                        }
-                        IconButton(onClick = onManageRemindersClick) {
-                            Icon(Icons.Default.Notifications, contentDescription = stringResource(R.string.reminders_title))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(

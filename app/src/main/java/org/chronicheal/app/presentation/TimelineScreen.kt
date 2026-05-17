@@ -41,7 +41,7 @@ import androidx.compose.material.icons.filled.AssignmentTurnedIn
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
@@ -110,6 +110,7 @@ fun TimelineScreen(
     navController: NavController,
     onAddEntryClick: () -> Unit,
     onCalendarClick: () -> Unit,
+    onRemindersClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onAnalyticsClick: () -> Unit,
     onCompleteEntryClick: () -> Unit,
@@ -207,6 +208,12 @@ fun TimelineScreen(
                         }
                         IconButton(onClick = onCalendarClick) {
                             Icon(Icons.Default.CalendarMonth, contentDescription = "Calendar")
+                        }
+                        IconButton(onClick = onRemindersClick) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                contentDescription = stringResource(R.string.reminders_title)
+                            )
                         }
                         IconButton(onClick = onSettingsClick) {
                             Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.action_settings))
@@ -309,7 +316,11 @@ fun TimelineScreen(
         }
     ) { innerPadding ->
         if (uiState.entries.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding), contentAlignment = Alignment.Center
+            ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     AsyncImage(
                         model = "file:///android_asset/Body-dont-know.svg",
@@ -785,7 +796,11 @@ fun EntryItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
-        Row(modifier = Modifier.height(IntrinsicSize.Min).defaultMinSize(minHeight = 80.dp)) {
+        Row(
+            modifier = Modifier
+                .height(IntrinsicSize.Min)
+                .defaultMinSize(minHeight = 80.dp)
+        ) {
             // Category color stripe
             Box(
                 modifier = Modifier
@@ -839,7 +854,9 @@ fun EntryItem(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     textAlign = TextAlign.End,
-                                    modifier = Modifier.weight(1f, fill = false).padding(start = 8.dp)
+                                    modifier = Modifier
+                                        .weight(1f, fill = false)
+                                        .padding(start = 8.dp)
                                 )
                             }
                         }

@@ -12,10 +12,10 @@ import org.chronicheal.app.domain.model.Reminder
 
 @Dao
 interface ReminderDao {
-    @Query("SELECT * FROM reminders")
+    @Query("SELECT * FROM reminders ORDER BY time ASC")
     fun getAllReminders(): Flow<List<Reminder>>
 
-    @Query("SELECT * FROM reminders WHERE isEnabled = 1")
+    @Query("SELECT * FROM reminders WHERE isEnabled = 1 ORDER BY time ASC")
     fun getEnabledReminders(): Flow<List<Reminder>>
 
     @Query("SELECT * FROM reminders WHERE id = :id")
@@ -27,7 +27,7 @@ interface ReminderDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReminder(reminder: Reminder): Long
 
-    @Update
+    @Update(onConflict = OnConflictStrategy.REPLACE)
     suspend fun updateReminder(reminder: Reminder)
 
     @Delete

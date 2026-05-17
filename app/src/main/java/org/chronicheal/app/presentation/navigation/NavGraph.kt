@@ -134,6 +134,9 @@ fun NavGraph(
                 onCalendarClick = {
                     navController.navigate(Screen.Calendar.route)
                 },
+                onRemindersClick = {
+                    navController.navigate(Screen.Reminders.route)
+                },
                 onSettingsClick = {
                     navController.navigate(Screen.Settings.route)
                 },
@@ -157,9 +160,6 @@ fun NavGraph(
                 onBackClick = { navController.popBackStack() },
                 onDateClick = { date ->
                     navController.navigate(Screen.DayView.createRoute(date.toString()))
-                },
-                onManageRemindersClick = {
-                    navController.navigate(Screen.Reminders.route)
                 }
             )
         }
@@ -214,7 +214,13 @@ fun NavGraph(
             )
         ) { backStackEntry ->
             val typeString = backStackEntry.arguments?.getString("type")
-            val initialType = typeString?.let { try { EntryType.valueOf(it) } catch(e: Exception) { null } }
+            val initialType = typeString?.let {
+                try {
+                    EntryType.valueOf(it)
+                } catch (_: Exception) {
+                    null
+                }
+            }
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddReminderScreen(
                 id = id,
@@ -271,7 +277,7 @@ fun NavGraph(
         fun onSaveSuccess(date: String?, isUpdate: Boolean) {
             val message = if (isUpdate) "Entry updated" else "Entry saved"
             val targetRoute = if (date != null) Screen.DayView.createRoute(date) else Screen.Timeline.route
-            navController.getBackStackEntry(targetRoute).savedStateHandle.set("message", message)
+            navController.getBackStackEntry(targetRoute).savedStateHandle["message"] = message
             navController.popBackStack(targetRoute, inclusive = false)
         }
 
@@ -626,7 +632,8 @@ fun NavGraph(
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { 
                     navController.popBackStack(Screen.Timeline.route, inclusive = false)
-                    navController.getBackStackEntry(Screen.Timeline.route).savedStateHandle.set("message", "Entry saved via voice")
+                    navController.getBackStackEntry(Screen.Timeline.route).savedStateHandle["message"] =
+                        "Entry saved via voice"
                 }
             )
         }
