@@ -22,6 +22,9 @@ interface SettingsRepository {
     val isMissingEntryNotificationEnabled: Flow<Boolean>
     suspend fun setMissingEntryNotificationEnabled(enabled: Boolean)
 
+    val lastMissingEntryNotificationDates: Flow<Map<String, String>>
+    suspend fun setLastMissingEntryNotificationDate(key: String, date: String)
+
     // User Profile
     val userAge: Flow<Int>
     suspend fun setUserAge(age: Int)

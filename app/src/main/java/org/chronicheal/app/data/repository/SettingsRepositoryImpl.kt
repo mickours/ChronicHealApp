@@ -35,6 +35,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val BACKUP_DIRECTORY_URI = stringPreferencesKey("backup_directory_uri")
         val IS_MISSING_ENTRY_NOTIFICATION_ENABLED =
             booleanPreferencesKey("is_missing_entry_notification_enabled")
+        val LAST_MISSING_ENTRY_NOTIF_DATES = stringPreferencesKey("last_missing_entry_notif_dates")
         
         // Profile
         val USER_AGE = intPreferencesKey("user_age")
@@ -127,6 +128,26 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setMissingEntryNotificationEnabled(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_MISSING_ENTRY_NOTIFICATION_ENABLED] = enabled
+        }
+    }
+
+    override val lastMissingEntryNotificationDates: Flow<Map<String, String>> =
+        context.settingsDataStore.data
+            .map { preferences ->
+                val json = preferences[PreferencesKeys.LAST_MISSING_ENTRY_NOTIF_DATES]
+                if (json != null) Json.decodeFromString(json) else emptyMap()
+            }
+
+    override suspend fun setLastMissingEntryNotificationDate(key: String, date: String) {
+        context.settingsDataStore.edit { preferences ->
+            val currentJson = preferences[PreferencesKeys.LAST_MISSING_ENTRY_NOTIF_DATES]
+            val currentMap: MutableMap<String, String> = if (currentJson != null) {
+                Json.decodeFromString<Map<String, String>>(currentJson).toMutableMap()
+            } else mutableMapOf()
+
+            currentMap[key] = date
+            preferences[PreferencesKeys.LAST_MISSING_ENTRY_NOTIF_DATES] =
+                Json.encodeToString(currentMap)
         }
     }
 

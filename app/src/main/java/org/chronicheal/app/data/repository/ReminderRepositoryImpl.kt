@@ -2,6 +2,7 @@ package org.chronicheal.app.data.repository
 
 import kotlinx.coroutines.flow.Flow
 import org.chronicheal.app.data.local.ReminderDao
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.Reminder
 import org.chronicheal.app.domain.repository.ReminderRepository
 import javax.inject.Inject
@@ -16,6 +17,9 @@ class ReminderRepositoryImpl @Inject constructor(
     override fun getEnabledReminders(): Flow<List<Reminder>> = reminderDao.getEnabledReminders()
 
     override suspend fun getReminderById(id: Long): Reminder? = reminderDao.getReminderById(id)
+
+    override suspend fun getRemindersByTypeAndName(type: EntryType, name: String): List<Reminder> =
+        reminderDao.getRemindersByTypeAndName(type, name)
 
     override suspend fun insertReminder(reminder: Reminder): Long = reminderDao.insertReminder(reminder)
 

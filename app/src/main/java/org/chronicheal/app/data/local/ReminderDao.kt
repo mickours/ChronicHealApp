@@ -7,6 +7,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.Reminder
 
 @Dao
@@ -19,6 +20,9 @@ interface ReminderDao {
 
     @Query("SELECT * FROM reminders WHERE id = :id")
     suspend fun getReminderById(id: Long): Reminder?
+
+    @Query("SELECT * FROM reminders WHERE entryType = :type AND title LIKE '%' || :name || '%'")
+    suspend fun getRemindersByTypeAndName(type: EntryType, name: String): List<Reminder>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReminder(reminder: Reminder): Long

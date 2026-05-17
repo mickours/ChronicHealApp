@@ -4,26 +4,6 @@ This document outlines the implementation steps for ChronicHeal, based on the `R
 
 ... (previous content) ...
 
-## Phase 46: Build Variants & Lite Version (Completed)
-
-Goal: Create a lightweight version of the app that excludes the heavy AI (MediaPipe) dependencies.
-
-**Accomplishments:**
-
-- **Product Flavors**: Introduced `full` and `lite` flavors in `build.gradle.kts`.
-- **Dependency Isolation**: Moved the `com.google.mediapipe:tasks-genai` dependency to the
-  `fullImplementation` configuration. This significantly reduces the APK size and memory footprint
-  of the lite build.
-- **Architecture Abstraction**:
-    - Created a core `LlmManager` interface in the `main` source set.
-    - Implemented `FullLlmManager` in the `full` source set containing the actual MediaPipe logic.
-    - Implemented `LiteLlmManager` in the `lite` source set with "no-op" (do nothing)
-      implementations.
-- **Dependency Injection**: Configured separate Dagger/Hilt `AiModule`s for each flavor to inject
-  the appropriate implementation at compile time.
-- **UI Adaptation**: Added an `isAiEnabled` flag to the `LlmManager` interface, allowing the UI (
-  e.g., `AddMealScreen`) to cleanly hide AI-related buttons when compiled in the lite flavor.
-
 ## Phase 47: Enhanced Checkup Reminders with Templates (Completed)
 
 Goal: Improve the medication section in the checkup screen by prefilling dosage and cleaning up drug
@@ -44,3 +24,26 @@ names using a template feature.
     - Drug names are now cleaned of the "Medication: " prefix if no template is found.
     - Dosage (value and unit) is automatically prefilled when the medication is checked.
     - The dosage is displayed under the drug name in the checkup list for better visibility.
+
+## Phase 48: Refined Missing Entry Detection (Completed)
+
+Goal: Reduce unnecessary notifications from the missing entry detection feature by making it more
+accurate and less intrusive.
+
+**Accomplishments:**
+
+- **User Control**: Added a "Missing Entry Notifications" toggle in Settings (disabled by default)
+  to
+  give users choice over these alerts.
+- **Notification Throttling**: Implemented a "once per day per activity" rule to prevent repeated
+  alerts for the same missing log.
+- **Usage Awareness**: Added a proximity check that skips notifications if the user has logged
+  anything in the last 30 minutes, assuming active app usage.
+- **Stricter Consistency Rules**:
+    - Increased minimum frequency threshold to 8 occurrences in 14 days.
+    - Added a regularity check using standard deviation (must be < 60 minutes) to ensure alerts only
+      trigger for truly routine activities.
+- **Reminder Integration**: Enhanced the worker to skip notifications for activities that already
+  have an active, manual reminder set.
+- **Localized Strings**: Provided full English and French translations for the new setting and its
+  description.
