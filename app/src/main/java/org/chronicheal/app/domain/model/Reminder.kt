@@ -16,5 +16,6 @@ data class Reminder(
     val time: LocalTime,
     val daysOfWeek: Set<Int>, // 1 (Monday) to 7 (Sunday)
     val isEnabled: Boolean = true,
-    val entryType: EntryType? = null
+    val entryType: EntryType? = null,
+    val templateEntryId: Long? = null
 )

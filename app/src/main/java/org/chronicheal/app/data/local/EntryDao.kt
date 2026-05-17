@@ -29,7 +29,7 @@ interface EntryDao {
     suspend fun getEntriesSince(since: Instant): List<HealthEntry>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertEntry(entry: HealthEntry)
+    suspend fun insertEntry(entry: HealthEntry): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEntries(entries: List<HealthEntry>)

@@ -4,29 +4,6 @@ This document outlines the implementation steps for ChronicHeal, based on the `R
 
 ... (previous content) ...
 
-## Phase 45: Intensity Heatmap Analytics (Completed)
-
-Goal: Add a visual calendar heatmap to the Analytics screen to track intensity trends.
-
-**Accomplishments:**
-
-- **UI Abstraction**: Unified the `MetricDropdown` to be reusable for multiple selection contexts (
-  Correlation vs. Heatmap).
-- **Heatmap Data Aggregation**: Added `heatmapData` to `AnalyticsUiState` and implemented
-  `getDailyValues` in `AnalyticsViewModel` to compute the sum of intensities or occurrences per day
-  for a selected metric.
-- **Dynamic Selection**: Users can now select any series available in the correlation selector to
-  display its intensity heatmap.
-- **Adaptive Calendar View**:
-    - **Weekly/Monthly**: Displays a grid-based calendar where each day's color intensity reflects
-      its total logged values.
-    - **Yearly/All-time**: Switches to a compact GitHub-style contribution grid for long-term trend
-      visualization.
-- **Auto-initialization**: The heatmap automatically selects "Pain" as the default metric on first
-  load.
-- **Technical Polish**: Updated `AnalyticsViewModel` with a more robust `combine` flow to handle 5+
-  state streams and avoid "Cannot infer type" compiler errors.
-
 ## Phase 46: Build Variants & Lite Version (Completed)
 
 Goal: Create a lightweight version of the app that excludes the heavy AI (MediaPipe) dependencies.
@@ -46,3 +23,24 @@ Goal: Create a lightweight version of the app that excludes the heavy AI (MediaP
   the appropriate implementation at compile time.
 - **UI Adaptation**: Added an `isAiEnabled` flag to the `LlmManager` interface, allowing the UI (
   e.g., `AddMealScreen`) to cleanly hide AI-related buttons when compiled in the lite flavor.
+
+## Phase 47: Enhanced Checkup Reminders with Templates (Completed)
+
+Goal: Improve the medication section in the checkup screen by prefilling dosage and cleaning up drug
+names using a template feature.
+
+**Accomplishments:**
+
+- **Schema Update**: Added `templateEntryId` to the `Reminder` model to link a reminder to a
+  specific `HealthEntry` serving as a data template.
+- **Database Migration**: Implemented a Room migration (version 10 to 11) to add the
+  `templateEntryId` column to the `reminders` table.
+- **Data Repository**: Updated `EntryDao` and `EntryRepository` to return the ID of newly inserted
+  entries.
+- **ViewModel Logic**: Enhanced `TimelineViewModel` to automatically link new reminders to the
+  entries they were created with.
+- **UI Improvements**: Updated `AddCompleteEntryScreen` (Checkup) to fetch and use template entries
+  for medications.
+    - Drug names are now cleaned of the "Medication: " prefix if no template is found.
+    - Dosage (value and unit) is automatically prefilled when the medication is checked.
+    - The dosage is displayed under the drug name in the checkup list for better visibility.

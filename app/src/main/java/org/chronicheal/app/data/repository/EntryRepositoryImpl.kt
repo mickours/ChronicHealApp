@@ -32,8 +32,8 @@ class EntryRepositoryImpl @Inject constructor(
         return dao.getEntriesSince(since)
     }
 
-    override suspend fun insertEntry(entry: HealthEntry) {
-        dao.insertEntry(entry)
+    override suspend fun insertEntry(entry: HealthEntry): Long {
+        return dao.insertEntry(entry)
     }
 
     override suspend fun insertEntries(entries: List<HealthEntry>) {

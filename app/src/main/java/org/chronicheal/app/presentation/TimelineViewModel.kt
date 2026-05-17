@@ -300,7 +300,7 @@ class TimelineViewModel @Inject constructor(
         
         viewModelScope.launch {
             if (original == null || original.id == 0L) {
-                // It's a new entry (or a new entry from a template)
+                // It\u0027s a new entry (or a new entry from a template)
                 addEntryUseCase(current)
                 val savedEntry = getEntriesUseCase().first().find { 
                     it.timestamp == current.timestamp && it.type == current.type 
@@ -337,12 +337,14 @@ class TimelineViewModel @Inject constructor(
 
     fun addEntryWithReminder(entry: HealthEntry, reminder: Reminder) {
         viewModelScope.launch {
-            val reminderId = reminderRepository.insertReminder(reminder)
-            val savedReminder = reminder.copy(id = reminderId)
+            val entryId = addEntryUseCase(entry)
+            val reminderId =
+                reminderRepository.insertReminder(reminder.copy(templateEntryId = entryId))
+            val savedReminder = reminder.copy(id = reminderId, templateEntryId = entryId)
             if (savedReminder.isEnabled) {
                 reminderScheduler.schedule(savedReminder)
             }
-            addEntryUseCase(entry.copy(reminderId = reminderId))
+            updateEntryUseCase(entry.copy(id = entryId, reminderId = reminderId))
         }
     }
 
@@ -354,8 +356,9 @@ class TimelineViewModel @Inject constructor(
 
     fun updateEntryWithReminder(entry: HealthEntry, reminder: Reminder) {
         viewModelScope.launch {
-            val reminderId = reminderRepository.insertReminder(reminder)
-            val savedReminder = reminder.copy(id = reminderId)
+            val reminderId =
+                reminderRepository.insertReminder(reminder.copy(templateEntryId = entry.id))
+            val savedReminder = reminder.copy(id = reminderId, templateEntryId = entry.id)
             if (savedReminder.isEnabled) {
                 reminderScheduler.schedule(savedReminder)
             }

@@ -11,7 +11,7 @@ interface EntryRepository {
     suspend fun getEntryByReminderId(reminderId: Long): HealthEntry?
     suspend fun getLastEntryByTypeAndName(type: EntryType, name: String): HealthEntry?
     suspend fun getEntriesSince(since: Instant): List<HealthEntry>
-    suspend fun insertEntry(entry: HealthEntry)
+    suspend fun insertEntry(entry: HealthEntry): Long
     suspend fun updateEntry(entry: HealthEntry)
     suspend fun deleteEntry(entry: HealthEntry)
     suspend fun insertEntries(entries: List<HealthEntry>)

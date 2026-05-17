@@ -128,14 +128,18 @@ fun AddCompleteEntryScreen(
     val drugReminders by viewModel.drugReminders.collectAsState()
     val medicationTaken = remember { mutableStateListOf<Boolean>() }
     val medicationTimes = remember { mutableStateListOf<LocalTime>() }
+    val medicationTemplates = remember { mutableStateListOf<HealthEntry?>() }
     
     LaunchedEffect(drugReminders) {
         if (medicationTaken.size != drugReminders.size) {
             medicationTaken.clear()
             medicationTimes.clear()
+            medicationTemplates.clear()
             drugReminders.forEach { reminder ->
                 medicationTaken.add(false)
                 medicationTimes.add(reminder.time)
+                val template = reminder.templateEntryId?.let { viewModel.getEntryById(it) }
+                medicationTemplates.add(template)
             }
         }
     }
@@ -205,12 +209,19 @@ fun AddCompleteEntryScreen(
         drugReminders.forEachIndexed { index, reminder ->
             if (index < medicationTaken.size && medicationTaken[index]) {
                 val medTime = if (index < medicationTimes.size) medicationTimes[index] else startTime
+                val template =
+                    if (index < medicationTemplates.size) medicationTemplates[index] else null
+                
                 entries.add(
                     HealthEntry(
                         timestamp = logDate.atTime(medTime).atZone(ZoneId.systemDefault()).toInstant(),
                         type = EntryType.DRUG,
-                        name = reminder.title,
-                        note = ""
+                        name = template?.name
+                            ?: reminder.title.removePrefix(context.getString(R.string.type_drug) + ": "),
+                        value = template?.value,
+                        unit = template?.unit,
+                        note = "",
+                        reminderId = reminder.id
                     )
                 )
             }
@@ -300,6 +311,7 @@ fun AddCompleteEntryScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier = Modifier.fillMaxWidth()
                         ) {
+                            @Suppress("DEPRECATION")
                             Text(text = stringResource(R.string.reminder_time_label), style = MaterialTheme.typography.bodyMedium)
                             TextButton(onClick = { showTimePicker = true }) {
                                 Text(text = reminderTime.format(timeFormatter))
@@ -374,6 +386,7 @@ fun AddCompleteEntryScreen(
             SectionHeader(type = EntryType.DRUG, title = stringResource(R.string.section_medication))
             MedicationCheckSection(
                 reminders = drugReminders,
+                templates = medicationTemplates,
                 taken = medicationTaken,
                 onTakenChange = { index, isTaken -> if (index < medicationTaken.size) medicationTaken[index] = isTaken },
                 times = medicationTimes,
@@ -408,7 +421,11 @@ fun PainSection(
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp)
+            ) {
                 BodySilhouette(
                     modifier = Modifier.fillMaxSize(),
                     onRegionHold = { regionId: String, intensity: Float ->
@@ -450,7 +467,11 @@ fun PainSection(
             if (pains.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 pains.forEachIndexed { index, pain ->
-                    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                    ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -463,6 +484,7 @@ fun PainSection(
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold
                             )
+                            @Suppress("DEPRECATION")
                             IconButton(onClick = { pains.removeAt(index) }, modifier = Modifier.size(24.dp)) {
                                 Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
                             }
@@ -488,7 +510,9 @@ fun PainSection(
                 Text(
                     text = stringResource(R.string.select_body_part),
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 8.dp)
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 8.dp)
                 )
             }
         }
@@ -571,12 +595,14 @@ fun SymptomsSection(
 @Composable
 fun MedicationCheckSection(
     reminders: List<Reminder>,
+    templates: List<HealthEntry?>,
     taken: List<Boolean>,
     onTakenChange: (Int, Boolean) -> Unit,
     times: List<LocalTime>,
     onTimeChange: (Int, LocalTime) -> Unit
 ) {
     if (reminders.isEmpty()) return
+    val context = LocalContext.current
 
     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -589,6 +615,17 @@ fun MedicationCheckSection(
                 var showTimePicker by remember { mutableStateOf(false) }
                 val currentTime = if (index < times.size) times[index] else LocalTime.now()
                 val timeFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
+                val template = if (index < templates.size) templates[index] else null
+
+                val drugName = template?.name
+                    ?: reminder.title.removePrefix(context.getString(R.string.type_drug) + ": ")
+                val dosage = template?.let {
+                    val valueStr = if (it.value != null) {
+                        if (it.value == it.value.toLong().toDouble()) it.value.toLong()
+                            .toString() else it.value.toString()
+                    } else ""
+                    if (valueStr.isNotEmpty()) "$valueStr ${it.unit ?: ""}" else ""
+                } ?: ""
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -600,9 +637,17 @@ fun MedicationCheckSection(
                     )
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.question_drugs, reminder.title),
+                            text = stringResource(R.string.question_drugs, drugName),
                             modifier = Modifier.padding(start = 8.dp)
                         )
+                        if (dosage.isNotEmpty()) {
+                            Text(
+                                text = dosage,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
                         IconButton(
                             onClick = { showTimePicker = true },
                             modifier = Modifier.padding(start = 4.dp)
