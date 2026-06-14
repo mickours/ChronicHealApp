@@ -13,7 +13,7 @@ import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.Fodmap
 import org.chronicheal.app.domain.model.Reminder
-import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import org.chronicheal.app.domain.repository.SecurityRepository
 import org.chronicheal.app.domain.repository.SettingsRepository
 import java.time.LocalTime
@@ -43,7 +43,7 @@ data class WelcomeWizardUiState(
 @HiltViewModel
 class WelcomeWizardViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val reminderRepository: ReminderRepository,
+    private val healthRepository: HealthRepository,
     private val reminderScheduler: ReminderScheduler,
     private val securityRepository: SecurityRepository
 ) : ViewModel() {
@@ -122,7 +122,7 @@ class WelcomeWizardViewModel @Inject constructor(
                     isEnabled = true,
                     entryType = EntryType.DRUG
                 )
-                val id = reminderRepository.insertReminder(reminder)
+                val id = healthRepository.insertReminder(reminder)
                 reminderScheduler.schedule(reminder.copy(id = id))
             }
             

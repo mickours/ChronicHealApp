@@ -3,13 +3,11 @@ package org.chronicheal.app.domain.usecase
 import org.chronicheal.app.data.notification.ReminderScheduler
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
-import org.chronicheal.app.domain.repository.EntryRepository
-import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import javax.inject.Inject
 
 class SaveReminderUseCase @Inject constructor(
-    private val reminderRepository: ReminderRepository,
-    private val entryRepository: EntryRepository,
+    private val repository: HealthRepository,
     private val reminderScheduler: ReminderScheduler
 ) {
     suspend operator fun invoke(reminder: Reminder, templateEntry: HealthEntry? = null): Long {
@@ -17,17 +15,17 @@ class SaveReminderUseCase @Inject constructor(
 
         if (templateEntry != null) {
             if (templateId != null && templateId != 0L) {
-                entryRepository.updateEntry(templateEntry.copy(id = templateId))
+                repository.updateEntry(templateEntry.copy(id = templateId))
             } else {
-                templateId = entryRepository.insertEntry(templateEntry)
+                templateId = repository.insertEntry(templateEntry)
             }
         }
 
         val reminderToSave = reminder.copy(templateEntryId = templateId)
         val id = if (reminderToSave.id == 0L) {
-            reminderRepository.insertReminder(reminderToSave)
+            repository.insertReminder(reminderToSave)
         } else {
-            reminderRepository.updateReminder(reminderToSave)
+            repository.updateReminder(reminderToSave)
             reminderToSave.id
         }
 

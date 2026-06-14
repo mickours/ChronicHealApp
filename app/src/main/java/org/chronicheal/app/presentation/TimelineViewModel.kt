@@ -17,8 +17,7 @@ import org.chronicheal.app.domain.model.AiMealAnalysis
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
-import org.chronicheal.app.domain.repository.EntryRepository
-import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import org.chronicheal.app.domain.repository.SettingsRepository
 import org.chronicheal.app.domain.usecase.AddEntryUseCase
 import org.chronicheal.app.domain.usecase.DeleteEntryUseCase
@@ -37,7 +36,7 @@ class TimelineViewModel @Inject constructor(
     private val getEntriesUseCase: GetEntriesUseCase,
     private val deleteEntryUseCase: DeleteEntryUseCase,
     private val updateEntryUseCase: UpdateEntryUseCase,
-    private val reminderRepository: ReminderRepository,
+    private val healthRepository: HealthRepository,
     private val settingsRepository: SettingsRepository,
     private val llmManager: LlmManager
 ) : ViewModel() {

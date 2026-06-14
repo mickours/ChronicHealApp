@@ -4,11 +4,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
-import org.chronicheal.app.domain.repository.EntryRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import javax.inject.Inject
 
 class GetSuggestionsUseCase @Inject constructor(
-    private val repository: EntryRepository
+    private val repository: HealthRepository
 ) {
     fun execute(
         types: Set<EntryType>,

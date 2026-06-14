@@ -9,8 +9,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 import org.chronicheal.app.data.notification.NotificationHelper
 import org.chronicheal.app.domain.model.EntryType
-import org.chronicheal.app.domain.repository.EntryRepository
-import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import org.chronicheal.app.domain.repository.SettingsRepository
 import java.time.Instant
 import java.time.LocalTime
@@ -22,8 +21,7 @@ import kotlin.math.sqrt
 class MissingEntryWorker @AssistedInject constructor(
     @Assisted private val context: Context,
     @Assisted workerParams: WorkerParameters,
-    private val entryRepository: EntryRepository,
-    private val reminderRepository: ReminderRepository,
+    private val healthRepository: HealthRepository,
     private val settingsRepository: SettingsRepository,
     private val notificationHelper: NotificationHelper
 ) : CoroutineWorker(context, workerParams) {
@@ -55,7 +53,7 @@ class MissingEntryWorker @AssistedInject constructor(
 
         // 3. Activity check: If user recently logged anything, they are active in the app, no need to nudge
         val proximityThreshold = now.minus(RECENT_LOG_GRACE_PERIOD_MINS, ChronoUnit.MINUTES)
-        val recentEntries = entryRepository.getEntriesSince(proximityThreshold)
+        val recentEntries = healthRepository.getEntriesSince(proximityThreshold)
         if (recentEntries.isNotEmpty()) {
             return Result.success()
         }
@@ -70,7 +68,7 @@ class MissingEntryWorker @AssistedInject constructor(
         // 5. Fetch past entries to identify habits (2-week window)
         val twoWeeksAgo = now.minus(14, ChronoUnit.DAYS)
         val threeDaysAgo = now.minus(3, ChronoUnit.DAYS)
-        val pastEntries = entryRepository.getEntriesSince(twoWeeksAgo)
+        val pastEntries = healthRepository.getEntriesSince(twoWeeksAgo)
 
         // 6. Identify consistent and ACTIVE habits
         // We focus on types that usually have names and occur at semi-regular times
@@ -109,7 +107,7 @@ class MissingEntryWorker @AssistedInject constructor(
 
         // 7. Check what's missing today and pick the best one to notify
         val todayStart = localDateTime.toLocalDate().atStartOfDay(zoneId).toInstant()
-        val entriesToday = entryRepository.getEntriesSince(todayStart)
+        val entriesToday = healthRepository.getEntriesSince(todayStart)
 
         val validatedMissing = mutableListOf<Triple<EntryType, String, LocalTime>>()
         for ((key, typicalTime) in regularPatterns) {
@@ -120,7 +118,7 @@ class MissingEntryWorker @AssistedInject constructor(
             if (lastNotifDates[patternKey] == todayStr) continue
 
             // B. No active manual reminder? (Avoid double notification if user already set a reminder)
-            val existingReminders = reminderRepository.getRemindersByTypeAndName(type, name)
+            val existingReminders = healthRepository.getRemindersByTypeAndName(type, name)
             if (existingReminders.any { it.isEnabled }) continue
 
             // C. Notification Window: typicalTime + (2h to 6h)
@@ -152,7 +150,7 @@ class MissingEntryWorker @AssistedInject constructor(
         if (itemToNotify != null) {
             val (type, name, _) = itemToNotify
             val notificationId = (type.name + name).hashCode()
-            val lastEntry = entryRepository.getLastEntryByTypeAndName(type, name)
+            val lastEntry = healthRepository.getLastEntryByTypeAndName(type, name)
 
             notificationHelper.showMissingEntryNotification(
                 title = context.getString(org.chronicheal.app.R.string.notification_missing_entry_title),

@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
-import org.chronicheal.app.domain.repository.EntryRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import java.io.OutputStream
 import java.time.LocalDate
 import java.time.ZoneId
@@ -20,7 +20,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 class ExportPdfUseCase @Inject constructor(
-    private val repository: EntryRepository
+    private val repository: HealthRepository
 ) {
     private val palette = listOf(
         0xFF0072B2.toInt(), // Blue

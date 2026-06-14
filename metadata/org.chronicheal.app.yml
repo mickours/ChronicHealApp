@@ -1,0 +1,36 @@
+License: GPL-3.0-only
+SourceCode: https://github.com/mickours/ChronicHealApp.git
+IssueTracker: https://github.com/mickours/ChronicHealApp.git/issues
+
+AutoName: ChronicHeal
+Description: |-
+    ChronicHeal is an open-source, privacy-first mobile application designed
+    to help individuals managing chronic conditions track their health journey.
+    Unlike traditional apps, ChronicHeal stores all your data locally, requires
+    no account, and puts you in complete control of your medical history.
+
+    Key Features:
+    - Comprehensive Tracking: Log pain, symptoms, medications, meals, sleep, and more.
+    - Visual History: Monthly calendar view with heatmaps and detailed interactive timeline.
+    - Advanced Analytics: Visualize progress with charts and find correlations.
+    - PDF Reporting: Generate professional medical reports to share with healthcare providers.
+    - Local-Only AI: Optional on-device meal analysis and voice logging.
+    - Privacy & Security: Local storage only, biometric lock, no account needed.
+    - Interactive Human Silhouette: Quickly log pain locations with a body scan.
+    - Smart Reminders: Stay on track with medication and activity alerts.
+
+RepoType: git
+Repo: https://github.com/mickours/ChronicHealApp.git
+
+Builds:
+  - versionName: '1.0'
+    versionCode: 1
+    commit: v1.0
+    subdir: app
+    gradle:
+      - liteRelease
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: '1.0'
+CurrentVersionCode: 1

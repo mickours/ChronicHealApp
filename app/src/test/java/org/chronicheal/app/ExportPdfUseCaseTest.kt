@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
-import org.chronicheal.app.domain.repository.EntryRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import org.chronicheal.app.domain.usecase.ExportPdfUseCase
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -17,7 +17,7 @@ import java.time.LocalDate
 
 class ExportPdfUseCaseTest {
 
-    private lateinit var repository: EntryRepository
+    private lateinit var repository: HealthRepository
     private lateinit var exportPdfUseCase: ExportPdfUseCase
 
     @Before

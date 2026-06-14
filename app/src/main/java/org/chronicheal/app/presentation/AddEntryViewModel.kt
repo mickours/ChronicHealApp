@@ -15,7 +15,7 @@ import org.chronicheal.app.domain.model.AiMealAnalysis
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
-import org.chronicheal.app.domain.repository.EntryRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import org.chronicheal.app.domain.repository.SettingsRepository
 import org.chronicheal.app.domain.usecase.AddEntryUseCase
 import org.chronicheal.app.domain.usecase.AnalyzeMealUseCase
@@ -47,7 +47,7 @@ class AddEntryViewModel @Inject constructor(
     private val getSuggestionsUseCase: GetSuggestionsUseCase,
     private val saveReminderUseCase: SaveReminderUseCase,
     private val analyzeMealUseCase: AnalyzeMealUseCase,
-    private val entryRepository: EntryRepository,
+    private val healthRepository: HealthRepository,
     private val settingsRepository: SettingsRepository,
     private val llmManager: LlmManager
 ) : ViewModel() {
@@ -87,7 +87,7 @@ class AddEntryViewModel @Inject constructor(
                     }
 
                     reminderId != null -> {
-                        val entry = entryRepository.getEntryByReminderId(reminderId)
+                        val entry = healthRepository.getEntryByReminderId(reminderId)
                         val reminder = getReminderByIdUseCase(reminderId)
                         _uiState.update {
                             it.copy(
@@ -157,7 +157,7 @@ class AddEntryViewModel @Inject constructor(
     }
 
     suspend fun getLastEntryByTypeAndName(type: EntryType, name: String): HealthEntry? {
-        return entryRepository.getLastEntryByTypeAndName(type, name)
+        return healthRepository.getLastEntryByTypeAndName(type, name)
     }
 
     fun getSuggestions(

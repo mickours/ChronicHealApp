@@ -2,11 +2,11 @@ package org.chronicheal.app.domain.usecase
 
 import org.chronicheal.app.data.notification.ReminderScheduler
 import org.chronicheal.app.domain.model.Reminder
-import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import javax.inject.Inject
 
 class ToggleReminderUseCase @Inject constructor(
-    private val repository: ReminderRepository,
+    private val repository: HealthRepository,
     private val scheduler: ReminderScheduler
 ) {
     suspend operator fun invoke(reminder: Reminder) {

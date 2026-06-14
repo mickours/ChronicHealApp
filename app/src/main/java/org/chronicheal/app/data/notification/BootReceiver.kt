@@ -8,14 +8,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class BootReceiver : BroadcastReceiver() {
 
     @Inject
-    lateinit var reminderRepository: ReminderRepository
+    lateinit var healthRepository: HealthRepository
 
     @Inject
     lateinit var reminderScheduler: ReminderScheduler
@@ -25,7 +25,7 @@ class BootReceiver : BroadcastReceiver() {
             val pendingResult = goAsync()
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val enabledReminders = reminderRepository.getEnabledReminders().first()
+                    val enabledReminders = healthRepository.getEnabledReminders().first()
                     enabledReminders.forEach { reminder ->
                         reminderScheduler.schedule(reminder)
                     }

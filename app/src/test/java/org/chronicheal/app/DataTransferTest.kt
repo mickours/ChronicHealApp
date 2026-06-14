@@ -6,9 +6,10 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
+import org.chronicheal.app.data.local.AppDatabase
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
-import org.chronicheal.app.domain.repository.EntryRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import org.chronicheal.app.domain.usecase.ExportDataUseCase
 import org.chronicheal.app.domain.usecase.ImportDataUseCase
 import org.junit.Assert.assertEquals
@@ -18,15 +19,18 @@ import java.time.Instant
 
 class DataTransferTest {
 
-    private lateinit var repository: EntryRepository
+    private lateinit var repository: HealthRepository
+    private lateinit var database: AppDatabase
     private lateinit var exportDataUseCase: ExportDataUseCase
     private lateinit var importDataUseCase: ImportDataUseCase
 
     @Before
     fun setup() {
         repository = mockk()
-        exportDataUseCase = ExportDataUseCase(repository)
-        importDataUseCase = ImportDataUseCase(repository)
+        database = mockk(relaxed = true)
+        every { database.openHelper.readableDatabase.version } returns 1
+        exportDataUseCase = ExportDataUseCase(repository, database)
+        importDataUseCase = ImportDataUseCase(repository, database)
     }
 
     @Test

@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
-import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import org.chronicheal.app.domain.usecase.DeleteReminderUseCase
 import org.chronicheal.app.domain.usecase.GetEntryByIdUseCase
 import org.chronicheal.app.domain.usecase.GetReminderByIdUseCase
@@ -21,7 +21,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RemindersViewModel @Inject constructor(
-    private val reminderRepository: ReminderRepository,
+    private val healthRepository: HealthRepository,
     private val getReminderByIdUseCase: GetReminderByIdUseCase,
     private val getEntryByIdUseCase: GetEntryByIdUseCase,
     private val getSuggestionsUseCase: GetSuggestionsUseCase,
@@ -30,7 +30,7 @@ class RemindersViewModel @Inject constructor(
     private val toggleReminderUseCase: ToggleReminderUseCase
 ) : ViewModel() {
 
-    val reminders: StateFlow<List<Reminder>> = reminderRepository.getAllReminders()
+    val reminders: StateFlow<List<Reminder>> = healthRepository.getAllReminders()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun toggleReminder(reminder: Reminder) {

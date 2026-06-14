@@ -8,7 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.chronicheal.app.R
-import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.repository.HealthRepository
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -16,7 +16,7 @@ import javax.inject.Inject
 class ReminderReceiver : BroadcastReceiver() {
 
     @Inject
-    lateinit var reminderRepository: ReminderRepository
+    lateinit var healthRepository: HealthRepository
 
     @Inject
     lateinit var notificationHelper: NotificationHelper
@@ -38,7 +38,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val reminder = reminderRepository.getReminderById(reminderId)
+                val reminder = healthRepository.getReminderById(reminderId)
                 if (reminder != null && reminder.isEnabled) {
                     val currentDayOfWeek = LocalDate.now().dayOfWeek.value // 1 (Mon) to 7 (Sun)
                     if (reminder.daysOfWeek.contains(currentDayOfWeek)) {
