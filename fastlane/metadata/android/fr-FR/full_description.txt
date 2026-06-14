@@ -1,0 +1,13 @@
+ChronicHeal est une application mobile open-source et respectueuse de la vie privée, conçue pour aider les personnes gérant des maladies chroniques à suivre leur parcours de santé. Contrairement aux applications traditionnelles, ChronicHeal stocke toutes vos données localement, ne nécessite aucun compte et vous donne un contrôle total sur votre historique médical.
+
+Caractéristiques principales :
+- Suivi complet : Enregistrez la douleur, les symptômes, les médicaments, les repas, le sommeil et plus encore.
+- Historique visuel : Vue calendrier mensuelle avec cartes de chaleur et chronologie interactive détaillée.
+- Analyses avancées : Visualisez vos progrès avec des graphiques et trouvez des corrélations.
+- Rapports PDF : Gérez des rapports médicaux professionnels à partager avec votre équipe soignante.
+- IA locale uniquement : Analyse optionnelle des repas sur l'appareil et enregistrement vocal.
+- Confidentialité et sécurité : Stockage local uniquement, verrouillage biométrique, aucun compte requis.
+- Silhouette humaine interactive : Enregistrez rapidement les zones de douleur avec un scan corporel.
+- Rappels intelligents : Restez à jour avec des alertes pour vos médicaments et activités.
+
+ChronicHeal vous permet de mieux comprendre votre santé tout en gardant vos données sensibles privées.

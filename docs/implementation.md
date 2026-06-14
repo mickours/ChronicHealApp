@@ -108,3 +108,22 @@ voice logging.
   `processLog` capability, removing manual instantiation of the AI manager.
 - **ViewModel Update**: Added `processLog` to `AddEntryViewModel` to bridge the UI and the AI
   layer.
+
+## Phase 51: F-Droid Publishing Preparation (Completed)
+
+Goal: Ensure the app meets F-Droid's submission requirements for open-source publishing.
+
+**Accomplishments:**
+
+- **Metadata Creation**: Created a `fastlane` metadata structure in `fastlane/metadata/android/`
+  with titles, short descriptions, and full descriptions in both English (`en-US`) and French
+  (`fr-FR`).
+- **Flavor Optimization**: Verified that the `lite` build flavor is 100% FLOSS (Free/Libre Open
+  Source Software), excluding the MediaPipe AI dependencies which are restricted to the `full`
+  flavor.
+- **Privacy Audit**: Confirmed that the app contains no proprietary tracking, analytics, or
+  Google Play Services dependencies. All permissions (Biometric, Record Audio, etc.) are justified
+  by core features and respect user privacy.
+- **Licensing**: Verified the GPL-3.0 license is correctly placed and referenced in the `README.md`.
+- **Build Readiness**: Ensured `versionCode` and `versionName` are correctly set in the Gradle
+  configuration for easy extraction by F-Droid's build system.
