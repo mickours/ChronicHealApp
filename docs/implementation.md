@@ -47,3 +47,64 @@ accurate and less intrusive.
   have an active, manual reminder set.
 - **Localized Strings**: Provided full English and French translations for the new setting and its
   description.
+
+## Phase 49: Advanced Reminder Details (Completed)
+
+Goal: Allow users to specify details for the entry created when a reminder is triggered.
+
+**Accomplishments:**
+
+- **UI Enhancement**: Redesigned `AddReminderScreen` to include an "Advanced Options" section.
+- **Template Logic**: Integrated fields to prefill entry details (name, location, intensity, unit,
+  value, note) based on the reminder's `EntryType`.
+- **Autocomplete**: Provided suggestions for names, locations, and units using data from existing
+  entries via `RemindersViewModel`.
+- **Persistence**: Updated `RemindersViewModel` to save and update the linked `templateEntryId`
+  in the `Reminder` model when saving details.
+- **Consistency**: Used existing UI components like `AutoCompleteTextField` and `Slider` to match
+  the rest of the app's logging experience.
+
+## Phase 50: Refactor (In Progress)
+
+Goal: Simplify the ChronicHeal codebase, reduce boilerplate, improve state management, and ensure a
+cleaner separation of concerns.
+
+### Phase 50.1: Architecture & State Management (Simplification)
+
+- **Consolidate ViewModel Logic**: Created dedicated UseCases (`GetSuggestionsUseCase`,
+  `SaveReminderUseCase`, `DeleteReminderUseCase`, `ToggleReminderUseCase`) to handle shared logic.
+  Created a shared `AddEntryViewModel` to manage state during entry creation. (Completed)
+- **State Class Pattern**: Standardize `UiState` across all screens using a single `StateFlow`
+  pattern for complex screens to improve maintainability. (Completed for `AddEntryViewModel`)
+- **Dependency Injection Cleanup**: Audit Hilt modules to ensure concise bindings and correct
+  scoping (`@ViewModelScoped`, `@Singleton`).
+
+### Phase 50.2: Feature Modularization & Component Reuse
+
+- **UI Component Library**: Moved repetitive components (e.g., `AutoCompleteTextField`,
+  `IntensityField`, `TimePickerDialog`) from `AddEntryComponents.kt` into a dedicated
+  `presentation/components` package. (Completed)
+- **Entry Handling Abstraction**: Created `AddEntryScaffold` in `AddEntryLayout.kt` to handle common
+  scaffold/logic (date/time pickers, save buttons) for all entry types. Updated all
+  `Add...Screen.kt` files to use this new layout and the new `AddEntryViewModel`. (Completed)
+
+### Phase 50.4: Voice Logging & AI Refactor (Completed)
+
+Goal: Integrate `LlmManager` into the dependency injection system and enhance its capabilities for
+voice logging.
+
+**Accomplishments:**
+
+- **DI Integration**: Refactored `LlmManager` from a concrete class to an interface with
+  flavor-specific implementations (`LiteLlmManager`, `FullLlmManager`).
+- **Hilt Setup**: Configured `AiModule` to provide the appropriate `LlmManager` instance based on
+  the build flavor.
+- **Enhanced AI capabilities**:
+    - Added `processLog` to `LlmManager` to extract multiple health entries from natural language
+      text.
+    - Updated `FullLlmManager` with a specialized prompt for multi-entry extraction.
+    - Fixed `analyzeMeal` prompt to correctly match the `AiMealAnalysis` data structure.
+- **UI Refactor**: Updated `VoiceLoggingScreen` to use the injected `AddEntryViewModel` and its new
+  `processLog` capability, removing manual instantiation of the AI manager.
+- **ViewModel Update**: Added `processLog` to `AddEntryViewModel` to bridge the UI and the AI
+  layer.

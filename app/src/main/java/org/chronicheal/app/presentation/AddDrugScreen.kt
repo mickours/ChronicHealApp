@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -34,6 +36,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.usecase.GetSuggestionsUseCase
+import org.chronicheal.app.presentation.components.AddEntryScaffold
+import org.chronicheal.app.presentation.components.AutoCompleteTextField
+import org.chronicheal.app.presentation.components.EntryDateTimePicker
+import org.chronicheal.app.presentation.components.LogNowEffect
+import org.chronicheal.app.presentation.components.ReminderSection
+import org.chronicheal.app.presentation.components.VoiceEnabledTextField
+import org.chronicheal.app.presentation.components.handleEntrySave
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -47,7 +57,7 @@ fun AddDrugScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: TimelineViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     
@@ -60,10 +70,15 @@ fun AddDrugScreen(
     
     var setReminder by rememberSaveable { mutableStateOf(false) }
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
-    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
-    var isNewFromTemplate by remember { mutableStateOf(false) }
 
-    val nameSuggestions by viewModel.drugSuggestions.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val existingEntry = uiState.entry
+    val isNewFromTemplate = uiState.isNewFromTemplate
+
+    val nameSuggestions by viewModel.getSuggestions(
+        setOf(EntryType.DRUG),
+        GetSuggestionsUseCase.SuggestionField.NAME
+    ).collectAsState()
 
     val unitOptions = listOf(
         stringResource(R.string.unit_pills),
@@ -79,17 +94,13 @@ fun AddDrugScreen(
         templateId = templateId,
         viewModel = viewModel,
         onEntryFound = { entry, fromTemplate ->
-            existingEntry = entry
-            isNewFromTemplate = fromTemplate
             name = entry.name ?: ""
-            if (entry.value != null) {
-                value = if (entry.value == entry.value.toLong().toDouble()) entry.value.toLong().toString() else entry.value.toString()
-            } else {
-                value = ""
-            }
+            value = entry.value?.let { v ->
+                if (v == v.toLong().toDouble()) v.toLong().toString() else v.toString()
+            } ?: ""
             selectedUnit = entry.unit ?: context.getString(R.string.unit_pills)
             note = entry.note
-            if (!isNewFromTemplate) {
+            if (!fromTemplate) {
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
@@ -127,37 +138,34 @@ fun AddDrugScreen(
         )
     }
 
-    val handleSave = {
-        handleEntrySave(
-            viewModel = viewModel,
-            existingEntry = existingEntry,
-            isNewFromTemplate = isNewFromTemplate,
-            currentEntry = createEntry(),
-            setReminder = setReminder,
-            reminderTime = if (setReminder) reminderTime else null,
-            reminderTitle = context.getString(R.string.type_drug) + ": $name",
-            onSaveSuccess = onSaveSuccess
-        )
-    }
-
     AddEntryScaffold(
-        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_drug) else stringResource(R.string.edit_drug),
-        existingEntry = if (isNewFromTemplate) null else existingEntry,
-        currentEntry = createEntry,
+        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_drug) else stringResource(
+            R.string.edit_drug
+        ),
+        hasExistingEntry = !isNewFromTemplate && existingEntry != null,
         onBackClick = onBackClick,
-        onSaveSuccess = onSaveSuccess,
+        onSaveClick = {
+            handleEntrySave(
+                viewModel = viewModel,
+                existingEntry = existingEntry,
+                isNewFromTemplate = isNewFromTemplate,
+                currentEntry = createEntry(),
+                setReminder = setReminder,
+                reminderTime = if (setReminder) reminderTime else null,
+                reminderTitle = context.getString(R.string.type_drug) + ": $name",
+                onSaveSuccess = onSaveSuccess
+            )
+        },
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onBackClick()
-        },
-        viewModel = viewModel,
-        onSave = handleSave
-    ) { innerPadding ->
+        }
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .padding(16.dp)
+                .verticalScroll(rememberScrollState())
         ) {
             EntryDateTimePicker(
                 date = logDate,

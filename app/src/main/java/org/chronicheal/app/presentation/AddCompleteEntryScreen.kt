@@ -1,47 +1,37 @@
 package org.chronicheal.app.presentation
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Switch
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -49,7 +39,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -57,13 +46,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
-import org.chronicheal.app.domain.model.Reminder
-import java.time.Duration
+import org.chronicheal.app.domain.usecase.GetSuggestionsUseCase
+import org.chronicheal.app.presentation.components.AutoCompleteTextField
+import org.chronicheal.app.presentation.components.EntryDateTimePicker
+import org.chronicheal.app.presentation.components.IntensityField
+import org.chronicheal.app.presentation.components.MoodSection
+import org.chronicheal.app.presentation.components.SectionHeader
+import org.chronicheal.app.presentation.components.VoiceEnabledTextField
+import org.chronicheal.app.ui.theme.HeaderBlue
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,710 +65,360 @@ fun AddCompleteEntryScreen(
     dateString: String? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: TimelineViewModel = hiltViewModel()
+    remindersViewModel: RemindersViewModel = hiltViewModel(),
+    viewModel: AddEntryViewModel = hiltViewModel()
 ) {
-    val context = LocalContext.current
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
+    var isSaving by remember { mutableStateOf(false) }
 
-    // Reminder State
-    var isReminderEnabled by rememberSaveable { mutableStateOf(false) }
-    var reminderTime by rememberSaveable { mutableStateOf(LocalTime.of(20, 0)) }
-    
-    val checkupReminders by viewModel.checkupReminders.collectAsState()
-    
-    LaunchedEffect(checkupReminders) {
-        val existingReminder = checkupReminders.firstOrNull()
-        if (existingReminder != null) {
-            isReminderEnabled = existingReminder.isEnabled
-            reminderTime = existingReminder.time
-        }
-    }
-
-    // Mood State
-    var moodIntensity by rememberSaveable { mutableFloatStateOf(5f) }
+    // State for sections
+    var moodIntensity by rememberSaveable { mutableStateOf(5f) }
     var moodNote by rememberSaveable { mutableStateOf("") }
 
-    // Pain State
+    var showPain by rememberSaveable { mutableStateOf(false) }
     val painEntries = remember { mutableStateListOf<HealthEntry>() }
-    var painNote by rememberSaveable { mutableStateOf("") }
 
-    // Sleep State
-    val now = remember { LocalTime.now() }
-    val today = remember { LocalDate.now() }
-    val defaultStartDateTime = remember(now, today) {
-        if (now.hour in 5..11) today.minusDays(1).atTime(22, 0) else today.atTime(22, 0)
-    }
-    val defaultEndDateTime = remember(now, today) {
-        if (now.hour in 5..11) today.atTime(7, 0) else today.plusDays(1).atTime(7, 0)
+    var showSymptoms by rememberSaveable { mutableStateOf(false) }
+    val symptomEntries = remember { mutableStateListOf<HealthEntry>() }
+
+    // Pre-fill active drugs as checkboxes
+    val allReminders by remindersViewModel.reminders.collectAsState()
+    val drugReminders = remember(allReminders) {
+        allReminders.filter { it.entryType == EntryType.DRUG && it.isEnabled }
     }
 
-    var sleepLogDate by rememberSaveable { mutableStateOf(defaultStartDateTime.toLocalDate()) }
-    var sleepStartTime by rememberSaveable { mutableStateOf(defaultStartDateTime.toLocalTime()) }
-    var sleepEndDate by rememberSaveable { mutableStateOf(defaultEndDateTime.toLocalDate()) }
-    var sleepEndTime by rememberSaveable { mutableStateOf(defaultEndDateTime.toLocalTime()) }
-    var sleepQuality by rememberSaveable { mutableFloatStateOf(5f) }
+    val checkedDrugs = remember { mutableStateMapOf<Long, Boolean>() }
+    val drugEntries = remember { mutableStateMapOf<Long, HealthEntry?>() }
 
-    val sleepDurationMinutes by remember(sleepLogDate, sleepStartTime, sleepEndDate, sleepEndTime) {
-        derivedStateOf {
-            val start = sleepLogDate.atTime(sleepStartTime).atZone(ZoneId.systemDefault())
-            val end = sleepEndDate.atTime(sleepEndTime).atZone(ZoneId.systemDefault())
-            Duration.between(start, end).toMinutes().toInt().coerceAtLeast(0)
-        }
-    }
-
-    // Medication State
-    val drugReminders by viewModel.drugReminders.collectAsState()
-    val medicationTaken = remember { mutableStateListOf<Boolean>() }
-    val medicationTimes = remember { mutableStateListOf<LocalTime>() }
-    val medicationTemplates = remember { mutableStateListOf<HealthEntry?>() }
-    
     LaunchedEffect(drugReminders) {
-        // Only re-initialize checks and times if count changed
-        if (medicationTaken.size != drugReminders.size) {
-            medicationTaken.clear()
-            medicationTimes.clear()
-            drugReminders.forEach { reminder ->
-                medicationTaken.add(false)
-                medicationTimes.add(reminder.time)
+        drugReminders.forEach { reminder ->
+            if (!checkedDrugs.containsKey(reminder.id)) {
+                checkedDrugs[reminder.id] = false
+                if (reminder.templateEntryId != null) {
+                    val entry = remindersViewModel.getEntryById(reminder.templateEntryId)
+                    drugEntries[reminder.id] = entry
+                }
             }
-        }
-
-        // Always refresh templates when reminders change to ensure we have dosage info
-        val newTemplates = mutableListOf<HealthEntry?>()
-        for (reminder in drugReminders) {
-            var template = reminder.templateEntryId?.let { viewModel.getEntryById(it) }
-            if (template == null) {
-                // Fallback: try to find the last entry with the name from title to get dosage
-                val drugName =
-                    reminder.title.removePrefix(context.getString(R.string.type_drug) + ": ").trim()
-                template = viewModel.getLastEntryByTypeAndName(EntryType.DRUG, drugName)
-            }
-            newTemplates.add(template)
-        }
-        medicationTemplates.clear()
-        medicationTemplates.addAll(newTemplates)
-    }
-
-    // Symptoms State
-    val symptomEntries = remember { mutableStateListOf<SymptomEntryState>() }
-    LaunchedEffect(Unit) {
-        if (symptomEntries.isEmpty()) {
-            symptomEntries.add(SymptomEntryState())
         }
     }
 
-    // General Note
-    var generalNote by rememberSaveable { mutableStateOf("") }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.complete_check_in)) },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back)
+                        )
+                    }
+                },
+                actions = {
+                    Button(
+                        onClick = {
+                            isSaving = true
+                            val timestamp =
+                                logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
 
-    val handleSave = {
-        val timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-        val entries = mutableListOf<HealthEntry>()
+                            val moodEntry = HealthEntry(
+                                timestamp = timestamp,
+                                type = EntryType.MOOD,
+                                intensity = moodIntensity.roundToInt(),
+                                note = moodNote
+                            )
+                            viewModel.saveEntry(moodEntry, null)
 
-        // Update/Create Checkup Reminder
-        val currentReminder = checkupReminders.firstOrNull()
-        if (isReminderEnabled) {
-            val reminder = (currentReminder ?: Reminder(
-                title = "Checkup",
-                time = reminderTime,
-                daysOfWeek = (1..7).toSet(),
-                isEnabled = true
-            )).copy(time = reminderTime, isEnabled = true)
-            viewModel.saveReminder(reminder)
-        } else if (currentReminder != null) {
-            viewModel.saveReminder(currentReminder.copy(isEnabled = false))
-        }
+                            if (showPain) {
+                                painEntries.forEach {
+                                    viewModel.saveEntry(
+                                        it.copy(timestamp = timestamp),
+                                        null
+                                    )
+                                }
+                            }
 
-        // Add Mood
-        entries.add(
-            HealthEntry(
-                timestamp = timestamp,
-                type = EntryType.MOOD,
-                intensity = moodIntensity.roundToInt(),
-                note = moodNote
-            )
-        )
+                            if (showSymptoms) {
+                                symptomEntries.forEach {
+                                    viewModel.saveEntry(
+                                        it.copy(timestamp = timestamp),
+                                        null
+                                    )
+                                }
+                            }
 
-        // Add Pains
-        painEntries.forEach { pain ->
-            entries.add(
-                pain.copy(
-                    timestamp = timestamp,
-                    note = painNote
+                            drugReminders.forEach { reminder ->
+                                if (checkedDrugs[reminder.id] == true) {
+                                    val templateEntry = drugEntries[reminder.id]
+                                    var baseName =
+                                        reminder.title.removePrefix("Medication: ").trim()
+                                    var value: Double? = null
+                                    var unit: String? = null
+
+                                    if (templateEntry != null) {
+                                        baseName = templateEntry.name ?: baseName
+                                        value = templateEntry.value
+                                        unit = templateEntry.unit
+                                    }
+
+                                    viewModel.saveEntry(
+                                        HealthEntry(
+                                            timestamp = timestamp,
+                                            type = EntryType.DRUG,
+                                            name = baseName,
+                                            value = value,
+                                            unit = unit,
+                                            reminderId = reminder.id
+                                        ), null
+                                    )
+                                }
+                            }
+                            onSaveSuccess()
+                        },
+                        modifier = Modifier.padding(end = 8.dp),
+                        enabled = !isSaving
+                    ) {
+                        if (isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.padding(end = 8.dp),
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                        Text(stringResource(R.string.save))
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = HeaderBlue,
+                    titleContentColor = Color.Black,
+                    navigationIconContentColor = Color.Black,
+                    actionIconContentColor = Color.Black
                 )
             )
         }
-
-        // Add Sleep if recorded
-        if (sleepDurationMinutes > 0) {
-            entries.add(
-                HealthEntry(
-                    timestamp = sleepLogDate.atTime(sleepStartTime).atZone(ZoneId.systemDefault()).toInstant(),
-                    type = EntryType.SLEEP,
-                    durationMinutes = sleepDurationMinutes,
-                    intensity = sleepQuality.roundToInt()
-                )
-            )
-        }
-
-        // Add Medication from reminders
-        drugReminders.forEachIndexed { index, reminder ->
-            if (index < medicationTaken.size && medicationTaken[index]) {
-                val medTime = if (index < medicationTimes.size) medicationTimes[index] else startTime
-                val template =
-                    if (index < medicationTemplates.size) medicationTemplates[index] else null
-                
-                entries.add(
-                    HealthEntry(
-                        timestamp = logDate.atTime(medTime).atZone(ZoneId.systemDefault()).toInstant(),
-                        type = EntryType.DRUG,
-                        name = template?.name
-                            ?: reminder.title.removePrefix(context.getString(R.string.type_drug) + ": ")
-                                .trim(),
-                        value = template?.value,
-                        unit = template?.unit,
-                        note = "",
-                        reminderId = reminder.id
-                    )
-                )
-            }
-        }
-
-        // Add Symptoms
-        symptomEntries.forEach { symptom ->
-            if (symptom.name.isNotBlank()) {
-                entries.add(
-                    HealthEntry(
-                        timestamp = timestamp,
-                        type = EntryType.SYMPTOM,
-                        name = symptom.name,
-                        intensity = symptom.intensity.roundToInt(),
-                        note = symptom.note
-                    )
-                )
-            }
-        }
-
-        // Add General Journal if recorded
-        if (generalNote.isNotBlank()) {
-            entries.add(
-                HealthEntry(
-                    timestamp = timestamp,
-                    type = EntryType.JOURNAL,
-                    note = generalNote
-                )
-            )
-        }
-
-        // Save all
-        entries.forEach { viewModel.addEntry(it) }
-        viewModel.showMessage(context.getString(R.string.entry_saved))
-        onSaveSuccess()
-    }
-
-    AddEntryScaffold(
-        title = stringResource(R.string.complete_checkin),
-        existingEntry = null,
-        currentEntry = { HealthEntry(type = EntryType.JOURNAL, timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()) },
-        onBackClick = onBackClick,
-        onSaveSuccess = onSaveSuccess,
-        onDeleteClick = {},
-        viewModel = viewModel,
-        onSave = handleSave
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
-            EntryDateTimePicker(
-                date = logDate,
-                onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
+            item {
+                EntryDateTimePicker(
+                    date = logDate,
+                    onDateChange = { logDate = it },
+                    startTime = startTime,
+                    onStartTimeChange = { startTime = it }
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
-            // Reminder Settings
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.NotificationsActive, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            Spacer(Modifier.width(8.dp))
-                            Text(text = stringResource(R.string.set_daily_reminder), style = MaterialTheme.typography.titleMedium)
-                        }
-                        Switch(checked = isReminderEnabled, onCheckedChange = { isReminderEnabled = it })
-                    }
-                    if (isReminderEnabled) {
-                        Spacer(Modifier.height(8.dp))
-                        HorizontalDivider()
-                        Spacer(Modifier.height(8.dp))
-                        var showTimePicker by remember { mutableStateOf(false) }
-                        val timeFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
-                        
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            @Suppress("DEPRECATION")
-                            Text(text = stringResource(R.string.reminder_time_label), style = MaterialTheme.typography.bodyMedium)
-                            TextButton(onClick = { showTimePicker = true }) {
-                                Text(text = reminderTime.format(timeFormatter))
-                            }
-                        }
+            // 1. Mood
+            item {
+                SectionHeader(EntryType.MOOD, stringResource(R.string.how_are_you_feeling))
+                MoodSection(moodIntensity, { moodIntensity = it }, moodNote, { moodNote = it })
+                Spacer(modifier = Modifier.height(24.dp))
+            }
 
-                        if (showTimePicker) {
-                            val timeState = rememberTimePickerState(initialHour = reminderTime.hour, initialMinute = reminderTime.minute)
-                            TimePickerDialog(
-                                onDismissRequest = { showTimePicker = false },
-                                confirmButton = {
-                                    TextButton(onClick = {
-                                        reminderTime = LocalTime.of(timeState.hour, timeState.minute)
-                                        showTimePicker = false
-                                    }) { Text(stringResource(R.string.ok)) }
-                                },
-                                dismissButton = {
-                                    TextButton(onClick = { showTimePicker = false }) {
-                                        Text(stringResource(R.string.cancel))
+            // 2. Drugs
+            if (drugReminders.isNotEmpty()) {
+                item {
+                    SectionHeader(EntryType.DRUG, stringResource(R.string.medications_taken))
+                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            drugReminders.forEach { reminder ->
+                                val templateEntry = drugEntries[reminder.id]
+                                val drugName = templateEntry?.name
+                                    ?: reminder.title.removePrefix("Medication: ").trim()
+                                val dosageText = templateEntry?.let { entry ->
+                                    val value = entry.value?.let { v ->
+                                        if (v == v.toLong().toDouble()) v.toLong()
+                                            .toString() else v.toString()
+                                    }
+                                    if (value != null && entry.unit != null) "$value ${entry.unit}" else null
+                                }
+
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            checkedDrugs[reminder.id] =
+                                                !(checkedDrugs[reminder.id] ?: false)
+                                        }
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = checkedDrugs[reminder.id] ?: false,
+                                        onCheckedChange = { checkedDrugs[reminder.id] = it }
+                                    )
+                                    Column {
+                                        Text(drugName, style = MaterialTheme.typography.bodyLarge)
+                                        if (dosageText != null) {
+                                            Text(
+                                                dosageText,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            }
+
+            // 3. Optional Pain
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = showPain, onCheckedChange = {
+                        showPain = it
+                        if (it && painEntries.isEmpty()) {
+                            painEntries.add(HealthEntry(type = EntryType.PAIN, intensity = 5))
+                        }
+                    })
+                    Text(
+                        stringResource(R.string.log_pain_question),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            if (showPain) {
+                items(painEntries) { pain ->
+                    val index = painEntries.indexOf(pain)
+                    ElevatedCard(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            val originSuggestions by viewModel.getSuggestions(
+                                setOf(EntryType.PAIN),
+                                GetSuggestionsUseCase.SuggestionField.ORIGIN,
+                                parentLocation = pain.location
+                            ).collectAsState(initial = emptyList())
+
+                            val locationSuggestions by viewModel.getSuggestions(
+                                setOf(EntryType.PAIN, EntryType.SYMPTOM),
+                                GetSuggestionsUseCase.SuggestionField.LOCATION
+                            ).collectAsState(initial = emptyList())
+
+                            AutoCompleteTextField(
+                                value = pain.location ?: "",
+                                onValueChange = { painEntries[index] = pain.copy(location = it) },
+                                suggestions = locationSuggestions,
+                                label = stringResource(R.string.location_label)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AutoCompleteTextField(
+                                value = pain.origin ?: "",
+                                onValueChange = { painEntries[index] = pain.copy(origin = it) },
+                                suggestions = originSuggestions,
+                                label = stringResource(R.string.pain_origin_label)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
                             ) {
-                                TimePicker(state = timeState)
-                            }
-                        }
-                    }
-                }
-            }
-
-            SectionHeader(type = EntryType.MOOD, title = stringResource(R.string.section_mood))
-            MoodSection(
-                intensity = moodIntensity,
-                onIntensityChange = { moodIntensity = it },
-                note = moodNote,
-                onNoteChange = { moodNote = it }
-            )
-
-            SectionHeader(type = EntryType.PAIN, title = stringResource(R.string.section_pain))
-            PainSection(
-                pains = painEntries,
-                note = painNote,
-                onNoteChange = { painNote = it },
-                logDate = logDate,
-                startTime = startTime,
-                viewModel = viewModel
-            )
-
-            SectionHeader(type = EntryType.SYMPTOM, title = stringResource(R.string.type_symptom))
-            SymptomsSection(
-                symptoms = symptomEntries,
-                onAddSymptom = { symptomEntries.add(SymptomEntryState()) },
-                onRemoveSymptom = { if (symptomEntries.size > 1) symptomEntries.removeAt(it) },
-                onSymptomChange = { index, newState -> symptomEntries[index] = newState },
-                viewModel = viewModel
-            )
-
-            SectionHeader(type = EntryType.SLEEP, title = stringResource(R.string.question_sleep_well))
-            SleepSection(
-                logDate = sleepLogDate,
-                onLogDateChange = { sleepLogDate = it },
-                startTime = sleepStartTime,
-                onStartTimeChange = { sleepStartTime = it },
-                endDate = sleepEndDate,
-                onEndDateChange = { sleepEndDate = it },
-                endTime = sleepEndTime,
-                onEndTimeChange = { sleepEndTime = it },
-                durationMinutes = sleepDurationMinutes,
-                quality = sleepQuality,
-                onQualityChange = { sleepQuality = it }
-            )
-
-            SectionHeader(type = EntryType.DRUG, title = stringResource(R.string.section_medication))
-            MedicationCheckSection(
-                reminders = drugReminders,
-                templates = medicationTemplates,
-                taken = medicationTaken,
-                onTakenChange = { index, isTaken -> if (index < medicationTaken.size) medicationTaken[index] = isTaken },
-                times = medicationTimes,
-                onTimeChange = { index, newTime -> if (index < medicationTimes.size) medicationTimes[index] = newTime }
-            )
-
-            SectionHeader(type = EntryType.JOURNAL, title = stringResource(R.string.section_anything_else))
-            VoiceEnabledTextField(
-                value = generalNote,
-                onValueChange = { generalNote = it },
-                label = stringResource(R.string.notes_label),
-                minLines = 3
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-        }
-    }
-}
-
-@Composable
-fun PainSection(
-    pains: MutableList<HealthEntry>,
-    note: String,
-    onNoteChange: (String) -> Unit,
-    logDate: LocalDate,
-    startTime: LocalTime,
-    viewModel: TimelineViewModel
-) {
-    val context = LocalContext.current
-    var currentHoldRegionId by remember { mutableStateOf<String?>(null) }
-    var currentHoldIntensity by remember { mutableFloatStateOf(1f) }
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp)
-            ) {
-                BodySilhouette(
-                    modifier = Modifier.fillMaxSize(),
-                    onRegionHold = { regionId: String, intensity: Float ->
-                        currentHoldRegionId = regionId
-                        currentHoldIntensity = intensity
-                    },
-                    onRelease = {
-                        val regionId = currentHoldRegionId
-                        if (regionId != null) {
-                            val existingIndex = pains.indexOfFirst { it.location == regionId }
-                            if (existingIndex >= 0) {
-                                pains[existingIndex] = pains[existingIndex].copy(intensity = currentHoldIntensity.toInt())
-                            } else {
-                                pains.add(HealthEntry(
-                                    type = EntryType.PAIN,
-                                    location = regionId,
-                                    intensity = currentHoldIntensity.toInt(),
-                                    timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant()
-                                ))
-                            }
-                        }
-                        currentHoldRegionId = null
-                    },
-                    painEntries = pains
-                )
-
-                if (currentHoldRegionId != null) {
-                    Box(modifier = Modifier.align(Alignment.TopEnd)) {
-                        VerticalIntensityGauge(
-                            intensity = currentHoldIntensity.toInt(),
-                            maxVal = 10,
-                            color = Color.Red,
-                            label = stringResource(R.string.intensity_short_label)
-                        )
-                    }
-                }
-            }
-
-            if (pains.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
-                pains.forEachIndexed { index, pain ->
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            val locationName = formatId(context, pain.location ?: "")
-                            val intensityValue = (pain.intensity ?: 0).toLong()
-                            Text(
-                                text = stringResource(R.string.pain_item_format, locationName, intensityValue),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                            @Suppress("DEPRECATION")
-                            IconButton(onClick = { pains.removeAt(index) }, modifier = Modifier.size(24.dp)) {
-                                Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                        
-                        val originSuggestions by remember(pain.location) { 
-                            viewModel.getPainOriginSuggestions(pain.location ?: "") 
-                        }.collectAsState(initial = emptyList())
-                        
-                        AutoCompleteTextField(
-                            value = pain.origin ?: "",
-                            onValueChange = { newOrigin ->
-                                pains[index] = pain.copy(origin = newOrigin)
-                            },
-                            suggestions = originSuggestions,
-                            label = stringResource(R.string.pain_origin_label)
-                        )
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                VoiceEnabledTextField(value = note, onValueChange = onNoteChange, label = stringResource(R.string.notes_label))
-            } else {
-                Text(
-                    text = stringResource(R.string.select_body_part),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = 8.dp)
-                )
-            }
-        }
-    }
-}
-
-data class SymptomEntryState(
-    val name: String = "",
-    val intensity: Float = 5f,
-    val note: String = ""
-)
-
-@Composable
-fun SymptomsSection(
-    symptoms: List<SymptomEntryState>,
-    onAddSymptom: () -> Unit,
-    onRemoveSymptom: (Int) -> Unit,
-    onSymptomChange: (Int, SymptomEntryState) -> Unit,
-    viewModel: TimelineViewModel
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        symptoms.forEachIndexed { index, symptom ->
-            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.symptom_item_title, stringResource(R.string.type_symptom), index + 1),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (symptoms.size > 1) {
-                            IconButton(onClick = { onRemoveSymptom(index) }) {
-                                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete), tint = MaterialTheme.colorScheme.error)
-                            }
-                        }
-                    }
-                    
-                    val suggestions by viewModel.symptomSuggestions.collectAsState()
-                    AutoCompleteTextField(
-                        value = symptom.name,
-                        onValueChange = { onSymptomChange(index, symptom.copy(name = it)) },
-                        suggestions = suggestions,
-                        label = stringResource(R.string.symptom_name_label)
-                    )
-                    
-                    Spacer(Modifier.height(16.dp))
-                    Text(stringResource(R.string.intensity_label, symptom.intensity.roundToInt()))
-                    Slider(
-                        value = symptom.intensity,
-                        onValueChange = { onSymptomChange(index, symptom.copy(intensity = it)) },
-                        valueRange = 1f..10f,
-                        steps = 8
-                    )
-                    
-                    VoiceEnabledTextField(
-                        value = symptom.note,
-                        onValueChange = { onSymptomChange(index, symptom.copy(note = it)) },
-                        label = stringResource(R.string.notes_label)
-                    )
-                }
-            }
-        }
-        
-        Button(
-            onClick = onAddSymptom,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.add_symptom))
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MedicationCheckSection(
-    reminders: List<Reminder>,
-    templates: List<HealthEntry?>,
-    taken: List<Boolean>,
-    onTakenChange: (Int, Boolean) -> Unit,
-    times: List<LocalTime>,
-    onTimeChange: (Int, LocalTime) -> Unit
-) {
-    if (reminders.isEmpty()) return
-    val context = LocalContext.current
-
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = stringResource(R.string.section_medication),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            reminders.forEachIndexed { index, reminder ->
-                var showTimePicker by remember { mutableStateOf(false) }
-                val currentTime = if (index < times.size) times[index] else LocalTime.now()
-                val timeFormatter = remember { DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT) }
-                val template = if (index < templates.size) templates[index] else null
-
-                val drugName = template?.name
-                    ?: reminder.title.removePrefix(context.getString(R.string.type_drug) + ": ")
-                        .trim()
-                val dosage = template?.let {
-                    val valueStr = if (it.value != null) {
-                        if (it.value == it.value.toLong().toDouble()) it.value.toLong()
-                            .toString() else it.value.toString()
-                    } else ""
-                    if (valueStr.isNotEmpty()) "$valueStr ${it.unit ?: ""}" else ""
-                } ?: ""
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Checkbox(
-                        checked = if (index < taken.size) taken[index] else false,
-                        onCheckedChange = { onTakenChange(index, it) }
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.question_drugs, drugName),
-                            modifier = Modifier.padding(start = 8.dp)
-                        )
-                        if (dosage.isNotEmpty()) {
-                            Text(
-                                text = dosage,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.padding(start = 8.dp)
-                            )
-                        }
-                        IconButton(
-                            onClick = { showTimePicker = true },
-                            modifier = Modifier.padding(start = 4.dp)
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.AccessTime, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    text = currentTime.format(timeFormatter),
-                                    style = MaterialTheme.typography.bodySmall
+                                IntensityField(
+                                    intensity = pain.intensity ?: 5,
+                                    onIntensityChange = {
+                                        painEntries[index] = pain.copy(intensity = it ?: 5)
+                                    }
                                 )
                             }
                         }
                     }
                 }
-
-                if (showTimePicker) {
-                    val timeState = rememberTimePickerState(
-                        initialHour = currentTime.hour,
-                        initialMinute = currentTime.minute
-                    )
-                    TimePickerDialog(
-                        onDismissRequest = { showTimePicker = false },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                onTimeChange(index, LocalTime.of(timeState.hour, timeState.minute))
-                                showTimePicker = false
-                            }) {
-                                Text(stringResource(R.string.ok))
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { showTimePicker = false }) {
-                                Text(stringResource(R.string.cancel))
-                            }
-                        }
-                    ) {
-                        TimePicker(state = timeState)
+                item {
+                    Button(onClick = {
+                        painEntries.add(
+                            HealthEntry(
+                                type = EntryType.PAIN,
+                                intensity = 5
+                            )
+                        )
+                    }) {
+                        Text(stringResource(R.string.add_another_pain))
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
-        }
-    }
-}
 
-@Composable
-fun SleepSection(
-    logDate: LocalDate,
-    onLogDateChange: (LocalDate) -> Unit,
-    startTime: LocalTime,
-    onStartTimeChange: (LocalTime) -> Unit,
-    endDate: LocalDate,
-    onEndDateChange: (LocalDate) -> Unit,
-    endTime: LocalTime,
-    onEndTimeChange: (LocalTime) -> Unit,
-    durationMinutes: Int,
-    quality: Float,
-    onQualityChange: (Float) -> Unit
-) {
-    val context = LocalContext.current
-    val durationText = remember(durationMinutes) {
-        val h = durationMinutes / 60
-        val m = durationMinutes % 60
-        if (h > 0) context.getString(R.string.duration_h_m, h, m) else context.getString(R.string.duration_m, m)
-    }
+            // 4. Optional Symptoms
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = showSymptoms, onCheckedChange = {
+                        showSymptoms = it
+                        if (it && symptomEntries.isEmpty()) {
+                            symptomEntries.add(HealthEntry(type = EntryType.SYMPTOM, intensity = 5))
+                        }
+                    })
+                    Text(
+                        stringResource(R.string.log_symptoms_question),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
 
-    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(stringResource(R.string.bedtime_label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-            EntryDateTimePicker(
-                date = logDate,
-                onDateChange = onLogDateChange,
-                startTime = startTime,
-                onStartTimeChange = onStartTimeChange
-            )
+            if (showSymptoms) {
+                items(symptomEntries) { symptom ->
+                    val index = symptomEntries.indexOf(symptom)
+                    ElevatedCard(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            val suggestions by viewModel.getSuggestions(
+                                setOf(EntryType.SYMPTOM),
+                                GetSuggestionsUseCase.SuggestionField.NAME
+                            ).collectAsState(initial = emptyList())
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(stringResource(R.string.wakeup_time_label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-            EntryDateTimePicker(
-                date = endDate,
-                onDateChange = onEndDateChange,
-                startTime = endTime,
-                onStartTimeChange = onEndTimeChange
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = durationText,
-                onValueChange = { },
-                label = { Text(stringResource(R.string.computed_duration_label)) },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                leadingIcon = { Icon(Icons.Default.Timer, contentDescription = null) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = stringResource(R.string.quality_label, quality.roundToInt()),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Slider(
-                value = quality,
-                onValueChange = onQualityChange,
-                valueRange = 1f..10f,
-                steps = 8
-            )
+                            AutoCompleteTextField(
+                                value = symptom.name ?: "",
+                                onValueChange = { symptomEntries[index] = symptom.copy(name = it) },
+                                suggestions = suggestions,
+                                label = stringResource(R.string.symptom_name_label)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            VoiceEnabledTextField(
+                                value = symptom.note,
+                                onValueChange = { symptomEntries[index] = symptom.copy(note = it) },
+                                label = stringResource(R.string.notes_label)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier.fillMaxWidth(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                IntensityField(
+                                    intensity = symptom.intensity ?: 5,
+                                    onIntensityChange = {
+                                        symptomEntries[index] = symptom.copy(intensity = it ?: 5)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                item {
+                    Button(onClick = {
+                        symptomEntries.add(
+                            HealthEntry(
+                                type = EntryType.SYMPTOM,
+                                intensity = 5
+                            )
+                        )
+                    }) {
+                        Text(stringResource(R.string.add_another_symptom))
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            }
         }
     }
 }

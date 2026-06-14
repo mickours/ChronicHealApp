@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.chronicheal.app.domain.model.AiMealAnalysis
+import org.chronicheal.app.domain.model.HealthEntry
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -118,9 +119,11 @@ class FullLlmManager @Inject constructor(
                   ],
                   "allergens": ["gluten", "lactose", "egg", "soy", "peanut", "tree_nut", "fish", "shellfish", "sesame", "mustard", "sulfite", "lupin", "mollusk", "celery"],
                   "fodmaps": ["fructans", "gos", "lactose", "fructose", "sorbitol", "mannitol"],
-                  "proteins": 20.5,
-                  "carbohydrates": 45.0,
-                  "lipids": 12.0,
+                  "nutrition": {
+                    "proteins": 20.5,
+                    "carbohydrates": 45.0,
+                    "lipids": 12.0
+                  },
                   "note": "Any additional notes"
                 }
                 Nutritional values (proteins, carbohydrates, lipids) should be in grams.
@@ -143,6 +146,47 @@ class FullLlmManager @Inject constructor(
                 return@withContext json.decodeFromString<AiMealAnalysis>(jsonString)
             } catch (e: Exception) {
                 Log.e(tag, "Analysis failed", e)
+                null
+            }
+        }
+
+    override suspend fun processLog(text: String): List<HealthEntry>? =
+        withContext(Dispatchers.Default) {
+            try {
+                initInference()
+                val inference = llmInference ?: return@withContext null
+
+                val systemPrompt = """
+                You are a health tracking assistant. Analyze the user's health log and return a JSON list of HealthEntry objects.
+                The JSON MUST be a list of objects with the following structure:
+                {
+                  "type": "PAIN|DRUG|SYMPTOM|DISEASE|MEAL|SLEEP|MEDICAL_APPOINTMENT|ACTIVITY|EXTERNAL_FACTOR|JOURNAL|PERIOD|BEVERAGE|STOOL|MOOD",
+                  "name": "Name of the item (e.g. 'Ibuprofen', 'Running', 'Headache')",
+                  "intensity": 1-10 (for PAIN, SYMPTOM, MOOD),
+                  "location": "Body part (for PAIN, SYMPTOM)",
+                  "value": numeric value (e.g. dosage for DRUG, amount for BEVERAGE),
+                  "unit": "Unit (e.g. 'mg', 'ml', 'km')",
+                  "note": "Any additional context",
+                  "durationMinutes": numeric duration,
+                  "isAlcoholic": boolean (for BEVERAGE),
+                  "isCaffeinated": boolean (for BEVERAGE)
+                }
+                Return ONLY the JSON list.
+            """.trimIndent()
+
+                val fullPrompt =
+                    "<start_of_turn>user\n$systemPrompt\n\nLog: $text<end_of_turn>\n<start_of_turn>model\n"
+
+                val response = inference.generateResponse(fullPrompt)
+
+                val jsonStart = response.indexOf("[")
+                val jsonEnd = response.lastIndexOf("]") + 1
+                if (jsonStart == -1 || jsonEnd == 0) return@withContext null
+
+                val jsonString = response.substring(jsonStart, jsonEnd)
+                return@withContext json.decodeFromString<List<HealthEntry>>(jsonString)
+            } catch (e: Exception) {
+                Log.e(tag, "Log processing failed", e)
                 null
             }
         }

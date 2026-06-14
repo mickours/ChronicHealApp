@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 11,
-    "identityHash": "5350bb563e7c0210fc7e0d684786d05f",
+    "identityHash": "70bcb510f781b66b3aa1fd57508ed0c9",
     "entities": [
       {
         "tableName": "health_entries",
@@ -152,7 +152,7 @@
       },
       {
         "tableName": "reminders",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `time` TEXT NOT NULL, `daysOfWeek` TEXT NOT NULL, `isEnabled` INTEGER NOT NULL, `entryType` TEXT, `templateEntryId` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `time` TEXT NOT NULL, `daysOfWeek` TEXT NOT NULL, `isEnabled` INTEGER NOT NULL, `entryType` TEXT NOT NULL, `templateEntryId` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -188,7 +188,7 @@
             "fieldPath": "entryType",
             "columnName": "entryType",
             "affinity": "TEXT",
-            "notNull": false
+            "notNull": true
           },
           {
             "fieldPath": "templateEntryId",
@@ -210,7 +210,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5350bb563e7c0210fc7e0d684786d05f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '70bcb510f781b66b3aa1fd57508ed0c9')"
     ]
   }
 }

@@ -139,7 +139,7 @@ class ExportPdfUseCase @Inject constructor(
                         state.checkNewPage(12f)
                         
                         val timeStr = entry.timestamp.atZone(ZoneId.systemDefault()).format(logDateFormatter)
-                        val typeEmoji = entry.type.emoji
+                        val typeEmoji = entry.type?.emoji
                         
                         val content = buildString {
                             append("$timeStr $typeEmoji ")

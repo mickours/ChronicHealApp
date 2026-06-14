@@ -1,22 +1,20 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -24,10 +22,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.usecase.GetSuggestionsUseCase
+import org.chronicheal.app.presentation.components.AddEntryScaffold
+import org.chronicheal.app.presentation.components.AutoCompleteTextField
+import org.chronicheal.app.presentation.components.EntryDateTimePicker
+import org.chronicheal.app.presentation.components.IntensityField
+import org.chronicheal.app.presentation.components.LogNowEffect
+import org.chronicheal.app.presentation.components.VoiceEnabledTextField
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,32 +43,34 @@ fun AddPainScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: TimelineViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel()
 ) {
-    var intensity by rememberSaveable { mutableFloatStateOf(5f) }
-    var location by rememberSaveable { mutableStateOf(locationString ?: "") }
     var origin by rememberSaveable { mutableStateOf("") }
     var note by rememberSaveable { mutableStateOf("") }
+    var intensity by rememberSaveable { mutableStateOf(5) }
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
-    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
-    var isNewFromTemplate by remember { mutableStateOf(false) }
 
-    val locationSuggestions by viewModel.painLocationSuggestions.collectAsState()
-    val originSuggestions by remember(location) { viewModel.getPainOriginSuggestions(location) }.collectAsState(initial = emptyList())
+    val uiState by viewModel.uiState.collectAsState()
+    val existingEntry = uiState.entry
+    val isNewFromTemplate = uiState.isNewFromTemplate
+
+    val originSuggestions by viewModel.getSuggestions(
+        types = setOf(EntryType.PAIN),
+        field = GetSuggestionsUseCase.SuggestionField.ORIGIN,
+        parentLocation = locationString ?: existingEntry?.location
+    ).collectAsState()
 
     LogNowEffect(
         id = id, 
         reminderId = reminderId,
+        templateId = templateId,
         viewModel = viewModel,
         onEntryFound = { entry, fromTemplate ->
-            existingEntry = entry
-            isNewFromTemplate = fromTemplate
-            intensity = entry.intensity?.toFloat() ?: 5f
-            location = entry.location ?: ""
             origin = entry.origin ?: ""
             note = entry.note
-            if (!isNewFromTemplate) {
+            intensity = entry.intensity ?: 5
+            if (!fromTemplate) {
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
@@ -76,30 +82,30 @@ fun AddPainScreen(
             id = if (isNewFromTemplate) 0 else (existingEntry?.id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.PAIN,
-            intensity = intensity.roundToInt(),
-            location = location.trim(),
+            location = locationString ?: existingEntry?.location,
             origin = origin.trim(),
             note = note,
+            intensity = intensity,
             durationMinutes = existingEntry?.durationMinutes
         )
     }
 
     AddEntryScaffold(
         title = if (id == null || isNewFromTemplate) stringResource(R.string.log_pain) else stringResource(R.string.edit_pain),
-        existingEntry = if (isNewFromTemplate) null else existingEntry,
-        currentEntry = createEntry,
+        hasExistingEntry = !isNewFromTemplate && existingEntry != null,
         onBackClick = onBackClick,
-        onSaveSuccess = onSaveSuccess,
+        onSaveClick = {
+            viewModel.saveEntry(createEntry(), if (isNewFromTemplate) null else existingEntry)
+            onSaveSuccess()
+        },
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onBackClick()
-        },
-        viewModel = viewModel
-    ) { innerPadding ->
+        }
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .padding(16.dp)
         ) {
             EntryDateTimePicker(
@@ -107,28 +113,6 @@ fun AddPainScreen(
                 onDateChange = { logDate = it },
                 startTime = startTime,
                 onStartTimeChange = { startTime = it }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = stringResource(R.string.intensity_label, intensity.roundToInt()),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Slider(
-                value = intensity,
-                onValueChange = { intensity = it },
-                valueRange = 1f..10f,
-                steps = 8
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AutoCompleteTextField(
-                value = location,
-                onValueChange = { location = it },
-                suggestions = locationSuggestions,
-                label = stringResource(R.string.location_label)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -148,6 +132,17 @@ fun AddPainScreen(
                 label = stringResource(R.string.notes_label),
                 minLines = 3
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                IntensityField(intensity = intensity, onIntensityChange = { intensity = it ?: 5 })
+            }
         }
     }
 }

@@ -93,6 +93,8 @@ import coil.compose.AsyncImage
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.presentation.components.VerticalIntensityGauge
+import org.chronicheal.app.presentation.components.formatId
 import org.chronicheal.app.presentation.navigation.Screen
 import org.chronicheal.app.ui.theme.HeaderBlue
 import org.chronicheal.app.ui.theme.PrimaryOrange
@@ -114,7 +116,6 @@ fun TimelineScreen(
     onSettingsClick: () -> Unit,
     onAnalyticsClick: () -> Unit,
     onCompleteEntryClick: () -> Unit,
-    onVoiceLoggingClick: () -> Unit,
     onEntryTypeClick: (EntryType) -> Unit,
     onEntryClick: (HealthEntry) -> Unit,
     viewModel: TimelineViewModel = hiltViewModel()
@@ -526,7 +527,7 @@ fun InsightItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val icon = when {
                     trend > 0 -> Icons.AutoMirrored.Filled.TrendingUp
-                    trend < 0 -> Icons.AutoMirrored.Filled.TrendingDown
+                    true -> Icons.AutoMirrored.Filled.TrendingDown
                     else -> Icons.AutoMirrored.Filled.TrendingFlat
                 }
                 Icon(

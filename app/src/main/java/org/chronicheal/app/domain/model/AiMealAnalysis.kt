@@ -8,12 +8,16 @@ data class AiMealAnalysis(
     val ingredients: List<AiIngredient>? = null,
     val allergens: List<String>? = null,
     val fodmaps: List<String>? = null,
-    val proteins: Double? = null,
-    val carbohydrates: Double? = null,
-    val lipids: Double? = null,
+    val nutrition: AiNutrition? = null,
     val note: String? = null
 )
 
+@Serializable
+data class AiNutrition(
+    val proteins: Double? = null,
+    val carbohydrates: Double? = null,
+    val lipids: Double? = null
+)
 @Serializable
 data class AiIngredient(
     val name: String,

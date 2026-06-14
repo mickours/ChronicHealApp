@@ -119,7 +119,8 @@ class WelcomeWizardViewModel @Inject constructor(
                     title = "Checkup",
                     time = _uiState.value.checkupReminderTime,
                     daysOfWeek = (1..7).toSet(),
-                    isEnabled = true
+                    isEnabled = true,
+                    entryType = EntryType.DRUG
                 )
                 val id = reminderRepository.insertReminder(reminder)
                 reminderScheduler.schedule(reminder.copy(id = id))

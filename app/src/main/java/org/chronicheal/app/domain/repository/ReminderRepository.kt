@@ -8,7 +8,7 @@ interface ReminderRepository {
     fun getAllReminders(): Flow<List<Reminder>>
     fun getEnabledReminders(): Flow<List<Reminder>>
     suspend fun getReminderById(id: Long): Reminder?
-    suspend fun getRemindersByTypeAndName(type: EntryType, name: String): List<Reminder>
+    suspend fun getRemindersByTypeAndName(type: EntryType?, name: String): List<Reminder>
     suspend fun insertReminder(reminder: Reminder): Long
     suspend fun updateReminder(reminder: Reminder)
     suspend fun deleteReminder(reminder: Reminder)

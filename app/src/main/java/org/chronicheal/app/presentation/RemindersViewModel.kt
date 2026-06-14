@@ -7,61 +7,76 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.chronicheal.app.data.notification.ReminderScheduler
+import org.chronicheal.app.domain.model.EntryType
+import org.chronicheal.app.domain.model.HealthEntry
 import org.chronicheal.app.domain.model.Reminder
 import org.chronicheal.app.domain.repository.ReminderRepository
+import org.chronicheal.app.domain.usecase.DeleteReminderUseCase
+import org.chronicheal.app.domain.usecase.GetEntryByIdUseCase
+import org.chronicheal.app.domain.usecase.GetReminderByIdUseCase
+import org.chronicheal.app.domain.usecase.GetSuggestionsUseCase
+import org.chronicheal.app.domain.usecase.SaveReminderUseCase
+import org.chronicheal.app.domain.usecase.ToggleReminderUseCase
 import javax.inject.Inject
 
 @HiltViewModel
 class RemindersViewModel @Inject constructor(
-    private val repository: ReminderRepository,
-    private val scheduler: ReminderScheduler
+    private val reminderRepository: ReminderRepository,
+    private val getReminderByIdUseCase: GetReminderByIdUseCase,
+    private val getEntryByIdUseCase: GetEntryByIdUseCase,
+    private val getSuggestionsUseCase: GetSuggestionsUseCase,
+    private val saveReminderUseCase: SaveReminderUseCase,
+    private val deleteReminderUseCase: DeleteReminderUseCase,
+    private val toggleReminderUseCase: ToggleReminderUseCase
 ) : ViewModel() {
 
-    val reminders: StateFlow<List<Reminder>> = repository.getAllReminders()
+    val reminders: StateFlow<List<Reminder>> = reminderRepository.getAllReminders()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun toggleReminder(reminder: Reminder) {
         viewModelScope.launch {
-            val updated = reminder.copy(isEnabled = !reminder.isEnabled)
-            repository.updateReminder(updated)
-            if (updated.isEnabled) {
-                scheduler.schedule(updated)
-            } else {
-                scheduler.cancel(updated)
-            }
+            toggleReminderUseCase(reminder)
         }
     }
 
     fun deleteReminder(reminder: Reminder) {
         viewModelScope.launch {
-            scheduler.cancel(reminder)
-            repository.deleteReminder(reminder)
+            deleteReminderUseCase(reminder)
         }
     }
 
-    fun addReminder(reminder: Reminder) {
+    fun addReminder(reminder: Reminder, templateEntry: HealthEntry? = null) {
         viewModelScope.launch {
-            val id = repository.insertReminder(reminder)
-            val savedReminder = reminder.copy(id = id)
-            if (savedReminder.isEnabled) {
-                scheduler.schedule(savedReminder)
-            }
+            saveReminderUseCase(reminder, templateEntry)
         }
     }
 
-    fun updateReminder(reminder: Reminder) {
+    fun updateReminder(reminder: Reminder, templateEntry: HealthEntry? = null) {
         viewModelScope.launch {
-            repository.updateReminder(reminder)
-            if (reminder.isEnabled) {
-                scheduler.schedule(reminder)
-            } else {
-                scheduler.cancel(reminder)
-            }
+            saveReminderUseCase(reminder, templateEntry)
         }
     }
 
     suspend fun getReminderById(id: Long): Reminder? {
-        return repository.getReminderById(id)
+        return getReminderByIdUseCase(id)
     }
+
+    suspend fun getEntryById(id: Long): HealthEntry? {
+        return getEntryByIdUseCase(id)
+    }
+
+    fun getNameSuggestions(type: EntryType) = getSuggestionsUseCase.execute(
+        types = setOf(type),
+        field = GetSuggestionsUseCase.SuggestionField.NAME
+    ).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun getLocationSuggestions(type: EntryType) = getSuggestionsUseCase.execute(
+        types = setOf(type),
+        field = GetSuggestionsUseCase.SuggestionField.LOCATION
+    ).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun getUnitSuggestions(type: EntryType) = getSuggestionsUseCase.execute(
+        types = setOf(type),
+        field = GetSuggestionsUseCase.SuggestionField.UNIT
+    ).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }

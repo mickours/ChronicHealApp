@@ -114,7 +114,7 @@ class MissingEntryWorker @AssistedInject constructor(
         val validatedMissing = mutableListOf<Triple<EntryType, String, LocalTime>>()
         for ((key, typicalTime) in regularPatterns) {
             val (type, name) = key
-            val patternKey = "${type.name}_$name"
+            val patternKey = type?.let { "${it.name}_$name" }
 
             // A. Not yet notified today for this specific item?
             if (lastNotifDates[patternKey] == todayStr) continue
@@ -132,7 +132,13 @@ class MissingEntryWorker @AssistedInject constructor(
                 // D. Not already logged today?
                 val alreadyLogged = entriesToday.any { it.type == type && it.name == name }
                 if (!alreadyLogged) {
-                    validatedMissing.add(Triple(type, name, typicalTime))
+                    validatedMissing.add(
+                        Triple(
+                            type,
+                            name,
+                            typicalTime
+                        ) as Triple<EntryType, String, LocalTime>
+                    )
                 }
             }
         }

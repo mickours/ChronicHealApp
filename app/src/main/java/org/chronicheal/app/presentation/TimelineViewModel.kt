@@ -25,6 +25,8 @@ import org.chronicheal.app.domain.usecase.DeleteEntryUseCase
 import org.chronicheal.app.domain.usecase.GetEntriesUseCase
 import org.chronicheal.app.domain.usecase.GetEntryByIdUseCase
 import org.chronicheal.app.domain.usecase.GetReminderByIdUseCase
+import org.chronicheal.app.domain.usecase.GetSuggestionsUseCase
+import org.chronicheal.app.domain.usecase.SaveReminderUseCase
 import org.chronicheal.app.domain.usecase.UpdateEntryUseCase
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -33,19 +35,13 @@ import javax.inject.Inject
 @HiltViewModel
 class TimelineViewModel @Inject constructor(
     private val getEntriesUseCase: GetEntriesUseCase,
-    private val addEntryUseCase: AddEntryUseCase,
     private val deleteEntryUseCase: DeleteEntryUseCase,
     private val updateEntryUseCase: UpdateEntryUseCase,
-    private val getEntryByIdUseCase: GetEntryByIdUseCase,
-    private val getReminderByIdUseCase: GetReminderByIdUseCase,
-    private val entryRepository: EntryRepository,
     private val reminderRepository: ReminderRepository,
-    private val reminderScheduler: ReminderScheduler,
     private val settingsRepository: SettingsRepository,
     private val llmManager: LlmManager
 ) : ViewModel() {
 
-    private var recentlyDeletedEntry: HealthEntry? = null
     private var lastAction: UndoAction? = null
 
     private val _message = MutableStateFlow<String?>(null)
@@ -102,45 +98,6 @@ class TimelineViewModel @Inject constructor(
         initialValue = TimelineUiState()
     )
 
-    val drugReminders: StateFlow<List<Reminder>> = reminderRepository.getEnabledReminders()
-        .map { reminders -> reminders.filter { it.entryType == EntryType.DRUG } }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
-
-    val checkupReminders: StateFlow<List<Reminder>> = reminderRepository.getAllReminders()
-        .map { reminders: List<Reminder> -> 
-            reminders.filter { it.title == "Checkup" || it.title == "Daily Checkup" || it.title == "Complete Check-in" } 
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
-
-    val isModelPresent: Boolean get() = llmManager.isModelPresent()
-    val isDownloadingModel: StateFlow<Boolean> = llmManager.isDownloading
-    val modelDownloadProgress: StateFlow<Float> = llmManager.downloadProgress
-
-    fun isMeteredConnection(): Boolean = llmManager.isMeteredConnection()
-
-    fun downloadModel() {
-        viewModelScope.launch {
-            try {
-                llmManager.downloadModel()
-                _message.value = "AI model downloaded successfully"
-            } catch (e: Exception) {
-                _message.value = "Failed to download: ${e.message}"
-            }
-        }
-    }
-
-    suspend fun analyzeMeal(description: String): AiMealAnalysis? {
-        return llmManager.analyzeMeal(description)
-    }
-
     private fun calculateWeeklyStats(entries: List<HealthEntry>): WeeklyStats? {
         val now = Instant.now()
         val oneWeekAgo = now.minus(7, ChronoUnit.DAYS)
@@ -170,100 +127,6 @@ class TimelineViewModel @Inject constructor(
         )
     }
 
-    private fun createSortedSuggestions(
-        filter: (HealthEntry) -> Boolean,
-        selector: (HealthEntry) -> String?
-    ): StateFlow<List<String>> {
-        return getEntriesUseCase()
-            .map { entries ->
-                entries
-                    .filter(filter)
-                    .mapNotNull(selector)
-                    .filter { it.isNotBlank() }
-                    .groupBy { it }
-                    .mapValues { it.value.size }
-                    .toList()
-                    .sortedByDescending { it.second }
-                    .map { it.first }
-            }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    }
-
-    val symptomSuggestions: StateFlow<List<String>> = createSortedSuggestions(
-        filter = { it.type == EntryType.SYMPTOM },
-        selector = { it.name }
-    )
-
-    val painLocationSuggestions: StateFlow<List<String>> = createSortedSuggestions(
-        filter = { it.type == EntryType.PAIN || it.type == EntryType.SYMPTOM },
-        selector = { it.location }
-    )
-
-    fun getPainOriginSuggestions(location: String): StateFlow<List<String>> {
-        return getEntriesUseCase()
-            .map { entries ->
-                entries
-                    .filter { it.type == EntryType.PAIN && (location.isBlank() || it.location == location) }
-                    .mapNotNull { it.origin }
-                    .filter { it.isNotBlank() }
-                    .groupBy { it }
-                    .mapValues { it.value.size }
-                    .toList()
-                    .sortedByDescending { it.second }
-                    .map { it.first }
-            }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-    }
-
-    val drugSuggestions: StateFlow<List<String>> = createSortedSuggestions(
-        filter = { it.type == EntryType.DRUG },
-        selector = { it.name }
-    )
-
-    val activitySuggestions: StateFlow<List<String>> = createSortedSuggestions(
-        filter = { it.type == EntryType.ACTIVITY },
-        selector = { it.name }
-    )
-
-    val diseaseSuggestions: StateFlow<List<String>> = createSortedSuggestions(
-        filter = { it.type == EntryType.DISEASE },
-        selector = { it.name }
-    )
-
-    val doctorSuggestions: StateFlow<List<String>> = createSortedSuggestions(
-        filter = { it.type == EntryType.MEDICAL_APPOINTMENT },
-        selector = { it.name }
-    )
-
-    val mealSuggestions: StateFlow<List<String>> = createSortedSuggestions(
-        filter = { it.type == EntryType.MEAL },
-        selector = { it.name }
-    )
-
-    val externalFactorSuggestions: StateFlow<List<String>> = createSortedSuggestions(
-        filter = { it.type == EntryType.EXTERNAL_FACTOR },
-        selector = { it.name }
-    )
-
-    val beverageSuggestions: StateFlow<List<String>> = createSortedSuggestions(
-        filter = { it.type == EntryType.BEVERAGE },
-        selector = { it.name }
-    )
-
-    val stoolAspectSuggestions: StateFlow<List<String>> = createSortedSuggestions(
-        filter = { it.type == EntryType.STOOL },
-        selector = { it.name }
-    )
-
-    val allergenOrder: StateFlow<List<String>> = settingsRepository.allergenOrder
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    val deactivatedAllergens: StateFlow<Set<String>> = settingsRepository.deactivatedAllergens
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
-
-    val deactivatedFodmaps: StateFlow<Set<String>> = settingsRepository.deactivatedFodmaps
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
-
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
@@ -289,34 +152,6 @@ class TimelineViewModel @Inject constructor(
         }
     }
 
-    fun addEntry(entry: HealthEntry) {
-        viewModelScope.launch {
-            addEntryUseCase(entry)
-        }
-    }
-
-    fun saveEntryAndNotify(original: HealthEntry?, current: HealthEntry) {
-        if (original != null && original.id != 0L && original == current) return
-        
-        viewModelScope.launch {
-            if (original == null || original.id == 0L) {
-                // It\u0027s a new entry (or a new entry from a template)
-                addEntryUseCase(current)
-                val savedEntry = getEntriesUseCase().first().find { 
-                    it.timestamp == current.timestamp && it.type == current.type 
-                }
-                savedEntry?.let {
-                    lastAction = UndoAction.Add(it)
-                    _message.value = "Entry added"
-                }
-            } else {
-                updateEntryUseCase(current)
-                lastAction = UndoAction.Update(original)
-                _message.value = "Entry updated"
-            }
-        }
-    }
-
     fun undoAction() {
         viewModelScope.launch {
             when (val action = lastAction) {
@@ -335,72 +170,6 @@ class TimelineViewModel @Inject constructor(
         }
     }
 
-    fun addEntryWithReminder(entry: HealthEntry, reminder: Reminder) {
-        viewModelScope.launch {
-            val entryId = addEntryUseCase(entry)
-            val reminderId =
-                reminderRepository.insertReminder(reminder.copy(templateEntryId = entryId))
-            val savedReminder = reminder.copy(id = reminderId, templateEntryId = entryId)
-            if (savedReminder.isEnabled) {
-                reminderScheduler.schedule(savedReminder)
-            }
-            updateEntryUseCase(entry.copy(id = entryId, reminderId = reminderId))
-        }
-    }
-
-    fun updateEntry(entry: HealthEntry) {
-        viewModelScope.launch {
-            updateEntryUseCase(entry)
-        }
-    }
-
-    fun updateEntryWithReminder(entry: HealthEntry, reminder: Reminder) {
-        viewModelScope.launch {
-            val reminderId =
-                reminderRepository.insertReminder(reminder.copy(templateEntryId = entry.id))
-            val savedReminder = reminder.copy(id = reminderId, templateEntryId = entry.id)
-            if (savedReminder.isEnabled) {
-                reminderScheduler.schedule(savedReminder)
-            }
-            updateEntryUseCase(entry.copy(reminderId = reminderId))
-        }
-    }
-
-    fun saveReminder(reminder: Reminder) {
-        viewModelScope.launch {
-            val id = reminderRepository.insertReminder(reminder)
-            if (reminder.isEnabled) {
-                reminderScheduler.schedule(reminder.copy(id = id))
-            } else {
-                reminderScheduler.cancel(reminder.copy(id = id))
-            }
-        }
-    }
-
-    fun deleteEntry(entry: HealthEntry) {
-        viewModelScope.launch {
-            recentlyDeletedEntry = entry
-            deleteEntryUseCase(entry)
-            _message.value = "Entry deleted"
-        }
-    }
-
-    suspend fun getEntryById(id: Long): HealthEntry? {
-        return getEntryByIdUseCase(id)
-    }
-
-    suspend fun getEntryByReminderId(reminderId: Long): HealthEntry? {
-        return entryRepository.getEntryByReminderId(reminderId)
-    }
-
-    suspend fun getLastEntryByTypeAndName(type: EntryType, name: String): HealthEntry? {
-        return entryRepository.getLastEntryByTypeAndName(type, name)
-    }
-
-    suspend fun getReminderById(id: Long): Reminder? {
-        return getReminderByIdUseCase(id)
-    }
-
     fun showMessage(message: String) {
         _message.value = message
     }
@@ -412,12 +181,6 @@ class TimelineViewModel @Inject constructor(
     fun setHasShownVoiceRationale(shown: Boolean) {
         viewModelScope.launch {
             settingsRepository.setHasShownVoicePermissionRationale(shown)
-        }
-    }
-
-    fun setAllergenOrder(order: List<String>) {
-        viewModelScope.launch {
-            settingsRepository.setAllergenOrder(order)
         }
     }
 }

@@ -93,6 +93,24 @@ fun NavGraph(
             navController.navigate(route)
         }
 
+        fun onSaveSuccess(date: String?, isUpdate: Boolean) {
+            val message = if (isUpdate) "Entry updated" else "Entry saved"
+            val targetRoute =
+                if (date != null) Screen.DayView.createRoute(date) else Screen.Timeline.route
+            navController.getBackStackEntry(targetRoute).savedStateHandle["message"] = message
+            navController.popBackStack(targetRoute, inclusive = false)
+        }
+
+        val onCancel: (Long?) -> Unit = { id ->
+            if (id != null) {
+                navController.previousBackStackEntry?.savedStateHandle?.set(
+                    "message",
+                    "Edition canceled"
+                )
+            }
+            navController.popBackStack()
+        }
+
         val onEntryTypeClick: (EntryType) -> Unit = { type ->
             val route = when (type) {
                 EntryType.PAIN -> Screen.BodyScan.createRoute()
@@ -146,9 +164,6 @@ fun NavGraph(
                 onCompleteEntryClick = {
                     navController.navigate(Screen.AddCompleteEntry.createRoute())
                 },
-                onVoiceLoggingClick = {
-                    navController.navigate(Screen.VoiceLogging.route)
-                },
                 onEntryTypeClick = onEntryTypeClick,
                 onEntryClick = { entry -> onEntryClick(entry, null) },
                 viewModel = viewModel
@@ -172,7 +187,8 @@ fun NavGraph(
             val date = backStackEntry.arguments?.getString("date")
             BodyScanScreen(
                 dateString = date,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = { onSaveSuccess(date, false) }
             )
         }
         composable(
@@ -224,7 +240,6 @@ fun NavGraph(
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
             AddReminderScreen(
                 id = id,
-                initialType = initialType,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { navController.popBackStack() }
             )
@@ -274,19 +289,6 @@ fun NavGraph(
             )
         }
 
-        fun onSaveSuccess(date: String?, isUpdate: Boolean) {
-            val message = if (isUpdate) "Entry updated" else "Entry saved"
-            val targetRoute = if (date != null) Screen.DayView.createRoute(date) else Screen.Timeline.route
-            navController.getBackStackEntry(targetRoute).savedStateHandle["message"] = message
-            navController.popBackStack(targetRoute, inclusive = false)
-        }
-
-        val onCancel: (Long?) -> Unit = { id ->
-            if (id != null) {
-                navController.previousBackStackEntry?.savedStateHandle?.set("message", "Edition canceled")
-            }
-            navController.popBackStack()
-        }
 
         composable(
             route = Screen.AddPain.route,

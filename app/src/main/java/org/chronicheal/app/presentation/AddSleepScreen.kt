@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,27 +8,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,12 +29,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.presentation.components.AddEntryScaffold
+import org.chronicheal.app.presentation.components.EntryDateTimePicker
+import org.chronicheal.app.presentation.components.IntensityField
+import org.chronicheal.app.presentation.components.LogNowEffect
+import org.chronicheal.app.presentation.components.TimePickerDialog
+import org.chronicheal.app.presentation.components.VoiceEnabledTextField
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,137 +49,84 @@ fun AddSleepScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: TimelineViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel()
 ) {
-    val now = remember { LocalTime.now() }
-    val today = remember { LocalDate.now() }
-
-    // Logic for default values based on time of day
-    val defaultStartDateTime = remember(now, today) {
-        when {
-            now.hour in 5..11 -> today.minusDays(1).atTime(now.minusHours(8)) // Morning: 8h before
-            now.hour in 12..17 -> today.atTime(now) // Afternoon: Now
-            else -> today.atTime(now) // Evening: Now
-        }
-    }
-
-    val defaultEndDateTime = remember(now, today) {
-        when {
-            now.hour in 5..11 -> today.atTime(now) // Morning: Now
-            now.hour in 12..17 -> today.atTime(now.plusHours(1)) // Afternoon: In 1 hour
-            else -> today.plusDays(1).atTime(now.plusHours(8)) // Evening: 8h after
-        }
-    }
-
-    var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else defaultStartDateTime.toLocalDate()) }
-    var startTime by rememberSaveable { mutableStateOf(defaultStartDateTime.toLocalTime()) }
-    
-    var endDate by rememberSaveable { mutableStateOf(if (dateString != null) logDate.plusDays(1) else defaultEndDateTime.toLocalDate()) }
-    var endTime by rememberSaveable { mutableStateOf(defaultEndDateTime.toLocalTime()) }
-
-    var quality by rememberSaveable { mutableFloatStateOf(5f) }
+    var sleepTime by rememberSaveable { mutableStateOf(LocalTime.of(23, 0)) }
+    var wakeTime by rememberSaveable { mutableStateOf(LocalTime.of(7, 0)) }
+    var intensity by rememberSaveable { mutableStateOf(5) }
     var note by rememberSaveable { mutableStateOf("") }
-    var existingEntry by remember { mutableStateOf<HealthEntry?>(null) }
-    var isNewFromTemplate by remember { mutableStateOf(false) }
+    var logDate by rememberSaveable {
+        mutableStateOf(
+            if (dateString != null) LocalDate.parse(
+                dateString
+            ) else LocalDate.now()
+        )
+    }
+    var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
 
-    var setReminder by rememberSaveable { mutableStateOf(false) }
-    var reminderTime by rememberSaveable { mutableStateOf(LocalTime.of(22, 0)) }
-    var showTimePicker by rememberSaveable { mutableStateOf(false) }
+    val uiState by viewModel.uiState.collectAsState()
+    val existingEntry = uiState.entry
+    val isNewFromTemplate = uiState.isNewFromTemplate
 
-    LaunchedEffect(id, reminderId) {
-        if (id != null) {
-            val entry = viewModel.getEntryById(id)
-            if (entry != null) {
-                existingEntry = entry
-                isNewFromTemplate = false
-                quality = entry.intensity?.toFloat() ?: 5f
-                note = entry.note
+    var showSleepTimePicker by rememberSaveable { mutableStateOf(false) }
+    var showWakeTimePicker by rememberSaveable { mutableStateOf(false) }
+
+    LogNowEffect(
+        id = id,
+        reminderId = reminderId,
+        templateId = templateId,
+        viewModel = viewModel,
+        onEntryFound = { entry, fromTemplate ->
+            intensity = entry.intensity ?: 5
+            note = entry.note
+            if (entry.durationMinutes != null) {
+                // If duration is present, we calculate fake sleep/wake times to match duration
+                // This is a simplification as the DB model doesn't store both sleep and wake time.
+                val duration = Duration.ofMinutes(entry.durationMinutes.toLong())
+                sleepTime = LocalTime.of(23, 0)
+                wakeTime = sleepTime.plus(duration)
+            }
+            if (!fromTemplate) {
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
-                
-                val durationMins = entry.durationMinutes?.toLong() ?: 480L
-                val start = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDateTime()
-                val end = start.plus(Duration.ofMinutes(durationMins))
-                endDate = end.toLocalDate()
-                endTime = end.toLocalTime()
-                
-                setReminder = entry.hasReminder
-                
-                if (entry.hasReminder && entry.reminderId != null) {
-                    viewModel.getReminderById(entry.reminderId)?.let { reminder ->
-                        reminderTime = reminder.time
-                    }
-                }
-            }
-        } else if (reminderId != null) {
-            val entry = viewModel.getEntryByReminderId(reminderId)
-            if (entry != null) {
-                existingEntry = entry
-                isNewFromTemplate = true
-                quality = entry.intensity?.toFloat() ?: 5f
-                note = entry.note
-                
-                // For template, we want to keep the current time defaults but apply the duration
-                val durationMins = entry.durationMinutes?.toLong() ?: 480L
-                val start = logDate.atTime(startTime)
-                val end = start.plus(Duration.ofMinutes(durationMins))
-                endDate = end.toLocalDate()
-                endTime = end.toLocalTime()
-                
-                setReminder = entry.hasReminder
-                viewModel.getReminderById(reminderId)?.let { reminder ->
-                    reminderTime = reminder.time
-                }
             }
         }
-    }
-
-    val durationMinutes by remember(logDate, startTime, endDate, endTime) {
-        derivedStateOf {
-            val start = logDate.atTime(startTime).atZone(ZoneId.systemDefault())
-            val end = endDate.atTime(endTime).atZone(ZoneId.systemDefault())
-            Duration.between(start, end).toMinutes().toInt().coerceAtLeast(0)
-        }
-    }
-
-    val durationText = remember(durationMinutes) {
-        val h = durationMinutes / 60
-        val m = durationMinutes % 60
-        if (h > 0) "${h}h ${m}m" else "${m}m"
-    }
+    )
 
     val createEntry = {
+        var duration = Duration.between(sleepTime, wakeTime)
+        if (duration.isNegative) {
+            duration = duration.plusDays(1)
+        }
+        
         HealthEntry(
-            id = if (isNewFromTemplate) 0 else (id ?: 0),
+            id = if (isNewFromTemplate) 0 else (existingEntry?.id ?: 0),
             timestamp = logDate.atTime(startTime).atZone(ZoneId.systemDefault()).toInstant(),
             type = EntryType.SLEEP,
-            intensity = quality.roundToInt(),
+            intensity = intensity,
             note = note,
-            hasReminder = setReminder,
-            reminderId = existingEntry?.reminderId,
-            durationMinutes = durationMinutes
+            durationMinutes = duration.toMinutes().toInt()
         )
     }
 
     AddEntryScaffold(
         title = if (id == null || isNewFromTemplate) stringResource(R.string.log_sleep) else stringResource(R.string.edit_sleep),
-        existingEntry = if (isNewFromTemplate) null else existingEntry,
-        currentEntry = createEntry,
+        hasExistingEntry = !isNewFromTemplate && existingEntry != null,
         onBackClick = onBackClick,
-        onSaveSuccess = onSaveSuccess,
+        onSaveClick = {
+            viewModel.saveEntry(createEntry(), if (isNewFromTemplate) null else existingEntry)
+            onSaveSuccess()
+        },
         onDeleteClick = {
             existingEntry?.let { viewModel.deleteEntry(it) }
             onBackClick()
-        },
-        viewModel = viewModel
-    ) { innerPadding ->
+        }
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            Text(stringResource(R.string.bedtime_label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
@@ -194,41 +136,31 @@ fun AddSleepScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(stringResource(R.string.wakeup_time_label), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
-            EntryDateTimePicker(
-                date = endDate,
-                onDateChange = { endDate = it },
-                startTime = endTime,
-                onStartTimeChange = { endTime = it }
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.sleep_time))
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedButton(onClick = { showSleepTimePicker = true }) {
+                    Text(sleepTime.toString())
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            OutlinedTextField(
-                value = durationText,
-                onValueChange = { },
-                label = { Text(stringResource(R.string.computed_duration_label)) },
-                modifier = Modifier.fillMaxWidth(),
-                readOnly = true,
-                leadingIcon = { Icon(Icons.Default.Timer, contentDescription = null) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.wake_time))
+                Spacer(modifier = Modifier.width(8.dp))
+                OutlinedButton(onClick = { showWakeTimePicker = true }) {
+                    Text(wakeTime.toString())
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text(
-                text = stringResource(R.string.quality_label, quality.roundToInt()),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Slider(
-                value = quality,
-                onValueChange = { quality = it },
-                valueRange = 1f..10f,
-                steps = 8
-            )
+            var duration = Duration.between(sleepTime, wakeTime)
+            if (duration.isNegative) {
+                duration = duration.plusDays(1)
+            }
+            Text("Duration: ${duration.toHours()}h ${duration.toMinutes() % 60}m")
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -239,56 +171,66 @@ fun AddSleepScreen(
                 minLines = 3
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Checkbox(
-                    checked = setReminder,
-                    onCheckedChange = { setReminder = it }
+                IntensityField(
+                    intensity = intensity,
+                    onIntensityChange = { intensity = it ?: 5 },
+                    label = stringResource(R.string.sleep_quality_label)
                 )
-                Text(
-                    text = if (existingEntry?.hasReminder == true) stringResource(R.string.update_daily_reminder) else stringResource(R.string.set_daily_reminder),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-
-            if (setReminder) {
-                val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
-                OutlinedButton(
-                    onClick = { showTimePicker = true },
-                    modifier = Modifier.padding(start = 32.dp)
-                ) {
-                    Text(stringResource(R.string.time_label) + ": ${reminderTime.format(timeFormatter)}")
-                }
             }
         }
+    }
 
-        if (showTimePicker) {
-            val timeState = rememberTimePickerState(
-                initialHour = reminderTime.hour,
-                initialMinute = reminderTime.minute
-            )
-            TimePickerDialog(
-                onDismissRequest = { showTimePicker = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        reminderTime = LocalTime.of(timeState.hour, timeState.minute)
-                        showTimePicker = false
-                    }) {
-                        Text(stringResource(R.string.ok))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showTimePicker = false }) {
-                        Text(stringResource(R.string.cancel))
-                    }
+    if (showSleepTimePicker) {
+        val timeState =
+            rememberTimePickerState(initialHour = sleepTime.hour, initialMinute = sleepTime.minute)
+        TimePickerDialog(
+            onDismissRequest = { showSleepTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    sleepTime = LocalTime.of(timeState.hour, timeState.minute)
+                    showSleepTimePicker = false
+                }) {
+                    Text(stringResource(R.string.ok))
                 }
-            ) {
-                TimePicker(state = timeState)
+            },
+            dismissButton = {
+                TextButton(onClick = { showSleepTimePicker = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
             }
+        ) {
+            TimePicker(state = timeState)
+        }
+    }
+
+    if (showWakeTimePicker) {
+        val timeState =
+            rememberTimePickerState(initialHour = wakeTime.hour, initialMinute = wakeTime.minute)
+        TimePickerDialog(
+            onDismissRequest = { showWakeTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    wakeTime = LocalTime.of(timeState.hour, timeState.minute)
+                    showWakeTimePicker = false
+                }) {
+                    Text(stringResource(R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWakeTimePicker = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        ) {
+            TimePicker(state = timeState)
         }
     }
 }

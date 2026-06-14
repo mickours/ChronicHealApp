@@ -83,6 +83,7 @@ import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.Fodmap
+import org.chronicheal.app.presentation.components.TimePickerDialog
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle

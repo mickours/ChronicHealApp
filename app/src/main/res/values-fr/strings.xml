@@ -306,6 +306,7 @@
     
     <!-- Body Scan -->
     <string name="body_scan_title">Scan Corporel</string>
+    <string name="intensity_format">Intensité: %1$d/10</string>
     <string name="select_body_part">Sélectionnez une partie du corps pour noter une douleur</string>
     <string name="pain_log_added">Douleur notée pour %1$s</string>
     <string name="pain_log_updated">Douleur mise à jour pour %1$s</string>
@@ -434,4 +435,8 @@
     <string name="ai_model_license">Licence : Gemma Terms of Use</string>
     <string name="ai_model_url">URL : https://huggingface.co/google/gemma-2b-it-gpu-int4</string>
     <string name="ai_error_parsing">Erreur lors de l\'analyse de la description. Veuillez réessayer.</string>
+    <string name="journal_entry_label">Entrée du Journal</string>
+    <string name="body_scan">Scan Corporel</string>
+    <string name="body_scan_instruction">Selectionner un région du corp pour enregistrer l\'intensité de la douleur</string>
+    <string name="recorded_pain_points">Point de Douleur enregistrée</string>
 </resources>

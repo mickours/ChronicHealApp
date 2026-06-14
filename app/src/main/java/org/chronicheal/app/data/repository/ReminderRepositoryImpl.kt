@@ -18,8 +18,8 @@ class ReminderRepositoryImpl @Inject constructor(
 
     override suspend fun getReminderById(id: Long): Reminder? = reminderDao.getReminderById(id)
 
-    override suspend fun getRemindersByTypeAndName(type: EntryType, name: String): List<Reminder> =
-        reminderDao.getRemindersByTypeAndName(type, name)
+    override suspend fun getRemindersByTypeAndName(type: EntryType?, name: String): List<Reminder> =
+        type?.let { reminderDao.getRemindersByTypeAndName(it, name) } ?: emptyList()
 
     override suspend fun insertReminder(reminder: Reminder): Long = reminderDao.insertReminder(reminder)
 

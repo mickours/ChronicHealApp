@@ -50,6 +50,10 @@
     <string name="voice_example_hint">Try saying:\n\"I took 500mg of Paracetamol for my head pain level 6\"</string>
     <string name="voice_permission_rationale_title">Voice Logging Permission</string>
     <string name="voice_permission_rationale_msg">ChronicHeal uses your microphone to let you log health entries by voice. Your audio is processed locally and never sent to any server.</string>
+    <string name="voice_logging">Voice Logging</string>
+    <string name="voice_logging_desc">Record your health status by voice. The AI will parse it into health entries.</string>
+    <string name="analyze_and_save">Analyze and Save</string>
+    <string name="transcript_label">Transcript</string>
 
     <!-- Voice Dictionaries -->
     <string name="voice_keywords_pain">pain,hurt,ache,sore,throbbing,stinging</string>
@@ -91,6 +95,7 @@
     <string name="category_management">What you can manage</string>
     <string name="complete_checkin">Checkup</string>
     <string name="complete_checkin_desc">Log mood, pain, sleep, and drugs at once</string>
+    <string name="complete_check_in">Complete Check-in</string>
 
     <!-- Entry Details Labels -->
     <string name="intensity_label">Intensity: %1$d/10</string>
@@ -117,6 +122,17 @@
     <string name="impact_label">Impact/Intensity: %1$d/10</string>
     <string name="scale_label">%1$s Scale</string>
     <string name="select_items_legend">Select items from the legend to display data</string>
+    <string name="unit_min">min</string>
+    <string name="volume_label">Volume</string>
+    <string name="contains_alcohol">Contains Alcohol</string>
+    <string name="contains_caffeine">Contains Caffeine</string>
+    <string name="activity_intensity_label">Activity Intensity</string>
+    <string name="flow_intensity_label">Flow Intensity</string>
+    <string name="sleep_time">Sleep Time</string>
+    <string name="wake_time">Wake Time</string>
+    <string name="sleep_quality_label">Sleep Quality</string>
+    <string name="aspect_color_label">Aspect/Color</string>
+    <string name="bristol_scale_label">Bristol Stool Scale</string>
     
     <!-- Time Ranges -->
     <string name="range_week">Week</string>
@@ -153,6 +169,10 @@
     <string name="edit_beverage">Edit Beverage</string>
     <string name="log_stool">Log Stool</string>
     <string name="edit_stool">Edit Stool</string>
+    <string name="log_medical_appointment">Log Medical Appointment</string>
+    <string name="edit_medical_appointment">Edit Medical Appointment</string>
+    <string name="log_external_factor">Log External Factor</string>
+    <string name="edit_external_factor">Edit External Factor</string>
 
     <!-- Specific Entry Types -->
     <string name="type_pain">Pain</string>
@@ -212,6 +232,8 @@
     <string name="unit_mg">mg</string>
     <string name="unit_g">g</string>
     <string name="unit_spoon">spoon</string>
+    <string name="doctor_name_label">Doctor or Clinic Name</string>
+    <string name="external_factor_name_label">Factor (e.g. Weather, Stress)</string>
 
     <string name="nutrition_label">Nutrition (Estimated)</string>
     <string name="proteins_label">Proteins</string>
@@ -249,6 +271,10 @@
     <string name="no_reminders">No reminders set</string>
     <string name="every_day">Every day</string>
     <string name="never">Never</string>
+    <string name="edit_reminder">Edit Reminder</string>
+    <string name="reminder_title">Reminder Title</string>
+    <string name="entry_type_label">Entry Type</string>
+    <string name="repeat_days">Repeat Days</string>
 
     <!-- Analytics -->
     <string name="analytics_title">Analytics</string>
@@ -291,6 +317,12 @@
     <string name="duration_h_m">%1$dh %2$dm</string>
     <string name="duration_m">%1$dm</string>
     <string name="mood_summary_format">%1$s: %2$s (%3$d/10)</string>
+    <string name="how_are_you_feeling">How are you feeling?</string>
+    <string name="medications_taken">Medications taken</string>
+    <string name="log_pain_question">Log pain?</string>
+    <string name="add_another_pain">Add another pain point</string>
+    <string name="log_symptoms_question">Log symptoms?</string>
+    <string name="add_another_symptom">Add another symptom</string>
 
     <!-- Mood Labels -->
     <string name="mood_very_bad">Very Bad</string>
@@ -306,6 +338,10 @@
     
     <!-- Body Scan -->
     <string name="body_scan_title">Body Scan</string>
+    <string name="body_scan">Body Scan</string>
+    <string name="body_scan_instruction">Select regions on the body silhouette to log pain intensity.</string>
+    <string name="recorded_pain_points">Recorded Pain Points</string>
+    <string name="intensity_format">Intensity: %1$d/10</string>
     <string name="select_body_part">Select a body part to log pain</string>
     <string name="pain_log_added">Pain log added for %1$s</string>
     <string name="pain_log_updated">Pain log updated for %1$s</string>
@@ -434,4 +470,5 @@
     <string name="ai_model_license">License: Gemma Terms of Use</string>
     <string name="ai_model_url">URL: https://huggingface.co/google/gemma-2b-it-gpu-int4</string>
     <string name="ai_error_parsing">Error analyzing description. Please try again.</string>
+    <string name="journal_entry_label">Journal entry</string>
 </resources>
