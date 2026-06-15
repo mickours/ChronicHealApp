@@ -98,7 +98,7 @@ class SettingsViewModel @Inject constructor(
                 importDataUseCase(jsonData)
                 _message.value = "Import successful"
             } catch (e: Exception) {
-                _message.value = "Import failed: ${e.message}"
+                _message.value = e.message ?: "Import failed"
             } finally {
                 _isLoading.value = false
             }

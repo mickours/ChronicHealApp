@@ -109,21 +109,21 @@ voice logging.
 - **ViewModel Update**: Added `processLog` to `AddEntryViewModel` to bridge the UI and the AI
   layer.
 
-## Phase 51: F-Droid Publishing Preparation (Completed)
+## Phase 52: Robust Data Import/Export (Completed)
 
-Goal: Ensure the app meets F-Droid's submission requirements for open-source publishing.
+Goal: Fix crashes and improve reliability when importing data from JSON files.
 
 **Accomplishments:**
 
-- **Metadata Creation**: Created a `fastlane` metadata structure in `fastlane/metadata/android/`
-  with titles, short descriptions, and full descriptions in both English (`en-US`) and French
-  (`fr-FR`).
-- **Flavor Optimization**: Verified that the `lite` build flavor is 100% FLOSS (Free/Libre Open
-  Source Software), excluding the MediaPipe AI dependencies which are restricted to the `full`
-  flavor.
-- **Privacy Audit**: Confirmed that the app contains no proprietary tracking, analytics, or
-  Google Play Services dependencies. All permissions (Biometric, Record Audio, etc.) are justified
-  by core features and respect user privacy.
-- **Licensing**: Verified the GPL-3.0 license is correctly placed and referenced in the `README.md`.
-- **Build Readiness**: Ensured `versionCode` and `versionName` are correctly set in the Gradle
-  configuration for easy extraction by F-Droid's build system.
+- **Main Thread Safety**: Moved database version checks and JSON serialization/deserialization to
+  `Dispatchers.IO` in both `ExportDataUseCase` and `ImportDataUseCase` to prevent ANRs and crashes.
+- **Robust Parsing**: Enhanced `ImportDataUseCase` with `ignoreUnknownKeys`, `coerceInputValues`,
+  and `isLenient` settings in `kotlinx.serialization` to better handle diverse JSON sources and
+  older
+  backups.
+- **Better Error Handling**: Implemented multi-stage parsing (BackupData vs List<HealthEntry>) with
+  explicit error messages for empty files, invalid formats, or missing data.
+- **UI Performance**: Updated `SettingsScreen` to read backup files on a background thread using
+  coroutines, ensuring the UI remains responsive during the process.
+- **Improved Feedback**: Standardized the display of error messages from the import process to the
+  user via the existing snackbar system.

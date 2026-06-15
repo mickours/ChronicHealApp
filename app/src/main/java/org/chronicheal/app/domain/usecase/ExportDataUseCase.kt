@@ -1,6 +1,8 @@
 package org.chronicheal.app.domain.usecase
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.chronicheal.app.data.local.AppDatabase
@@ -10,16 +12,20 @@ import javax.inject.Inject
 
 class ExportDataUseCase @Inject constructor(
     private val repository: HealthRepository,
-    private val database: AppDatabase
+    private val database: AppDatabase,
 ) {
     private val json = Json { prettyPrint = true }
 
-    suspend operator fun invoke(): String {
+    suspend operator fun invoke(): String = withContext(Dispatchers.IO) {
         val entries = repository.getAllEntries().first()
         val backupData = BackupData(
-            schemaVersion = database.openHelper.readableDatabase.version,
+            schemaVersion = try {
+                database.openHelper.readableDatabase.version
+            } catch (_: Exception) {
+                0
+            },
             entries = entries
         )
-        return json.encodeToString(backupData)
+        json.encodeToString(backupData)
     }
 }

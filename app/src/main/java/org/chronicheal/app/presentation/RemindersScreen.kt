@@ -142,10 +142,9 @@ fun ReminderItem(
 
     val stripeColor = remember(reminder.entryType, reminder.isEnabled) {
         if (!reminder.isEnabled) return@remember Color.LightGray
-        when (reminder.entryType?.category) {
+        when (reminder.entryType.category) {
             EntryType.Category.OCCURRENCE -> PrimaryOrange
             EntryType.Category.MANAGEMENT -> HeaderBlue
-            null -> HeaderBlue
         }
     }
 
@@ -193,20 +192,18 @@ fun ReminderItem(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
                     )
-                    
-                    if (reminder.entryType != null) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = stripeColor.copy(alpha = 0.15f),
-                        ) {
-                            Text(
-                                text = "${reminder.entryType.emoji} ${stringResource(reminder.entryType.displayRes)}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (reminder.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
+
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = stripeColor.copy(alpha = 0.15f),
+                    ) {
+                        Text(
+                            text = "${reminder.entryType.emoji} ${stringResource(reminder.entryType.displayRes)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (reminder.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
                     }
                 }
 

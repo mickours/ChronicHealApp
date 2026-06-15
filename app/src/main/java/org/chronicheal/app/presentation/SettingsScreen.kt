@@ -59,6 +59,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,12 +72,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.Allergen
 import org.chronicheal.app.domain.model.Fodmap
 import org.chronicheal.app.ui.theme.HeaderBlue
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -108,15 +110,26 @@ fun SettingsScreen(
         }
     }
 
+    val scope = rememberCoroutineScope()
+
     // Launcher for picking JSON file
     val openDocumentLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let {
-            context.contentResolver.openInputStream(it)?.use { inputStream ->
-                val reader = BufferedReader(InputStreamReader(inputStream))
-                val content = reader.readText()
-                viewModel.importData(content)
+            scope.launch {
+                val content = withContext(Dispatchers.IO) {
+                    try {
+                        context.contentResolver.openInputStream(it)?.use { inputStream ->
+                            inputStream.bufferedReader().readText()
+                        }
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                if (content != null) {
+                    viewModel.importData(content)
+                }
             }
         }
     }
