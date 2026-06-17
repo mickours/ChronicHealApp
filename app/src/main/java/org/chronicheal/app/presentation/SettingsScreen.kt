@@ -1,6 +1,7 @@
 package org.chronicheal.app.presentation
 
 import android.content.Intent
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -114,21 +115,65 @@ fun SettingsScreen(
 
     // Launcher for picking JSON file
     val openDocumentLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
+        contract = ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
             scope.launch {
+                // Show loader immediately
+                viewModel.setLoading(true)
+
                 val content = withContext(Dispatchers.IO) {
-                    try {
-                        context.contentResolver.openInputStream(it)?.use { inputStream ->
-                            inputStream.bufferedReader().readText()
+                    val cr = context.applicationContext.contentResolver
+                    var lastError: Exception? = null
+
+                    // SAF and cloud providers (like Nextcloud) can be flaky or slow to download.
+                    // We try to open the stream with a few retries and a delay.
+                    for (attempt in 1..3) {
+                        try {
+                            cr.openInputStream(it)?.use { stream ->
+                                return@withContext stream.bufferedReader().use { it.readText() }
+                            }
+                        } catch (e: Exception) {
+                            lastError = e
+                            val errorMsg = e.message ?: ""
+
+                            // Specific check for Nextcloud "Error downloading file"
+                            if (it.authority == "org.nextcloud.documents" &&
+                                (errorMsg.contains("download", ignoreCase = true) ||
+                                        errorMsg.contains("FileNotFound", ignoreCase = true))
+                            ) {
+                                Log.e("SettingsScreen", "Nextcloud download error detected", e)
+                                // We can't fix Nextcloud internally, so we'll have to warn the user
+                            }
+
+                            Log.w(
+                                "SettingsScreen",
+                                "Attempt $attempt: Failed to open stream for $it",
+                                e
+                            )
+
+                            if (attempt < 3) {
+                                kotlinx.coroutines.delay(2000L * attempt) // Increasing delay
+                            }
                         }
-                    } catch (_: Exception) {
-                        null
                     }
+
+                    Log.e("SettingsScreen", "All read attempts failed for $it", lastError)
+                    null
                 }
+
                 if (content != null) {
                     viewModel.importData(content)
+                } else {
+                    viewModel.setLoading(false)
+                    val isNextcloud = it.authority == "org.nextcloud.documents"
+                    val message = if (isNextcloud) {
+                        // Custom hint for Nextcloud users
+                        context.getString(R.string.import_read_error) + " (Nextcloud: try 'Available offline')"
+                    } else {
+                        context.getString(R.string.import_read_error)
+                    }
+                    snackbarHostState.showSnackbar(message)
                 }
             }
         }
@@ -555,7 +600,7 @@ fun SettingsScreen(
             }
 
             Button(
-                onClick = { openDocumentLauncher.launch(arrayOf("application/json")) },
+                onClick = { openDocumentLauncher.launch("*/*") },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             ) {

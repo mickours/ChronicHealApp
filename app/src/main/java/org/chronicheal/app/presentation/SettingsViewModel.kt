@@ -1,5 +1,6 @@
 package org.chronicheal.app.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -94,15 +95,22 @@ class SettingsViewModel @Inject constructor(
     fun importData(jsonData: String) {
         viewModelScope.launch {
             _isLoading.value = true
+            _message.value = null
             try {
                 importDataUseCase(jsonData)
-                _message.value = "Import successful"
+                _message.value =
+                    "Import successful" // Will be handled by localized strings in the future
             } catch (e: Exception) {
-                _message.value = e.message ?: "Import failed"
+                Log.e("SettingsViewModel", "Import failed", e)
+                _message.value = e.localizedMessage ?: "Import failed"
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+
+    fun setLoading(loading: Boolean) {
+        _isLoading.value = loading
     }
 
     fun toggleAutoBackup(enabled: Boolean) {

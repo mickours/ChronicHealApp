@@ -425,6 +425,11 @@
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>
+    <string name="import_read_error">Failed to read the selected file. If it is in the cloud, please ensure it is available offline and try again.</string>
+    <string name="import_error_download">Failed to download the backup file from the cloud. Please ensure you have a stable internet connection and try again.</string>
+    <string name="import_success">Data imported successfully.</string>
+    <string name="import_failed">Import failed: %s</string>
+    <string name="import_failed_generic">Import failed due to an unknown error.</string>
     <string name="settings_security">Security</string>
     <string name="biometric_lock">Biometric Lock</string>
     <string name="biometric_lock_desc">Require authentication to open the app</string>

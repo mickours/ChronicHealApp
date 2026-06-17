@@ -1,9 +1,11 @@
 package org.chronicheal.app
 
+import android.util.Log
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.chronicheal.app.data.local.AppDatabase
@@ -26,6 +28,10 @@ class DataTransferTest {
 
     @Before
     fun setup() {
+        mockkStatic(Log::class)
+        every { Log.e(any(), any(), any()) } returns 0
+        every { Log.w(any(), any<String>()) } returns 0
+
         repository = mockk()
         database = mockk(relaxed = true)
         every { database.openHelper.readableDatabase.version } returns 1
@@ -94,5 +100,80 @@ class DataTransferTest {
         }
         
         coVerify(exactly = 1) { repository.insertEntries(any()) }
+    }
+
+    @Test
+    fun `import should handle old format (list of entries)`() = runBlocking {
+        // Arrange
+        val oldJson = """
+            [
+                {
+                    "id": 10,
+                    "timestamp": 1698400800000,
+                    "type": "PAIN",
+                    "intensity": 5
+                }
+            ]
+        """.trimIndent()
+
+        val entriesSlot = mutableListOf<List<HealthEntry>>()
+        coEvery { repository.insertEntries(capture(entriesSlot)) } returns Unit
+
+        // Act
+        importDataUseCase(oldJson)
+
+        // Assert
+        assertEquals(1, entriesSlot.first().size)
+        assertEquals(10L, entriesSlot.first()[0].id)
+        assertEquals(EntryType.PAIN, entriesSlot.first()[0].type)
+    }
+
+    @Test(expected = ImportDataUseCase.VersionMismatchException::class)
+    fun `import should throw VersionMismatchException when backup version is newer`() =
+        runBlocking {
+            // Arrange
+            val newerJson = """
+            {
+                "schemaVersion": 99,
+                "entries": [
+                    {
+                        "id": 1,
+                        "timestamp": 1698400800000,
+                        "type": "PAIN"
+                    }
+                ]
+            }
+        """.trimIndent()
+
+            every { database.openHelper.readableDatabase.version } returns 1
+
+            // Act
+            importDataUseCase(newerJson)
+        }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun `import should throw IllegalArgumentException for invalid json`() = runBlocking {
+        // Arrange
+        val invalidJson = "not a json"
+
+        // Act
+        importDataUseCase(invalidJson)
+    }
+
+    @Test
+    fun `import actual backup file should succeed`() = runBlocking {
+        // Arrange
+        val backupJson = java.io.File("../chronicheal_backup.json").readText()
+        val entriesSlot = mutableListOf<List<HealthEntry>>()
+        coEvery { repository.insertEntries(capture(entriesSlot)) } returns Unit
+        every { database.openHelper.readableDatabase.version } returns 11
+
+        // Act
+        importDataUseCase(backupJson)
+
+        // Assert
+        coVerify(exactly = 1) { repository.insertEntries(any()) }
+        val imported = entriesSlot.first()
+        assertEquals(539, imported.size)
     }
 }

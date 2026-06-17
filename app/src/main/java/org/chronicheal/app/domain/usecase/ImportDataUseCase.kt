@@ -21,46 +21,65 @@ class ImportDataUseCase @Inject constructor(
     }
 
     suspend operator fun invoke(jsonData: String) = withContext(Dispatchers.IO) {
-        if (jsonData.isBlank()) {
+        // Handle UTF-8 BOM if present
+        val cleanData = jsonData.removePrefix("\uFEFF").trimStart()
+
+        if (cleanData.isBlank()) {
             throw IllegalArgumentException("Import failed: File is empty")
         }
 
-        val currentVersion = getCurrentDatabaseVersion()
-
-        // Try to decode as BackupData first (new format)
         val entries = try {
-            val backupData = json.decodeFromString<BackupData>(jsonData)
+            if (cleanData.startsWith("{")) {
+                // New format: BackupData object
+                val backupData = try {
+                    json.decodeFromString<BackupData>(cleanData)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to parse BackupData", e)
+                    throw IllegalArgumentException("Failed to parse backup file: ${e.localizedMessage}")
+                }
 
-            if (backupData.schemaVersion > currentVersion && currentVersion > 0) {
-                Log.w(
-                    TAG,
-                    "Backup version (${backupData.schemaVersion}) is newer than app version ($currentVersion)"
-                )
-                throw VersionMismatchException(
-                    "This backup was created with a newer version of the app. " +
-                            "Please update ChronicHeal to the latest version to import this data."
-                )
+                val currentVersion = getCurrentDatabaseVersion()
+                if (backupData.schemaVersion > currentVersion && currentVersion > 0) {
+                    Log.w(
+                        TAG,
+                        "Backup version (${backupData.schemaVersion}) is newer than app version ($currentVersion)"
+                    )
+                    throw VersionMismatchException(
+                        "This backup was created with a newer version of the app (${backupData.schemaVersion}). " +
+                                "Please update ChronicHeal to the latest version to import this data."
+                    )
+                }
+                backupData.entries
+            } else if (cleanData.startsWith("[")) {
+                // Old format: List of entries
+                try {
+                    json.decodeFromString<List<HealthEntry>>(cleanData)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to parse legacy entry list", e)
+                    throw IllegalArgumentException("Failed to parse legacy entry list: ${e.localizedMessage}")
+                }
+            } else {
+                throw IllegalArgumentException("Invalid data format: Expected a JSON object or array.")
             }
-
-            backupData.entries
         } catch (e: VersionMismatchException) {
-            // Re-throw version mismatch so it's not swallowed by the general fallback catch
             throw e
-        } catch (_: Exception) {
-            // Fallback to old format (List<HealthEntry>)
-            try {
-                json.decodeFromString<List<HealthEntry>>(jsonData)
-            } catch (_: Exception) {
-                // If both fail, throw a more descriptive error
-                throw IllegalArgumentException("Invalid data format: This file does not appear to be a valid ChronicHeal backup.")
-            }
+        } catch (e: IllegalArgumentException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Unexpected import error", e)
+            throw IllegalArgumentException("Import failed due to an unexpected error: ${e.localizedMessage}")
         }
 
         if (entries.isEmpty()) {
             throw IllegalArgumentException("Import failed: No health entries found in the file")
         }
 
-        repository.insertEntries(entries)
+        try {
+            repository.insertEntries(entries)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to insert entries into database", e)
+            throw IllegalArgumentException("Failed to save imported data to database: ${e.localizedMessage}")
+        }
     }
 
     private fun getCurrentDatabaseVersion(): Int = try {

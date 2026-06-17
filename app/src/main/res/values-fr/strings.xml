@@ -50,6 +50,10 @@
     <string name="voice_example_hint">Exemple : \"J\'ai pris 500mg de Paracétamol pour mon mal de tête niveau 6\"</string>
     <string name="voice_permission_rationale_title">Permission de Saisie Vocale</string>
     <string name="voice_permission_rationale_msg">ChronicHeal utilise votre microphone pour vous permettre de noter vos entrées de santé à la voix. Votre audio est traité localement et n\'est jamais envoyé à un serveur.</string>
+    <string name="voice_logging">Saisie Vocale</string>
+    <string name="voice_logging_desc">Notez votre état de santé par la voix. L\'IA extraira les différentes entrées de santé.</string>
+    <string name="analyze_and_save">Analyser et Enregistrer</string>
+    <string name="transcript_label">Transcription</string>
 
     <!-- Voice Dictionaries -->
     <string name="voice_keywords_pain">douleur,mal,courbature,élancement,brûlure</string>
@@ -91,6 +95,7 @@
     <string name="category_management">Ce que vous gérez</string>
     <string name="complete_checkin">Bilan</string>
     <string name="complete_checkin_desc">Notez humeur, douleur, sommeil et médicaments d\'un coup</string>
+    <string name="complete_check_in">Bilan Complet</string>
 
     <!-- Entry Details Labels -->
     <string name="intensity_label">Intensité : %1$d/10</string>
@@ -117,7 +122,18 @@
     <string name="impact_label">Impact/Intensité : %1$d/10</string>
     <string name="scale_label">Échelle %1$s</string>
     <string name="select_items_legend">Sélectionnez des éléments dans la légende pour afficher les données</string>
-    
+    <string name="unit_min">min</string>
+    <string name="volume_label">Volume</string>
+    <string name="contains_alcohol">Contient de l\'alcool</string>
+    <string name="contains_caffeine">Contient de la caféine</string>
+    <string name="activity_intensity_label">Intensité de l\'activité</string>
+    <string name="flow_intensity_label">Intensité du flux</string>
+    <string name="sleep_time">Heure de sommeil</string>
+    <string name="wake_time">Heure de réveil</string>
+    <string name="sleep_quality_label">Qualité du sommeil</string>
+    <string name="aspect_color_label">Aspect/Couleur</string>
+    <string name="bristol_scale_label">Échelle de Bristol</string>
+
     <!-- Time Ranges -->
     <string name="range_week">Semaine</string>
     <string name="range_month">Mois</string>
@@ -153,6 +169,10 @@
     <string name="edit_beverage">Modifier Boisson</string>
     <string name="log_stool">Noter Selles</string>
     <string name="edit_stool">Modifier Selles</string>
+    <string name="log_medical_appointment">Noter RDV Médical</string>
+    <string name="edit_medical_appointment">Modifier RDV Médical</string>
+    <string name="log_external_factor">Noter Facteur Externe</string>
+    <string name="edit_external_factor">Modifier Facteur Externe</string>
 
     <!-- Specific Entry Types -->
     <string name="type_pain">Douleur</string>
@@ -212,6 +232,8 @@
     <string name="unit_mg">mg</string>
     <string name="unit_g">g</string>
     <string name="unit_spoon">cuillère</string>
+    <string name="doctor_name_label">Nom du médecin ou de la clinique</string>
+    <string name="external_factor_name_label">Facteur (ex: Météo, Stress)</string>
 
     <string name="nutrition_label">Nutrition (Estimée)</string>
     <string name="proteins_label">Protéines</string>
@@ -249,6 +271,10 @@
     <string name="no_reminders">Aucun rappel défini</string>
     <string name="every_day">Chaque jour</string>
     <string name="never">Jamais</string>
+    <string name="edit_reminder">Modifier le rappel</string>
+    <string name="reminder_title">Titre du rappel</string>
+    <string name="entry_type_label">Type d\'entrée</string>
+    <string name="repeat_days">Jours de répétition</string>
 
     <!-- Analytics -->
     <string name="analytics_title">Analyses</string>
@@ -291,6 +317,12 @@
     <string name="duration_h_m">%1$dh %2$dm</string>
     <string name="duration_m">%1$dm</string>
     <string name="mood_summary_format">%1$s : %2$s (%3$d/10)</string>
+    <string name="how_are_you_feeling">Comment vous sentez-vous ?</string>
+    <string name="medications_taken">Médicaments pris</string>
+    <string name="log_pain_question">Noter la douleur ?</string>
+    <string name="add_another_pain">Ajouter une autre zone de douleur</string>
+    <string name="log_symptoms_question">Noter les symptômes ?</string>
+    <string name="add_another_symptom">Ajouter un autre symptôme</string>
 
     <!-- Mood Labels -->
     <string name="mood_very_bad">Très Mauvais</string>
@@ -355,23 +387,23 @@
     <string name="welcome_subtitle">Votre compagnon de santé chronique respectueux de votre vie privée.</string>
     <string name="step_privacy_title">Priorité à la Vie Privée</string>
     <string name="step_privacy_desc">Toutes vos données sont stockées localement sur votre appareil. Pas de cloud, pas de suivi, pas de compte nécessaire.</string>
-    <string name="step_privacy_desc_short">Vos données reste sur votre appareil.</string>
+    <string name="step_privacy_desc_short">Vos données restent sur votre appareil.</string>
     <string name="step_logging_title">Saisie Simplifiée</string>
     <string name="step_logging_desc">Notez rapidement douleurs, symptômes, médicaments et plus encore avec des écrans spécialisés.</string>
-    <string name="step_logging_desc_short">Un écrans spécialisé pour chaque evenement.</string>
+    <string name="step_logging_desc_short">Un écran spécialisé pour chaque événement.</string>
     <string name="step_insights_title">Analyses Actionnables</string>
     <string name="step_insights_desc">Visualisez les tendances et trouvez des corrélations entre votre mode de vie et vos symptômes.</string>
     <string name="step_insights_desc_short">Voir les tendances et les corrélations dans le temps.</string>
     <string name="get_started">Commencer</string>
     <string name="data_control_title">Vos Données, Votre Contrôle</string>
-    <string name="data_control_desc">ChronicHeal est built avec la vie privée au cœur. Vos informations de santé ne quittent jamais votre téléphone sauf si vous choisissez de les exporter.</string>
+    <string name="data_control_desc">ChronicHeal est conçu avec la vie privée au cœur. Vos informations de santé ne quittent jamais votre téléphone sauf si vous choisissez de les exporter.</string>
     <string name="stay_on_track_title">Restez à Jour</string>
-    <string name="stay_on_track_desc">Accordez les permissions de notification pour receive des rappels haute précision pour vos médicaments, rendez-vous et bilans quotidiens.</string>
+    <string name="stay_on_track_desc">Accordez les permissions de notification pour recevoir des rappels haute précision pour vos médicaments, rendez-vous et bilans quotidiens.</string>
     <string name="checkup_reminder_title">Rappel Bilan Quotidien</string>
-    <string name="checkup_reminder_desc">Une invite pour noter votre mood, douleur, sommeil et médicaments chaque jour</string>
+    <string name="checkup_reminder_desc">Une invite pour noter votre humeur, douleur, sommeil et médicaments chaque jour</string>
     <string name="reminder_time_label">Heure du Rappel</string>
-    <string name="personalize_title">Personnalisez Votre Experience</string>
-    <string name="personalize_desc">Sélectionnez les types d\'entrées que vous utiliserez le plus often pour les épingler sur votre journal.</string>
+    <string name="personalize_title">Personnalisez Votre Expérience</string>
+    <string name="personalize_desc">Sélectionnez les types d\'entrées que vous utiliserez le plus souvent pour les épingler sur votre journal.</string>
     <string name="backup_portability_title">Sauvegarde &amp; Portabilité</string>
     <string name="backup_portability_desc">Vous pouvez créer des sauvegardes chiffrées ou exporter vos données en JSON/PDF à tout moment depuis les Paramètres.</string>
 
@@ -390,6 +422,11 @@
 
     <!-- Settings -->
     <string name="settings_title">Paramètres</string>
+    <string name="import_read_error">Impossible de lire le fichier sélectionné. S\'il est dans le cloud, assurez-vous qu\'il est disponible hors connexion et réessayez.</string>
+    <string name="import_error_download">Impossible de télécharger le fichier de sauvegarde depuis le cloud. Veuillez vous assurer que vous avez une connexion internet stable et réessayez.</string>
+    <string name="import_success">Données importées avec succès.</string>
+    <string name="import_failed">Échec de l\'importation : %s</string>
+    <string name="import_failed_generic">Échec de l\'importation en raison d\'une erreur inconnue.</string>
     <string name="settings_security">Sécurité</string>
     <string name="biometric_lock">Verrouillage Biométrique</string>
     <string name="biometric_lock_desc">Exiger une authentification pour ouvrir l\'application</string>

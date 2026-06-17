@@ -14,7 +14,11 @@ class ExportDataUseCase @Inject constructor(
     private val repository: HealthRepository,
     private val database: AppDatabase,
 ) {
-    private val json = Json { prettyPrint = true }
+    private val json = Json {
+        prettyPrint = true
+        encodeDefaults = true
+        ignoreUnknownKeys = true
+    }
 
     suspend operator fun invoke(): String = withContext(Dispatchers.IO) {
         val entries = repository.getAllEntries().first()
