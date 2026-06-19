@@ -74,6 +74,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.chronicheal.app.R
@@ -97,6 +98,26 @@ fun SettingsScreen(
     var isProfileExpanded by remember { mutableStateOf(false) }
     var isAllergensExpanded by remember { mutableStateOf(false) }
     var isFodmapsExpanded by remember { mutableStateOf(false) }
+
+    var ageInput by remember { mutableStateOf(if (uiState.userAge > 0) uiState.userAge.toString() else "") }
+    var weightInput by remember { mutableStateOf(if (uiState.userWeight > 0) uiState.userWeight.toString() else "") }
+    var heightInput by remember { mutableStateOf(if (uiState.userHeight > 0) uiState.userHeight.toString() else "") }
+
+    LaunchedEffect(uiState.userAge) {
+        if (uiState.userAge != (ageInput.toIntOrNull() ?: 0)) {
+            ageInput = if (uiState.userAge > 0) uiState.userAge.toString() else ""
+        }
+    }
+    LaunchedEffect(uiState.userWeight) {
+        if (uiState.userWeight != (weightInput.replace(",", ".").toFloatOrNull() ?: 0f)) {
+            weightInput = if (uiState.userWeight > 0) uiState.userWeight.toString() else ""
+        }
+    }
+    LaunchedEffect(uiState.userHeight) {
+        if (uiState.userHeight != (heightInput.toIntOrNull() ?: 0)) {
+            heightInput = if (uiState.userHeight > 0) uiState.userHeight.toString() else ""
+        }
+    }
 
     // Launcher for saving JSON file
     val createJsonLauncher = rememberLauncherForActivityResult(
@@ -153,7 +174,7 @@ fun SettingsScreen(
                             )
 
                             if (attempt < 3) {
-                                kotlinx.coroutines.delay(2000L * attempt) // Increasing delay
+                                delay(2000L * attempt) // Increasing delay
                             }
                         }
                     }
@@ -256,8 +277,11 @@ fun SettingsScreen(
                         Column(modifier = Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 OutlinedTextField(
-                                    value = if (uiState.userAge > 0) uiState.userAge.toString() else "",
-                                    onValueChange = { viewModel.setUserAge(it.toIntOrNull() ?: 0) },
+                                    value = ageInput,
+                                    onValueChange = {
+                                        ageInput = it
+                                        viewModel.setUserAge(it.toIntOrNull() ?: 0)
+                                    },
                                     label = { Text(stringResource(R.string.age_label)) },
                                     modifier = Modifier.weight(1f),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -293,16 +317,24 @@ fun SettingsScreen(
                             
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                                 OutlinedTextField(
-                                    value = if (uiState.userWeight > 0) uiState.userWeight.toString() else "",
-                                    onValueChange = { viewModel.setUserWeight(it.replace(",", ".").toFloatOrNull() ?: 0f) },
+                                    value = weightInput,
+                                    onValueChange = {
+                                        weightInput = it
+                                        viewModel.setUserWeight(
+                                            it.replace(",", ".").toFloatOrNull() ?: 0f
+                                        )
+                                    },
                                     label = { Text(stringResource(R.string.weight_label)) },
                                     modifier = Modifier.weight(1f),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                     singleLine = true
                                 )
                                 OutlinedTextField(
-                                    value = if (uiState.userHeight > 0) uiState.userHeight.toString() else "",
-                                    onValueChange = { viewModel.setUserHeight(it.toIntOrNull() ?: 0) },
+                                    value = heightInput,
+                                    onValueChange = {
+                                        heightInput = it
+                                        viewModel.setUserHeight(it.toIntOrNull() ?: 0)
+                                    },
                                     label = { Text(stringResource(R.string.height_label)) },
                                     modifier = Modifier.weight(1f),
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),

@@ -127,3 +127,17 @@ Goal: Fix crashes and improve reliability when importing data from JSON files.
   coroutines, ensuring the UI remains responsive during the process.
 - **Improved Feedback**: Standardized the display of error messages from the import process to the
   user via the existing snackbar system.
+
+## Phase 53: UI Fixes & Reliability (Completed)
+
+Goal: Fix user-reported UI issues and improve the overall reliability of the application.
+
+**Accomplishments:**
+
+- **Input Field Fixes**: Resolved a "typing in reverse" bug in `SettingsScreen` where text fields
+  for Age, Weight, and Height would misbehave due to asynchronous state updates.
+    - Implemented a local state pattern with `mutableStateOf` to handle user input synchronously.
+    - Added `LaunchedEffect` synchronization to keep local input in sync with the source of truth
+      (repository) without interrupting the typing flow.
+    - Ensured numeric conversions and localized decimal separators (comma vs dot) are handled
+      consistently.
