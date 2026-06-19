@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -68,10 +69,12 @@ fun AddBeverageScreen(
     val existingEntry = uiState.entry
     val isNewFromTemplate = uiState.isNewFromTemplate
 
-    val nameSuggestions by viewModel.getSuggestions(
-        setOf(EntryType.BEVERAGE),
-        GetSuggestionsUseCase.SuggestionField.NAME
-    ).collectAsState()
+    val nameSuggestions by remember {
+        viewModel.getSuggestions(
+            setOf(EntryType.BEVERAGE),
+            GetSuggestionsUseCase.SuggestionField.NAME
+        )
+    }.collectAsState()
 
     LogNowEffect(
         id = id, 

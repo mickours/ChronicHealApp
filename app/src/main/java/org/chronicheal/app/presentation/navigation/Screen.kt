@@ -11,11 +11,22 @@ sealed class Screen(val route: String) {
     }
     object BodyScanReminders : Screen("body_scan_reminders")
     object Reminders : Screen("reminders")
-    object AddReminder : Screen("add_reminder?type={type}&id={id}") {
-        fun createRoute(type: String? = null, id: Long? = null): String {
+    object AddReminder :
+        Screen("add_reminder?type={type}&id={id}&name={name}&unit={unit}&value={value}") {
+        fun createRoute(
+            type: String? = null,
+            id: Long? = null,
+            name: String? = null,
+            unit: String? = null,
+            value: String? = null
+        ): String {
             val typePart = if (type != null) "type=$type" else null
             val idPart = if (id != null) "id=$id" else null
-            val query = listOfNotNull(typePart, idPart).joinToString("&")
+            val namePart = if (name != null) "name=$name" else null
+            val unitPart = if (unit != null) "unit=$unit" else null
+            val valuePart = if (value != null) "value=$value" else null
+            val query =
+                listOfNotNull(typePart, idPart, namePart, unitPart, valuePart).joinToString("&")
             return if (query.isNotEmpty()) "add_reminder?$query" else "add_reminder"
         }
     }

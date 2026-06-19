@@ -10,8 +10,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -23,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -41,17 +43,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.HealthEntry
+import org.chronicheal.app.domain.model.Reminder
 import org.chronicheal.app.domain.usecase.GetSuggestionsUseCase
 import org.chronicheal.app.presentation.components.AutoCompleteTextField
 import org.chronicheal.app.presentation.components.EntryDateTimePicker
 import org.chronicheal.app.presentation.components.IntensityField
 import org.chronicheal.app.presentation.components.MoodSection
+import org.chronicheal.app.presentation.components.ReminderSection
 import org.chronicheal.app.presentation.components.SectionHeader
 import org.chronicheal.app.presentation.components.VoiceEnabledTextField
 import org.chronicheal.app.ui.theme.HeaderBlue
@@ -68,7 +71,11 @@ fun AddCompleteEntryScreen(
     onSaveSuccess: () -> Unit,
     remindersViewModel: RemindersViewModel = hiltViewModel(),
     viewModel: AddEntryViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel = hiltViewModel()
 ) {
+    val settingsUiState by settingsViewModel.uiState.collectAsState()
+    val checkInSections = settingsUiState.checkInSections
+
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     var isSaving by remember { mutableStateOf(value = false) }
@@ -77,30 +84,79 @@ fun AddCompleteEntryScreen(
     var moodIntensity by rememberSaveable { mutableFloatStateOf(5f) }
     var moodNote by rememberSaveable { mutableStateOf("") }
 
-    var showPain by rememberSaveable { mutableStateOf(value = false) }
-    val painEntries = remember { mutableStateListOf<HealthEntry>() }
+    var sleepQuality by rememberSaveable { mutableFloatStateOf(5f) }
+    var sleepNote by rememberSaveable { mutableStateOf("") }
 
-    var showSymptoms by rememberSaveable { mutableStateOf(value = false) }
+    val painEntries = remember { mutableStateListOf<HealthEntry>() }
     val symptomEntries = remember { mutableStateListOf<HealthEntry>() }
+
+    LaunchedEffect(checkInSections) {
+        if (EntryType.PAIN in checkInSections && painEntries.isEmpty()) {
+            painEntries.add(HealthEntry(type = EntryType.PAIN, intensity = 5))
+        }
+        if (EntryType.SYMPTOM in checkInSections && symptomEntries.isEmpty()) {
+            symptomEntries.add(HealthEntry(type = EntryType.SYMPTOM, intensity = 5))
+        }
+    }
 
     // Pre-fill active drugs as checkboxes
     val allReminders by remindersViewModel.reminders.collectAsState()
-    val drugReminders = remember(allReminders) {
-        allReminders.filter { (it.entryType == EntryType.DRUG) && it.isEnabled }
+    val allEntries by viewModel.entries.collectAsState()
+
+    val locationSuggestions by remember {
+        viewModel.getSuggestions(
+            setOf(EntryType.PAIN, EntryType.SYMPTOM),
+            GetSuggestionsUseCase.SuggestionField.LOCATION
+        )
+    }.collectAsState(initial = emptyList())
+
+    val symptomNameSuggestions by remember {
+        viewModel.getSuggestions(
+            setOf(EntryType.SYMPTOM),
+            GetSuggestionsUseCase.SuggestionField.NAME
+        )
+    }.collectAsState(initial = emptyList())
+
+    val entriesOnSelectedDate = remember(allEntries, logDate) {
+        allEntries.filter { entry ->
+            entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate() == logDate
+        }
     }
 
-    val checkedDrugs = remember { mutableStateMapOf<Long, Boolean>() }
-    val drugEntries = remember { mutableStateMapOf<Long, HealthEntry?>() }
+    val pendingReminders = remember(allReminders, entriesOnSelectedDate, logDate) {
+        val dayOfWeek = logDate.dayOfWeek.value // 1 (Mon) to 7 (Sun)
+        allReminders.filter { reminder ->
+            reminder.isEnabled && reminder.title != "Checkup" &&
+                    reminder.daysOfWeek.contains(dayOfWeek) &&
+                    entriesOnSelectedDate.none { it.reminderId == reminder.id }
+        }
+    }
 
-    LaunchedEffect(drugReminders) {
-        drugReminders.forEach { reminder ->
-            if (!checkedDrugs.containsKey(reminder.id)) {
-                checkedDrugs[reminder.id] = false
+    val checkedReminders = remember { mutableStateMapOf<Long, Boolean>() }
+    val reminderEntries = remember { mutableStateMapOf<Long, HealthEntry?>() }
+
+    LaunchedEffect(pendingReminders) {
+        pendingReminders.forEach { reminder ->
+            if (!checkedReminders.containsKey(reminder.id)) {
+                checkedReminders[reminder.id] = false
                 if (reminder.templateEntryId != null) {
                     val entry = remindersViewModel.getEntryById(reminder.templateEntryId)
-                    drugEntries[reminder.id] = entry
+                    reminderEntries[reminder.id] = entry
                 }
             }
+        }
+    }
+
+    val checkupReminder = remember(allReminders) { allReminders.find { it.title == "Checkup" } }
+    var isCheckupReminderEnabled by rememberSaveable { mutableStateOf(false) }
+    var checkupReminderTime by rememberSaveable { mutableStateOf(LocalTime.of(20, 0)) }
+    var hasInitializedReminder by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(checkupReminder) {
+        if (!hasInitializedReminder && checkupReminder != null) {
+            isCheckupReminderEnabled = checkupReminder.isEnabled
+            checkupReminderTime = checkupReminder.time
+            hasInitializedReminder = true
         }
     }
 
@@ -129,9 +185,22 @@ fun AddCompleteEntryScreen(
                                 intensity = moodIntensity.roundToInt(),
                                 note = moodNote
                             )
-                            viewModel.saveEntry(moodEntry, null)
+                            if (EntryType.MOOD in checkInSections) {
+                                viewModel.saveEntry(moodEntry, null)
+                            }
 
-                            if (showPain) {
+                            if (EntryType.SLEEP in checkInSections) {
+                                viewModel.saveEntry(
+                                    HealthEntry(
+                                        timestamp = timestamp,
+                                        type = EntryType.SLEEP,
+                                        intensity = sleepQuality.roundToInt(),
+                                        note = sleepNote
+                                    ), null
+                                )
+                            }
+
+                            if (EntryType.PAIN in checkInSections) {
                                 painEntries.forEach {
                                     viewModel.saveEntry(
                                         it.copy(timestamp = timestamp),
@@ -140,7 +209,7 @@ fun AddCompleteEntryScreen(
                                 }
                             }
 
-                            if (showSymptoms) {
+                            if (EntryType.SYMPTOM in checkInSections) {
                                 symptomEntries.forEach {
                                     viewModel.saveEntry(
                                         it.copy(timestamp = timestamp),
@@ -149,11 +218,13 @@ fun AddCompleteEntryScreen(
                                 }
                             }
 
-                            drugReminders.forEach { reminder ->
-                                if (checkedDrugs[reminder.id] == true) {
-                                    val templateEntry = drugEntries[reminder.id]
-                                    var baseName =
-                                        reminder.title.removePrefix("Medication: ").trim()
+                            pendingReminders.forEach { reminder ->
+                                if (checkedReminders[reminder.id] == true) {
+                                    val templateEntry = reminderEntries[reminder.id]
+                                    var baseName = reminder.title
+                                    if (reminder.entryType == EntryType.DRUG) {
+                                        baseName = baseName.removePrefix("Medication: ").trim()
+                                    }
                                     var value: Double? = null
                                     var unit: String? = null
 
@@ -166,7 +237,7 @@ fun AddCompleteEntryScreen(
                                     viewModel.saveEntry(
                                         HealthEntry(
                                             timestamp = timestamp,
-                                            type = EntryType.DRUG,
+                                            type = reminder.entryType,
                                             name = baseName,
                                             value = value,
                                             unit = unit,
@@ -175,6 +246,31 @@ fun AddCompleteEntryScreen(
                                     )
                                 }
                             }
+
+                            // Update Checkup Reminder
+                            checkupReminder?.let {
+                                if (it.isEnabled != isCheckupReminderEnabled || it.time != checkupReminderTime) {
+                                    remindersViewModel.updateReminder(
+                                        it.copy(
+                                            isEnabled = isCheckupReminderEnabled,
+                                            time = checkupReminderTime
+                                        )
+                                    )
+                                }
+                            } ?: run {
+                                if (isCheckupReminderEnabled) {
+                                    remindersViewModel.addReminder(
+                                        Reminder(
+                                            title = "Checkup",
+                                            time = checkupReminderTime,
+                                            daysOfWeek = (1..7).toSet(),
+                                            isEnabled = true,
+                                            entryType = EntryType.DRUG
+                                        )
+                                    )
+                                }
+                            }
+
                             onSaveSuccess()
                         },
                         modifier = Modifier.padding(end = 8.dp),
@@ -215,26 +311,69 @@ fun AddCompleteEntryScreen(
             }
 
             // 1. Mood
-            item {
-                SectionHeader(EntryType.MOOD, stringResource(R.string.how_are_you_feeling))
-                MoodSection(
-                    intensity = moodIntensity,
-                    onIntensityChange = { moodIntensity = it },
-                    note = moodNote
-                ) { moodNote = it }
-                Spacer(modifier = Modifier.height(24.dp))
+            if (EntryType.MOOD in checkInSections) {
+                item {
+                    SectionHeader(EntryType.MOOD, stringResource(R.string.section_mood))
+                    MoodSection(
+                        intensity = moodIntensity,
+                        onIntensityChange = { moodIntensity = it },
+                        note = moodNote
+                    ) { moodNote = it }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
             }
 
-            // 2. Drugs
-            if (drugReminders.isNotEmpty()) {
+            // 2. Sleep
+            if (EntryType.SLEEP in checkInSections) {
                 item {
-                    SectionHeader(EntryType.DRUG, stringResource(R.string.medications_taken))
+                    SectionHeader(EntryType.SLEEP, stringResource(R.string.section_sleep))
+                    Text(
+                        stringResource(R.string.question_sleep_well),
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
+
+                item {
                     ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            drugReminders.forEach { reminder ->
-                                val templateEntry = drugEntries[reminder.id]
-                                val drugName = templateEntry?.name
-                                    ?: reminder.title.removePrefix("Medication: ").trim()
+                            Text(
+                                stringResource(
+                                    R.string.quality_label,
+                                    sleepQuality.roundToInt()
+                                )
+                            )
+                            Slider(
+                                value = sleepQuality,
+                                onValueChange = { sleepQuality = it },
+                                valueRange = 1f..10f,
+                                steps = 8
+                            )
+                            VoiceEnabledTextField(
+                                value = sleepNote,
+                                onValueChange = { sleepNote = it },
+                                label = stringResource(R.string.notes_label)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(24.dp))
+                }
+            }
+
+            // 3. Reminders
+            if (EntryType.DRUG in checkInSections && pendingReminders.isNotEmpty()) {
+                item {
+                    SectionHeader(EntryType.DRUG, stringResource(R.string.reminders_title))
+                    ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            pendingReminders.forEach { reminder ->
+                                val templateEntry = reminderEntries[reminder.id]
+                                val displayName = templateEntry?.name
+                                    ?: if (reminder.entryType == EntryType.DRUG) {
+                                        reminder.title.removePrefix("Medication: ").trim()
+                                    } else {
+                                        reminder.title
+                                    }
                                 val dosageText = templateEntry?.let { entry ->
                                     val value = entry.value?.let { v ->
                                         if (v == v.toLong().toDouble()) v.toLong()
@@ -247,18 +386,25 @@ fun AddCompleteEntryScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            checkedDrugs[reminder.id] =
-                                                !(checkedDrugs[reminder.id] ?: false)
+                                            checkedReminders[reminder.id] =
+                                                !(checkedReminders[reminder.id] ?: false)
                                         }
                                         .padding(vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
-                                        checked = checkedDrugs[reminder.id] ?: false,
-                                        onCheckedChange = { checkedDrugs[reminder.id] = it }
+                                        checked = checkedReminders[reminder.id] ?: false,
+                                        onCheckedChange = { checkedReminders[reminder.id] = it }
                                     )
                                     Column {
-                                        Text(drugName, style = MaterialTheme.typography.bodyLarge)
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(reminder.entryType.emoji)
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(
+                                                displayName,
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
+                                        }
                                         dosageText?.let {
                                             Text(
                                                 it,
@@ -275,45 +421,30 @@ fun AddCompleteEntryScreen(
                 }
             }
 
-            // 3. Optional Pain
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(
-                        checked = showPain,
-                        onCheckedChange = {
-                            showPain = it
-                            if (it && painEntries.isEmpty()) {
-                                painEntries.add(HealthEntry(type = EntryType.PAIN, intensity = 5))
-                            }
-                        }
-                    )
+            if (EntryType.PAIN in checkInSections) {
+                item {
+                    SectionHeader(EntryType.PAIN, stringResource(R.string.section_pain))
                     Text(
                         stringResource(R.string.log_pain_question),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
-            }
 
-            if (showPain) {
-                items(painEntries) { pain ->
-                    val index = painEntries.indexOf(pain)
+                itemsIndexed(painEntries) { index, pain ->
                     ElevatedCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            val originSuggestions by viewModel.getSuggestions(
-                                setOf(EntryType.PAIN),
-                                GetSuggestionsUseCase.SuggestionField.ORIGIN,
-                                parentLocation = pain.location
-                            ).collectAsState(initial = emptyList())
-
-                            val locationSuggestions by viewModel.getSuggestions(
-                                setOf(EntryType.PAIN, EntryType.SYMPTOM),
-                                GetSuggestionsUseCase.SuggestionField.LOCATION
-                            ).collectAsState(initial = emptyList())
+                            val originSuggestions by remember(pain.location) {
+                                viewModel.getSuggestions(
+                                    setOf(EntryType.PAIN),
+                                    GetSuggestionsUseCase.SuggestionField.ORIGIN,
+                                    parentLocation = pain.location
+                                )
+                            }.collectAsState(initial = emptyList())
 
                             AutoCompleteTextField(
                                 value = pain.location ?: "",
@@ -358,39 +489,25 @@ fun AddCompleteEntryScreen(
                 }
             }
 
-            // 4. Optional Symptoms
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = showSymptoms, onCheckedChange = {
-                        showSymptoms = it
-                        if (it && symptomEntries.isEmpty()) {
-                            symptomEntries.add(HealthEntry(type = EntryType.SYMPTOM, intensity = 5))
-                        }
-                    })
+            if (EntryType.SYMPTOM in checkInSections) {
+                item {
+                    SectionHeader(EntryType.SYMPTOM, stringResource(R.string.section_anything_else))
                     Text(
                         stringResource(R.string.log_symptoms_question),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
-            }
 
-            if (showSymptoms) {
-                items(symptomEntries) { symptom ->
-                    val index = symptomEntries.indexOf(symptom)
+                itemsIndexed(symptomEntries) { index, symptom ->
                     ElevatedCard(modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            val suggestions by viewModel.getSuggestions(
-                                setOf(EntryType.SYMPTOM),
-                                GetSuggestionsUseCase.SuggestionField.NAME
-                            ).collectAsState(initial = emptyList())
-
                             AutoCompleteTextField(
                                 value = symptom.name ?: "",
                                 onValueChange = { symptomEntries[index] = symptom.copy(name = it) },
-                                suggestions = suggestions,
+                                suggestions = symptomNameSuggestions,
                                 label = stringResource(R.string.symptom_name_label)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
@@ -426,6 +543,20 @@ fun AddCompleteEntryScreen(
                         Text(stringResource(R.string.add_another_symptom))
                     }
                     Spacer(modifier = Modifier.height(24.dp))
+                }
+            }
+
+            // 6. Reminder Settings
+            if (EntryType.DRUG in checkInSections) {
+                item {
+                    SectionHeader(EntryType.DRUG, stringResource(R.string.checkup_reminder_title))
+                    ReminderSection(
+                        setReminder = isCheckupReminderEnabled,
+                        onSetReminderChange = { isCheckupReminderEnabled = it },
+                        reminderTime = checkupReminderTime,
+                        onReminderTimeChange = { checkupReminderTime = it },
+                        isUpdate = checkupReminder != null
+                    )
                 }
             }
         }

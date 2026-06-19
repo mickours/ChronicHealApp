@@ -263,7 +263,7 @@
     <string name="day_sat">Sam</string>
 
     <!-- Reminders -->
-    <string name="reminders_title">Gérer les rappels</string>
+    <string name="reminders_title">Rappels</string>
     <string name="add_reminder">Ajouter un rappel</string>
     <string name="set_daily_reminder">Définir un rappel quotidien</string>
     <string name="update_daily_reminder">Modifier le rappel quotidien</string>
@@ -449,6 +449,9 @@
     <string name="notifications_title">Notifications</string>
     <string name="missing_entry_notif">Notifications d\'oubli</string>
     <string name="missing_entry_notif_desc">Recevez une notification si vous oubliez vos logs habituels</string>
+
+    <string name="checkin_sections_title">Configuration du Bilan</string>
+    <string name="checkin_sections_desc">Sélectionnez les sections que vous souhaitez voir dans l\'écran de Bilan Complet.</string>
 
     <!-- Notifications -->
     <string name="notification_reminder_title_format">Rappel : %1$s</string>

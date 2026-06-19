@@ -13,6 +13,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,11 +57,13 @@ fun AddPainScreen(
     val existingEntry = uiState.entry
     val isNewFromTemplate = uiState.isNewFromTemplate
 
-    val originSuggestions by viewModel.getSuggestions(
-        types = setOf(EntryType.PAIN),
-        field = GetSuggestionsUseCase.SuggestionField.ORIGIN,
-        parentLocation = locationString ?: existingEntry?.location,
-    ).collectAsState()
+    val originSuggestions by remember(locationString, existingEntry?.location) {
+        viewModel.getSuggestions(
+            types = setOf(EntryType.PAIN),
+            field = GetSuggestionsUseCase.SuggestionField.ORIGIN,
+            parentLocation = locationString ?: existingEntry?.location,
+        )
+    }.collectAsState()
 
     LogNowEffect(
         id = id, 
@@ -76,6 +79,7 @@ fun AddPainScreen(
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
         },
+        onReminderTimeFound = { }
     )
 
     val createEntry = {

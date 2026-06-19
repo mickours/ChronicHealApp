@@ -43,6 +43,7 @@ class SettingsRepositoryImpl @Inject constructor(
         val USER_WEIGHT = floatPreferencesKey("user_weight")
         val USER_HEIGHT = intPreferencesKey("user_height")
         val CHRONIC_DISEASES = stringSetPreferencesKey("chronic_diseases")
+        val CHECK_IN_SECTIONS = stringSetPreferencesKey("check_in_sections")
         
         // Allergens
         val ALLERGEN_ORDER = stringPreferencesKey("allergen_order")
@@ -188,6 +189,31 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setChronicDiseases(diseases: Set<String>) {
         context.settingsDataStore.edit { preferences -> preferences[PreferencesKeys.CHRONIC_DISEASES] = diseases }
+    }
+
+    override val checkInSections: Flow<Set<EntryType>> = context.settingsDataStore.data
+        .map { preferences ->
+            val types = preferences[PreferencesKeys.CHECK_IN_SECTIONS]?.mapNotNull {
+                try {
+                    EntryType.valueOf(it)
+                } catch (_: IllegalArgumentException) {
+                    null
+                }
+            }?.toSet()
+
+            types ?: setOf(
+                EntryType.MOOD,
+                EntryType.SLEEP,
+                EntryType.DRUG,
+                EntryType.PAIN,
+                EntryType.SYMPTOM
+            )
+        }
+
+    override suspend fun setCheckInSections(sections: Set<EntryType>) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[PreferencesKeys.CHECK_IN_SECTIONS] = sections.map { it.name }.toSet()
+        }
     }
 
     // Allergens implementation

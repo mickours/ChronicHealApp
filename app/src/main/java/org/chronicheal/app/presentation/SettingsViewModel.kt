@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.chronicheal.app.data.worker.BackupManager
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.repository.SettingsRepository
 import org.chronicheal.app.domain.usecase.ExportDataUseCase
 import org.chronicheal.app.domain.usecase.ImportDataUseCase
@@ -39,7 +40,8 @@ class SettingsViewModel @Inject constructor(
         settingsRepository.chronicDiseases,
         settingsRepository.deactivatedAllergens,
         settingsRepository.deactivatedFodmaps,
-        settingsRepository.isMissingEntryNotificationEnabled
+        settingsRepository.isMissingEntryNotificationEnabled,
+        settingsRepository.checkInSections
     ) { params ->
         val isLoading = params[0] as Boolean
         val message = params[1] as String?
@@ -57,6 +59,9 @@ class SettingsViewModel @Inject constructor(
         val deactivatedFodmaps = params[10] as Set<String>
         val isMissingEntryNotificationEnabled = params[11] as Boolean
 
+        @Suppress("UNCHECKED_CAST")
+        val checkInSections = params[12] as Set<EntryType>
+
         SettingsUiState(
             isLoading = isLoading,
             message = message,
@@ -69,7 +74,8 @@ class SettingsViewModel @Inject constructor(
             chronicDiseases = chronicDiseases,
             deactivatedAllergens = deactivatedAllergens,
             deactivatedFodmaps = deactivatedFodmaps,
-            isMissingEntryNotificationEnabled = isMissingEntryNotificationEnabled
+            isMissingEntryNotificationEnabled = isMissingEntryNotificationEnabled,
+            checkInSections = checkInSections
         )
     }.stateIn(
         scope = viewModelScope,
@@ -167,6 +173,12 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun setCheckInSections(sections: Set<EntryType>) {
+        viewModelScope.launch {
+            settingsRepository.setCheckInSections(sections)
+        }
+    }
+
     fun clearMessage() {
         _message.value = null
     }
@@ -186,5 +198,6 @@ data class SettingsUiState(
     val chronicDiseases: Set<String> = emptySet(),
     val deactivatedAllergens: Set<String> = emptySet(),
     val deactivatedFodmaps: Set<String> = emptySet(),
-    val isMissingEntryNotificationEnabled: Boolean = false
+    val isMissingEntryNotificationEnabled: Boolean = false,
+    val checkInSections: Set<EntryType> = emptySet()
 )

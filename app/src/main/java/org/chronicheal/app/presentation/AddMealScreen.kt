@@ -90,6 +90,7 @@ fun AddMealScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
+    onAddReminderClick: (EntryType, String, String, String) -> Unit,
     viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
@@ -122,10 +123,12 @@ fun AddMealScreen(
     var carbs by rememberSaveable { mutableStateOf("") }
     var lipids by rememberSaveable { mutableStateOf("") }
 
-    val nameSuggestions by viewModel.getSuggestions(
-        setOf(EntryType.MEAL),
-        GetSuggestionsUseCase.SuggestionField.NAME
-    ).collectAsState()
+    val nameSuggestions by remember {
+        viewModel.getSuggestions(
+            setOf(EntryType.MEAL),
+            GetSuggestionsUseCase.SuggestionField.NAME
+        )
+    }.collectAsState()
 
     val allergenOrder by viewModel.allergenOrder.collectAsState()
     val deactivatedAllergens by viewModel.deactivatedAllergens.collectAsState()
@@ -662,7 +665,10 @@ fun AddMealScreen(
                 onSetReminderChange = { setReminder = it },
                 reminderTime = reminderTime,
                 onReminderTimeChange = { reminderTime = it },
-                isUpdate = existingEntry?.hasReminder == true
+                isUpdate = existingEntry?.hasReminder == true,
+                onAdvancedClick = {
+                    onAddReminderClick(EntryType.MEAL, name, "", "")
+                }
             )
         }
     }

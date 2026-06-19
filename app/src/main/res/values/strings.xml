@@ -263,7 +263,7 @@
     <string name="day_sat">Sat</string>
 
     <!-- Reminders -->
-    <string name="reminders_title">Manage Reminders</string>
+    <string name="reminders_title">Reminders</string>
     <string name="add_reminder">Add Reminder</string>
     <string name="set_daily_reminder">Set daily reminder</string>
     <string name="update_daily_reminder">Update daily reminder</string>
@@ -452,6 +452,9 @@
     <string name="notifications_title">Notifications</string>
     <string name="missing_entry_notif">Missing Entry Notifications</string>
     <string name="missing_entry_notif_desc">Get notified if you forget to log your usual activities</string>
+
+    <string name="checkin_sections_title">Check-in Configuration</string>
+    <string name="checkin_sections_desc">Select the sections you want to see in the Complete Check-in screen.</string>
 
     <!-- Notifications -->
     <string name="notification_reminder_title_format">Reminder: %1$s</string>

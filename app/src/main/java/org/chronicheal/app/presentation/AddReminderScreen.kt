@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -68,27 +70,37 @@ import java.time.LocalTime
 import java.time.format.TextStyle
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddReminderScreen(
     id: Long? = null,
+    initialType: EntryType? = null,
+    initialName: String? = null,
+    initialUnit: String? = null,
+    initialValue: String? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     viewModel: RemindersViewModel = hiltViewModel()
 ) {
-    var title by rememberSaveable { mutableStateOf("") }
+    var type: EntryType by rememberSaveable { mutableStateOf(initialType ?: EntryType.DRUG) }
+    var title by rememberSaveable {
+        mutableStateOf(
+            if (initialName != null) {
+                if (type == EntryType.DRUG) "Medication: $initialName" else initialName
+            } else ""
+        )
+    }
     var time by rememberSaveable { mutableStateOf(LocalTime.of(8, 0)) }
     var selectedDays by rememberSaveable { mutableStateOf(setOf(1, 2, 3, 4, 5, 6, 7)) }
-    var type: EntryType by rememberSaveable { mutableStateOf(EntryType.DRUG) }
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
 
     // Advanced Details State
-    var showAdvancedDetails by rememberSaveable { mutableStateOf(false) }
-    var detailName by rememberSaveable { mutableStateOf("") }
+    var showAdvancedDetails by rememberSaveable { mutableStateOf(initialName != null || initialUnit != null || initialValue != null) }
+    var detailName by rememberSaveable { mutableStateOf(initialName ?: "") }
     var detailLocation by rememberSaveable { mutableStateOf("") }
     var detailIntensity by rememberSaveable { mutableStateOf(5) }
-    var detailUnit by rememberSaveable { mutableStateOf("") }
-    var detailValue by rememberSaveable { mutableStateOf("") }
+    var detailUnit by rememberSaveable { mutableStateOf(initialUnit ?: "") }
+    var detailValue by rememberSaveable { mutableStateOf(initialValue ?: "") }
     var detailNote by rememberSaveable { mutableStateOf("") }
 
     var existingReminder by remember { mutableStateOf<Reminder?>(null) }
@@ -264,14 +276,15 @@ fun AddReminderScreen(
 
             Text(stringResource(R.string.repeat_days), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
-            
-            Row(
+
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 (1..7).forEach { dayOfWeek ->
                     val dayName = java.time.DayOfWeek.of(dayOfWeek)
-                        .getDisplayName(TextStyle.SHORT, Locale.getDefault())
+                        .getDisplayName(TextStyle.NARROW, Locale.getDefault())
                     val isSelected = selectedDays.contains(dayOfWeek)
                     
                     FilterChip(
@@ -283,7 +296,7 @@ fun AddReminderScreen(
                                 selectedDays + dayOfWeek
                             }
                         },
-                        label = { Text(dayName) },
+                        label = { Text(dayName, modifier = Modifier.padding(horizontal = 4.dp)) },
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer

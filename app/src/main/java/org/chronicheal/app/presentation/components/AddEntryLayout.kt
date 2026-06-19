@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,11 +14,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
@@ -206,7 +210,8 @@ fun ReminderSection(
     onSetReminderChange: (Boolean) -> Unit,
     reminderTime: LocalTime,
     onReminderTimeChange: (LocalTime) -> Unit,
-    isUpdate: Boolean
+    isUpdate: Boolean,
+    onAdvancedClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     var showTimePicker by rememberSaveable { mutableStateOf(false) }
@@ -220,7 +225,8 @@ fun ReminderSection(
     Column {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Checkbox(
                 checked = setReminder,
@@ -246,8 +252,27 @@ fun ReminderSection(
                 text = if (isUpdate) stringResource(R.string.update_daily_reminder) else stringResource(
                     R.string.set_daily_reminder
                 ),
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
             )
+            if (onAdvancedClick != null) {
+                OutlinedButton(
+                    onClick = onAdvancedClick,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                    modifier = Modifier.height(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Settings,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        stringResource(R.string.advanced_options),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
         }
 
         if (setReminder) {

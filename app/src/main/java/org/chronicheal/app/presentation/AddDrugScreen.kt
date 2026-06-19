@@ -57,6 +57,7 @@ fun AddDrugScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
+    onAddReminderClick: (EntryType, String, String, String) -> Unit,
     viewModel: AddEntryViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -245,7 +246,10 @@ fun AddDrugScreen(
                 onSetReminderChange = { setReminder = it },
                 reminderTime = reminderTime,
                 onReminderTimeChange = { reminderTime = it },
-                isUpdate = existingEntry?.hasReminder == true
+                isUpdate = existingEntry?.hasReminder == true,
+                onAdvancedClick = {
+                    onAddReminderClick(EntryType.DRUG, name, selectedUnit, value)
+                }
             )
         }
     }

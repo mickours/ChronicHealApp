@@ -55,6 +55,9 @@ class AddEntryViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AddEntryUiState())
     val uiState: StateFlow<AddEntryUiState> = _uiState.asStateFlow()
 
+    val entries: StateFlow<List<HealthEntry>> = healthRepository.getAllEntries()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val isDownloadingModel: StateFlow<Boolean> = llmManager.isDownloading
     val modelDownloadProgress: StateFlow<Float> = llmManager.downloadProgress
     val allergenOrder: StateFlow<List<String>> = settingsRepository.allergenOrder
@@ -145,8 +148,14 @@ class AddEntryViewModel @Inject constructor(
                 updateEntryUseCase(entry)
                 entry.id
             }
-            saveReminderUseCase(reminder.copy(templateEntryId = entryId))
-            updateEntryUseCase(entry.copy(id = entryId, reminderId = reminder.id))
+            val reminderId = saveReminderUseCase(reminder.copy(templateEntryId = entryId))
+            updateEntryUseCase(
+                entry.copy(
+                    id = entryId,
+                    reminderId = reminderId,
+                    hasReminder = true
+                )
+            )
         }
     }
 

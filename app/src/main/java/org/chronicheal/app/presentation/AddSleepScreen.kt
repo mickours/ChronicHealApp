@@ -91,7 +91,8 @@ fun AddSleepScreen(
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
-        }
+        },
+        onReminderTimeFound = { }
     )
 
     val createEntry = {

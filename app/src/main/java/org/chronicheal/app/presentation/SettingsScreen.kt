@@ -79,6 +79,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.chronicheal.app.R
 import org.chronicheal.app.domain.model.Allergen
+import org.chronicheal.app.domain.model.EntryType
 import org.chronicheal.app.domain.model.Fodmap
 import org.chronicheal.app.ui.theme.HeaderBlue
 
@@ -550,6 +551,48 @@ fun SettingsScreen(
                     checked = uiState.isMissingEntryNotificationEnabled,
                     onCheckedChange = { viewModel.setMissingEntryNotificationEnabled(it) }
                 )
+            }
+
+            HorizontalDivider()
+
+            Text(
+                text = stringResource(R.string.checkin_sections_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = stringResource(R.string.checkin_sections_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    EntryType.MOOD,
+                    EntryType.SLEEP,
+                    EntryType.DRUG,
+                    EntryType.PAIN,
+                    EntryType.SYMPTOM
+                ).forEach { type ->
+                    val isSelected = type in uiState.checkInSections
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = {
+                            val next =
+                                if (isSelected) uiState.checkInSections - type else uiState.checkInSections + type
+                            viewModel.setCheckInSections(next)
+                        },
+                        label = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(type.emoji)
+                                Spacer(Modifier.width(4.dp))
+                                Text(stringResource(type.displayRes))
+                            }
+                        }
+                    )
+                }
             }
 
             HorizontalDivider()

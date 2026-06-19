@@ -226,7 +226,16 @@ fun NavGraph(
             route = Screen.AddReminder.route,
             arguments = listOf(
                 navArgument("type") { type = NavType.StringType; nullable = true; defaultValue = null },
-                navArgument("id") { type = NavType.LongType; defaultValue = -1L }
+                navArgument("id") { type = NavType.LongType; defaultValue = -1L },
+                navArgument("name") {
+                    type = NavType.StringType; nullable = true; defaultValue = null
+                },
+                navArgument("unit") {
+                    type = NavType.StringType; nullable = true; defaultValue = null
+                },
+                navArgument("value") {
+                    type = NavType.StringType; nullable = true; defaultValue = null
+                }
             )
         ) { backStackEntry ->
             val typeString = backStackEntry.arguments?.getString("type")
@@ -238,8 +247,16 @@ fun NavGraph(
                 }
             }
             val id = backStackEntry.arguments?.getLong("id").takeIf { it != -1L }
+            val name = backStackEntry.arguments?.getString("name")
+            val unit = backStackEntry.arguments?.getString("unit")
+            val value = backStackEntry.arguments?.getString("value")
+
             AddReminderScreen(
                 id = id,
+                initialType = initialType,
+                initialName = name,
+                initialUnit = unit,
+                initialValue = value,
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { navController.popBackStack() }
             )
@@ -335,7 +352,17 @@ fun NavGraph(
                 reminderId = reminderId,
                 templateId = templateId,
                 onBackClick = { onCancel(id) },
-                onSaveSuccess = { onSaveSuccess(date, id != null) }
+                onSaveSuccess = { onSaveSuccess(date, id != null) },
+                onAddReminderClick = { type, name, unit, value ->
+                    navController.navigate(
+                        Screen.AddReminder.createRoute(
+                            type = type.name,
+                            name = name,
+                            unit = unit,
+                            value = value
+                        )
+                    )
+                }
             )
         }
         composable(
@@ -406,7 +433,17 @@ fun NavGraph(
                 reminderId = reminderId,
                 templateId = templateId,
                 onBackClick = { onCancel(id) },
-                onSaveSuccess = { onSaveSuccess(date, id != null) }
+                onSaveSuccess = { onSaveSuccess(date, id != null) },
+                onAddReminderClick = { type, name, unit, value ->
+                    navController.navigate(
+                        Screen.AddReminder.createRoute(
+                            type = type.name,
+                            name = name,
+                            unit = unit,
+                            value = value
+                        )
+                    )
+                }
             )
         }
         composable(
