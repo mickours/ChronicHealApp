@@ -10,7 +10,7 @@ import java.time.Instant
 data class Ingredient(
     val name: String,
     val quantity: Double? = null,
-    val unit: String? = null
+    val unit: String? = null,
 )
 
 @Entity(tableName = "health_entries")
@@ -39,5 +39,5 @@ data class HealthEntry(
     val fodmaps: List<String>? = null,
     val proteins: Double? = null,
     val carbohydrates: Double? = null,
-    val lipids: Double? = null
+    val lipids: Double? = null,
 )

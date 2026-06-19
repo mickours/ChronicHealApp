@@ -11,6 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -42,10 +43,10 @@ fun AddDiseaseScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
     var name by rememberSaveable { mutableStateOf("") }
-    var intensity by rememberSaveable { mutableStateOf(5) }
+    var intensity by rememberSaveable { mutableIntStateOf(5) }
     var note by rememberSaveable { mutableStateOf("") }
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
@@ -88,7 +89,9 @@ fun AddDiseaseScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_disease) else stringResource(R.string.edit_disease),
+        title = if ((id == null) || isNewFromTemplate) stringResource(R.string.log_disease) else stringResource(
+            R.string.edit_disease
+        ),
         hasExistingEntry = !isNewFromTemplate && existingEntry != null,
         onBackClick = onBackClick,
         onSaveClick = {
@@ -108,9 +111,8 @@ fun AddDiseaseScreen(
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
+                startTime = startTime
+            ) { startTime = it }
 
             Spacer(modifier = Modifier.height(16.dp))
 

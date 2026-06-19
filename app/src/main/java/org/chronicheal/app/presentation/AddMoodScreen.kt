@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -39,9 +40,9 @@ fun AddMoodScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
-    var intensity by rememberSaveable { mutableStateOf(5) }
+    var intensity by rememberSaveable { mutableIntStateOf(5) }
     var note by rememberSaveable { mutableStateOf("") }
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
@@ -77,8 +78,10 @@ fun AddMoodScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_mood) else stringResource(R.string.edit_mood),
-        hasExistingEntry = !isNewFromTemplate && existingEntry != null,
+        title = if ((id == null) || isNewFromTemplate) stringResource(R.string.log_mood) else stringResource(
+            R.string.edit_mood
+        ),
+        hasExistingEntry = (!isNewFromTemplate) && (existingEntry != null),
         onBackClick = onBackClick,
         onSaveClick = {
             viewModel.saveEntry(createEntry(), if (isNewFromTemplate) null else existingEntry)
@@ -97,9 +100,8 @@ fun AddMoodScreen(
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
+                startTime = startTime
+            ) { startTime = it }
 
             Spacer(modifier = Modifier.height(16.dp))
 

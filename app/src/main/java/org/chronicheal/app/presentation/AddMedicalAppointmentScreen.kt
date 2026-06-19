@@ -41,7 +41,7 @@ fun AddMedicalAppointmentScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
     var name by rememberSaveable { mutableStateOf("") }
     var location by rememberSaveable { mutableStateOf("") }
@@ -87,10 +87,10 @@ fun AddMedicalAppointmentScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_medical_appointment) else stringResource(
+        title = if ((id == null) || isNewFromTemplate) stringResource(R.string.log_medical_appointment) else stringResource(
             R.string.edit_medical_appointment
         ),
-        hasExistingEntry = !isNewFromTemplate && existingEntry != null,
+        hasExistingEntry = (!isNewFromTemplate) && (existingEntry != null),
         onBackClick = onBackClick,
         onSaveClick = {
             viewModel.saveEntry(createEntry(), if (isNewFromTemplate) null else existingEntry)
@@ -109,9 +109,8 @@ fun AddMedicalAppointmentScreen(
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
+                startTime = startTime
+            ) { startTime = it }
 
             Spacer(modifier = Modifier.height(16.dp))
 

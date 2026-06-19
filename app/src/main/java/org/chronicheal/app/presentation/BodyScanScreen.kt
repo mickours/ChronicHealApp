@@ -28,6 +28,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,16 +63,16 @@ fun BodyScanScreen(
     dateString: String? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
-    var isSaving by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(value = false) }
 
     val painEntries = remember { mutableStateListOf<HealthEntry>() }
     var selectedRegion by remember { mutableStateOf<String?>(null) }
-    var currentIntensity by remember { mutableStateOf(0f) }
+    var currentIntensity by remember { mutableFloatStateOf(0f) }
 
     Scaffold(
         topBar = {
@@ -94,7 +95,7 @@ fun BodyScanScreen(
                             onSaveSuccess()
                         },
                         modifier = Modifier.padding(end = 8.dp),
-                        enabled = !isSaving && painEntries.isNotEmpty()
+                        enabled = !isSaving && painEntries.isNotEmpty(),
                     ) {
                         if (isSaving) {
                             CircularProgressIndicator(
@@ -119,13 +120,14 @@ fun BodyScanScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Box(modifier = Modifier.padding(16.dp)) {
+            Box(
+                modifier = Modifier.padding(16.dp)
+            ) {
                 EntryDateTimePicker(
                     date = logDate,
                     onDateChange = { logDate = it },
-                    startTime = startTime,
-                    onStartTimeChange = { startTime = it }
-                )
+                    startTime = startTime
+                ) { startTime = it }
             }
 
             Text(
@@ -145,9 +147,11 @@ fun BodyScanScreen(
                     .fillMaxWidth()
             ) {
                 Row(modifier = Modifier.fillMaxSize()) {
-                    Box(modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    ) {
                         BodySilhouette(
                             modifier = Modifier.fillMaxSize(),
                             painEntries = painEntries,

@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -66,26 +67,26 @@ fun AddCompleteEntryScreen(
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
     remindersViewModel: RemindersViewModel = hiltViewModel(),
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
-    var isSaving by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(value = false) }
 
     // State for sections
-    var moodIntensity by rememberSaveable { mutableStateOf(5f) }
+    var moodIntensity by rememberSaveable { mutableFloatStateOf(5f) }
     var moodNote by rememberSaveable { mutableStateOf("") }
 
-    var showPain by rememberSaveable { mutableStateOf(false) }
+    var showPain by rememberSaveable { mutableStateOf(value = false) }
     val painEntries = remember { mutableStateListOf<HealthEntry>() }
 
-    var showSymptoms by rememberSaveable { mutableStateOf(false) }
+    var showSymptoms by rememberSaveable { mutableStateOf(value = false) }
     val symptomEntries = remember { mutableStateListOf<HealthEntry>() }
 
     // Pre-fill active drugs as checkboxes
     val allReminders by remindersViewModel.reminders.collectAsState()
     val drugReminders = remember(allReminders) {
-        allReminders.filter { it.entryType == EntryType.DRUG && it.isEnabled }
+        allReminders.filter { (it.entryType == EntryType.DRUG) && it.isEnabled }
     }
 
     val checkedDrugs = remember { mutableStateMapOf<Long, Boolean>() }
@@ -111,7 +112,7 @@ fun AddCompleteEntryScreen(
                     IconButton(onClick = onBackClick) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
@@ -208,16 +209,19 @@ fun AddCompleteEntryScreen(
                 EntryDateTimePicker(
                     date = logDate,
                     onDateChange = { logDate = it },
-                    startTime = startTime,
-                    onStartTimeChange = { startTime = it }
-                )
+                    startTime = startTime
+                ) { startTime = it }
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
             // 1. Mood
             item {
                 SectionHeader(EntryType.MOOD, stringResource(R.string.how_are_you_feeling))
-                MoodSection(moodIntensity, { moodIntensity = it }, moodNote, { moodNote = it })
+                MoodSection(
+                    intensity = moodIntensity,
+                    onIntensityChange = { moodIntensity = it },
+                    note = moodNote
+                ) { moodNote = it }
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
@@ -236,7 +240,7 @@ fun AddCompleteEntryScreen(
                                         if (v == v.toLong().toDouble()) v.toLong()
                                             .toString() else v.toString()
                                     }
-                                    if (value != null && entry.unit != null) "$value ${entry.unit}" else null
+                                    if (value != null && (entry.unit != null)) "$value ${entry.unit}" else null
                                 }
 
                                 Row(
@@ -255,9 +259,9 @@ fun AddCompleteEntryScreen(
                                     )
                                     Column {
                                         Text(drugName, style = MaterialTheme.typography.bodyLarge)
-                                        if (dosageText != null) {
+                                        dosageText?.let {
                                             Text(
-                                                dosageText,
+                                                it,
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
@@ -274,12 +278,15 @@ fun AddCompleteEntryScreen(
             // 3. Optional Pain
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = showPain, onCheckedChange = {
-                        showPain = it
-                        if (it && painEntries.isEmpty()) {
-                            painEntries.add(HealthEntry(type = EntryType.PAIN, intensity = 5))
+                    Checkbox(
+                        checked = showPain,
+                        onCheckedChange = {
+                            showPain = it
+                            if (it && painEntries.isEmpty()) {
+                                painEntries.add(HealthEntry(type = EntryType.PAIN, intensity = 5))
+                            }
                         }
-                    })
+                    )
                     Text(
                         stringResource(R.string.log_pain_question),
                         style = MaterialTheme.typography.titleMedium,
@@ -291,9 +298,11 @@ fun AddCompleteEntryScreen(
             if (showPain) {
                 items(painEntries) { pain ->
                     val index = painEntries.indexOf(pain)
-                    ElevatedCard(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)) {
+                    ElevatedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             val originSuggestions by viewModel.getSuggestions(
                                 setOf(EntryType.PAIN),

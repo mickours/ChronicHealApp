@@ -11,6 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -43,11 +44,11 @@ fun AddPainScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
     var origin by rememberSaveable { mutableStateOf("") }
     var note by rememberSaveable { mutableStateOf("") }
-    var intensity by rememberSaveable { mutableStateOf(5) }
+    var intensity by rememberSaveable { mutableIntStateOf(5) }
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
 
@@ -58,7 +59,7 @@ fun AddPainScreen(
     val originSuggestions by viewModel.getSuggestions(
         types = setOf(EntryType.PAIN),
         field = GetSuggestionsUseCase.SuggestionField.ORIGIN,
-        parentLocation = locationString ?: existingEntry?.location
+        parentLocation = locationString ?: existingEntry?.location,
     ).collectAsState()
 
     LogNowEffect(
@@ -74,7 +75,7 @@ fun AddPainScreen(
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
-        }
+        },
     )
 
     val createEntry = {
@@ -91,8 +92,10 @@ fun AddPainScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_pain) else stringResource(R.string.edit_pain),
-        hasExistingEntry = !isNewFromTemplate && existingEntry != null,
+        title = if ((id == null) || isNewFromTemplate) stringResource(R.string.log_pain) else stringResource(
+            R.string.edit_pain
+        ),
+        hasExistingEntry = (!isNewFromTemplate) && (existingEntry != null),
         onBackClick = onBackClick,
         onSaveClick = {
             viewModel.saveEntry(createEntry(), if (isNewFromTemplate) null else existingEntry)
@@ -111,9 +114,8 @@ fun AddPainScreen(
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
+                startTime = startTime
+            ) { startTime = it }
 
             Spacer(modifier = Modifier.height(16.dp))
 

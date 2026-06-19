@@ -39,6 +39,8 @@
     <string name="voice_logging_title">Saisie Vocale</string>
     <string name="voice_listening">Écoute en cours…</string>
     <string name="voice_tap_to_speak">Appuyez sur le micro et parlez</string>
+    <string name="voice_start">Commencer l\'écoute</string>
+    <string name="voice_stop">Arrêter l\'écoute</string>
     <string name="voice_detected_log">Log détecté</string>
     <string name="voice_save_hint">Dites \"Enregistrer\" pour confirmer ou \"Annuler\" pour ignorer</string>
     <string name="voice_save_now">Enregistrer maintenant</string>

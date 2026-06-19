@@ -308,12 +308,12 @@ fun TimelineScreen(
         },
         bottomBar = {
             val quickAddFavorites = uiState.favorites.filter { it != EntryType.VOICE_LOGGING }.toList()
-            if (quickAddFavorites.isNotEmpty()) {
-                QuickAddBar(
-                    favorites = quickAddFavorites,
-                    onEntryTypeClick = onEntryTypeClick
-                )
-            }
+            QuickAddBar(
+                favorites = quickAddFavorites,
+                onEntryTypeClick = onEntryTypeClick,
+                onCompleteEntryClick = onCompleteEntryClick,
+                onVoiceEntryClick = { onEntryTypeClick(EntryType.VOICE_LOGGING) }
+            )
         }
     ) { innerPadding ->
         if (uiState.entries.isEmpty()) {
@@ -360,7 +360,6 @@ fun TimelineScreen(
                             item(key = "month_${item.month}_$index") {
                                 MonthHeader(
                                     month = item.month,
-                                    yearMonth = item.yearMonth,
                                     onMonthClick = {
                                         // For "Day view for the month", we navigate to Calendar
                                         navController.navigate(Screen.Calendar.route)
@@ -372,7 +371,6 @@ fun TimelineScreen(
                             stickyHeader(key = "day_${item.day}_$index") {
                                 DayHeader(
                                     day = item.day,
-                                    date = item.date,
                                     isToday = item.isToday,
                                     onDayClick = {
                                         navController.navigate(Screen.DayView.createRoute(item.date.toString()))
@@ -398,7 +396,9 @@ fun TimelineScreen(
 @Composable
 fun QuickAddBar(
     favorites: List<EntryType>,
-    onEntryTypeClick: (EntryType) -> Unit
+    onEntryTypeClick: (EntryType) -> Unit,
+    onCompleteEntryClick: () -> Unit,
+    onVoiceEntryClick: () -> Unit
 ) {
     Surface(
         tonalElevation = 8.dp,
@@ -441,6 +441,20 @@ fun QuickAddBar(
                 modifier = Modifier.weight(1f),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                item {
+                    QuickAddChip(
+                        emoji = "✨",
+                        label = stringResource(R.string.complete_checkin),
+                        onClick = onCompleteEntryClick
+                    )
+                }
+                item {
+                    QuickAddChip(
+                        emoji = EntryType.VOICE_LOGGING.emoji,
+                        label = stringResource(R.string.voice_logging),
+                        onClick = onVoiceEntryClick
+                    )
+                }
                 items(favorites) { type ->
                     QuickAddChip(
                         type = type,
@@ -554,6 +568,19 @@ fun QuickAddChip(
     type: EntryType,
     onClick: () -> Unit
 ) {
+    QuickAddChip(
+        emoji = type.emoji,
+        label = stringResource(type.displayRes),
+        onClick = onClick
+    )
+}
+
+@Composable
+fun QuickAddChip(
+    emoji: String,
+    label: String,
+    onClick: () -> Unit
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -565,19 +592,19 @@ fun QuickAddChip(
         Surface(
             shape = CircleShape,
             color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.size(40.dp) // Reduced from 48.dp
+            modifier = Modifier.size(40.dp)
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(text = type.emoji, fontSize = 20.sp) // Reduced from 24.sp
+                Text(text = emoji, fontSize = 20.sp)
             }
         }
-        Spacer(modifier = Modifier.height(2.dp)) // Reduced from 4.dp
+        Spacer(modifier = Modifier.height(2.dp))
         Text(
-            text = stringResource(type.displayRes),
+            text = label,
             style = MaterialTheme.typography.labelSmall,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            fontSize = 10.sp // Reduced from default
+            fontSize = 10.sp
         )
     }
 }
@@ -662,7 +689,6 @@ fun YearHeader(year: Int) {
 @Composable
 fun MonthHeader(
     month: String, 
-    yearMonth: YearMonth,
     onMonthClick: () -> Unit
 ) {
     Surface(
@@ -700,7 +726,6 @@ fun MonthHeader(
 @Composable
 fun DayHeader(
     day: String, 
-    date: LocalDate,
     isToday: Boolean,
     onDayClick: () -> Unit
 ) {

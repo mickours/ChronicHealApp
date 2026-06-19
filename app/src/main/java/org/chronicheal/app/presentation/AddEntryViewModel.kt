@@ -34,7 +34,7 @@ data class AddEntryUiState(
     val error: String? = null,
     val reminder: Reminder? = null,
     val isAiEnabled: Boolean = true,
-    val message: String? = null
+    val message: String? = null,
 )
 
 @HiltViewModel
@@ -48,8 +48,8 @@ class AddEntryViewModel @Inject constructor(
     private val saveReminderUseCase: SaveReminderUseCase,
     private val analyzeMealUseCase: AnalyzeMealUseCase,
     private val healthRepository: HealthRepository,
-    private val settingsRepository: SettingsRepository,
-    private val llmManager: LlmManager
+    settingsRepository: SettingsRepository,
+    private val llmManager: LlmManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AddEntryUiState())
@@ -122,7 +122,7 @@ class AddEntryViewModel @Inject constructor(
 
     fun saveEntry(entry: HealthEntry, originalEntry: HealthEntry?) {
         viewModelScope.launch {
-            if (originalEntry == null || _uiState.value.isNewFromTemplate) {
+            if ((originalEntry == null) || _uiState.value.isNewFromTemplate) {
                 addEntryUseCase(entry)
             } else {
                 updateEntryUseCase(entry)
@@ -189,10 +189,6 @@ class AddEntryViewModel @Inject constructor(
 
     suspend fun processLog(text: String): List<HealthEntry>? {
         return llmManager.processLog(text)
-    }
-
-    fun clearMessage() {
-        _uiState.update { it.copy(message = null) }
     }
 
     fun showMessage(message: String) {

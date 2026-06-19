@@ -11,6 +11,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -43,11 +44,11 @@ fun AddSymptomScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
     var name by rememberSaveable { mutableStateOf("") }
     var location by rememberSaveable { mutableStateOf(locationString ?: "") }
-    var intensity by rememberSaveable { mutableStateOf(5) }
+    var intensity by rememberSaveable { mutableIntStateOf(5) }
     var note by rememberSaveable { mutableStateOf("") }
     var logDate by rememberSaveable { mutableStateOf(if (dateString != null) LocalDate.parse(dateString) else LocalDate.now()) }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
@@ -58,12 +59,12 @@ fun AddSymptomScreen(
 
     val nameSuggestions by viewModel.getSuggestions(
         setOf(EntryType.SYMPTOM),
-        GetSuggestionsUseCase.SuggestionField.NAME
+        GetSuggestionsUseCase.SuggestionField.NAME,
     ).collectAsState()
 
     val locationSuggestions by viewModel.getSuggestions(
         setOf(EntryType.PAIN, EntryType.SYMPTOM),
-        GetSuggestionsUseCase.SuggestionField.LOCATION
+        GetSuggestionsUseCase.SuggestionField.LOCATION,
     ).collectAsState()
 
     LogNowEffect(
@@ -80,7 +81,7 @@ fun AddSymptomScreen(
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
                 startTime = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalTime()
             }
-        }
+        },
     )
 
     val createEntry = {
@@ -97,8 +98,10 @@ fun AddSymptomScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_symptom) else stringResource(R.string.edit_symptom),
-        hasExistingEntry = !isNewFromTemplate && existingEntry != null,
+        title = if ((id == null) || isNewFromTemplate) stringResource(R.string.log_symptom) else stringResource(
+            R.string.edit_symptom
+        ),
+        hasExistingEntry = (!isNewFromTemplate) && (existingEntry != null),
         onBackClick = onBackClick,
         onSaveClick = {
             viewModel.saveEntry(createEntry(), if (isNewFromTemplate) null else existingEntry)
@@ -117,9 +120,8 @@ fun AddSymptomScreen(
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
+                startTime = startTime
+            ) { startTime = it }
 
             Spacer(modifier = Modifier.height(16.dp))
 

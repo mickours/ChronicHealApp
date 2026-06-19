@@ -18,6 +18,7 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -49,11 +50,11 @@ fun AddSleepScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
     var sleepTime by rememberSaveable { mutableStateOf(LocalTime.of(23, 0)) }
     var wakeTime by rememberSaveable { mutableStateOf(LocalTime.of(7, 0)) }
-    var intensity by rememberSaveable { mutableStateOf(5) }
+    var intensity by rememberSaveable { mutableIntStateOf(5) }
     var note by rememberSaveable { mutableStateOf("") }
     var logDate by rememberSaveable {
         mutableStateOf(
@@ -68,8 +69,8 @@ fun AddSleepScreen(
     val existingEntry = uiState.entry
     val isNewFromTemplate = uiState.isNewFromTemplate
 
-    var showSleepTimePicker by rememberSaveable { mutableStateOf(false) }
-    var showWakeTimePicker by rememberSaveable { mutableStateOf(false) }
+    var showSleepTimePicker by rememberSaveable { mutableStateOf(value = false) }
+    var showWakeTimePicker by rememberSaveable { mutableStateOf(value = false) }
 
     LogNowEffect(
         id = id,
@@ -84,7 +85,7 @@ fun AddSleepScreen(
                 // This is a simplification as the DB model doesn't store both sleep and wake time.
                 val duration = Duration.ofMinutes(entry.durationMinutes.toLong())
                 sleepTime = LocalTime.of(23, 0)
-                wakeTime = sleepTime.plus(duration)
+                wakeTime = sleepTime + duration
             }
             if (!fromTemplate) {
                 logDate = entry.timestamp.atZone(ZoneId.systemDefault()).toLocalDate()
@@ -110,8 +111,10 @@ fun AddSleepScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_sleep) else stringResource(R.string.edit_sleep),
-        hasExistingEntry = !isNewFromTemplate && existingEntry != null,
+        title = if ((id == null) || isNewFromTemplate) stringResource(R.string.log_sleep) else stringResource(
+            R.string.edit_sleep
+        ),
+        hasExistingEntry = (!isNewFromTemplate) && (existingEntry != null),
         onBackClick = onBackClick,
         onSaveClick = {
             viewModel.saveEntry(createEntry(), if (isNewFromTemplate) null else existingEntry)
@@ -130,9 +133,8 @@ fun AddSleepScreen(
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
+                startTime = startTime
+            ) { startTime = it }
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -192,17 +194,19 @@ fun AddSleepScreen(
         val timeState =
             rememberTimePickerState(initialHour = sleepTime.hour, initialMinute = sleepTime.minute)
         TimePickerDialog(
-            onDismissRequest = { showSleepTimePicker = false },
+            onDismissRequest = {
+            },
             confirmButton = {
-                TextButton(onClick = {
-                    sleepTime = LocalTime.of(timeState.hour, timeState.minute)
-                    showSleepTimePicker = false
-                }) {
+                TextButton(
+                    onClick = {
+                        sleepTime = LocalTime.of(timeState.hour, timeState.minute)
+                    }
+                ) {
                     Text(stringResource(R.string.ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showSleepTimePicker = false }) {
+                TextButton(onClick = { }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -215,12 +219,15 @@ fun AddSleepScreen(
         val timeState =
             rememberTimePickerState(initialHour = wakeTime.hour, initialMinute = wakeTime.minute)
         TimePickerDialog(
-            onDismissRequest = { showWakeTimePicker = false },
+            onDismissRequest = {
+            },
             confirmButton = {
-                TextButton(onClick = {
-                    wakeTime = LocalTime.of(timeState.hour, timeState.minute)
-                    showWakeTimePicker = false
-                }) {
+                TextButton(
+                    onClick = {
+                        wakeTime = LocalTime.of(timeState.hour, timeState.minute)
+                        showWakeTimePicker = false
+                    }
+                ) {
                     Text(stringResource(R.string.ok))
                 }
             },

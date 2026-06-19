@@ -48,13 +48,13 @@ fun AddBeverageScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
     var name by rememberSaveable { mutableStateOf("") }
     var value by rememberSaveable { mutableStateOf("") }
     var note by rememberSaveable { mutableStateOf("") }
-    var isAlcoholic by rememberSaveable { mutableStateOf(false) }
-    var isCaffeinated by rememberSaveable { mutableStateOf(false) }
+    var isAlcoholic by rememberSaveable { mutableStateOf(value = false) }
+    var isCaffeinated by rememberSaveable { mutableStateOf(value = false) }
     var logDate by rememberSaveable {
         mutableStateOf(
             if (dateString != null) LocalDate.parse(
@@ -109,8 +109,10 @@ fun AddBeverageScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_beverage) else stringResource(R.string.edit_beverage),
-        hasExistingEntry = !isNewFromTemplate && existingEntry != null,
+        title = if ((id == null) || isNewFromTemplate) stringResource(R.string.log_beverage) else stringResource(
+            R.string.edit_beverage
+        ),
+        hasExistingEntry = (!isNewFromTemplate) && (existingEntry != null),
         onBackClick = onBackClick,
         onSaveClick = {
             viewModel.saveEntry(createEntry(), if (isNewFromTemplate) null else existingEntry)
@@ -129,9 +131,8 @@ fun AddBeverageScreen(
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
+                startTime = startTime
+            ) { startTime = it }
 
             Spacer(modifier = Modifier.height(16.dp))
 

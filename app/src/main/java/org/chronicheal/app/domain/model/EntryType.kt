@@ -21,9 +21,9 @@ enum class EntryType(val emoji: String, val displayRes: Int) {
     MOOD("😊", R.string.type_mood),
     VOICE_LOGGING("🎙️", R.string.voice_logging_title);
 
-    enum class Category(val titleRes: Int) {
-        OCCURRENCE(R.string.category_occurrence), // "What occurs to you"
-        MANAGEMENT(R.string.category_management)  // "What you can manage"
+    enum class Category {
+        OCCURRENCE, // "What occurs to you"
+        MANAGEMENT,  // "What you can manage"
     }
 
     val category: Category

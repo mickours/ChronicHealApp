@@ -91,11 +91,11 @@ import java.time.format.FormatStyle
 @Composable
 fun WelcomeWizardScreen(
     onWizardCompleted: () -> Unit,
-    viewModel: WelcomeWizardViewModel = hiltViewModel()
+    viewModel: WelcomeWizardViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val scope = rememberCoroutineScope()
-    val pagerState = rememberPagerState(pageCount = { 7 })
+    val pagerState = rememberPagerState { 7 }
 
     LaunchedEffect(uiState.isCompleted) {
         if (uiState.isCompleted) {
@@ -103,9 +103,11 @@ fun WelcomeWizardScreen(
         }
     }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .statusBarsPadding()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+    ) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
@@ -595,7 +597,7 @@ fun NotificationPermissionPage(
         }
     }
 
-    var showTimePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(value = false) }
 
     Column(
         modifier = Modifier
@@ -645,7 +647,7 @@ fun NotificationPermissionPage(
                     Switch(
                         checked = isCheckupEnabled,
                         onCheckedChange = {
-                            if (it && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            if (it && (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)) {
                                 permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             } else {
                                 onCheckupToggled(it)

@@ -61,7 +61,8 @@ class MainActivity : AppCompatActivity() {
         val type: String?,
         val reminderId: Long?,
         val templateEntryId: Long?,
-        val isLogNow: Boolean
+        val isLogNow: Boolean,
+        val action: String? = null
     )
     private val pendingEntryAction = MutableStateFlow<PendingAction?>(null)
 
@@ -113,84 +114,105 @@ class MainActivity : AppCompatActivity() {
                         val entryAction by pendingEntryAction.collectAsState()
                         LaunchedEffect(entryAction) {
                             entryAction?.let { action ->
-                                val entryType = action.type?.let { try { EntryType.valueOf(it) } catch(_: Exception) { null } }
-                                
-                                val route = when (entryType) {
-                                    EntryType.PAIN -> Screen.AddPain.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                var route: String? = null
 
-                                    EntryType.DRUG -> Screen.AddDrug.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                when (action.action) {
+                                    ACTION_VOICE_LOGGING -> {
+                                        route = Screen.VoiceLogging.route
+                                    }
 
-                                    EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                    ACTION_CHECKUP -> {
+                                        route = Screen.AddCompleteEntry.createRoute()
+                                    }
 
-                                    EntryType.DISEASE -> Screen.AddDisease.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                    else -> {
+                                        val entryType = action.type?.let {
+                                            try {
+                                                EntryType.valueOf(it)
+                                            } catch (_: Exception) {
+                                                null
+                                            }
+                                        }
 
-                                    EntryType.MEAL -> Screen.AddMeal.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                        route = when (entryType) {
+                                            EntryType.PAIN -> Screen.AddPain.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
 
-                                    EntryType.SLEEP -> Screen.AddSleep.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                            EntryType.DRUG -> Screen.AddDrug.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
 
-                                    EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                            EntryType.SYMPTOM -> Screen.AddSymptom.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
 
-                                    EntryType.ACTIVITY -> Screen.AddActivity.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                            EntryType.DISEASE -> Screen.AddDisease.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
 
-                                    EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                            EntryType.MEAL -> Screen.AddMeal.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
 
-                                    EntryType.JOURNAL -> Screen.AddJournal.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                            EntryType.SLEEP -> Screen.AddSleep.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
 
-                                    EntryType.PERIOD -> Screen.AddPeriod.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                            EntryType.MEDICAL_APPOINTMENT -> Screen.AddMedicalAppointment.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
 
-                                    EntryType.BEVERAGE -> Screen.AddBeverage.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                            EntryType.ACTIVITY -> Screen.AddActivity.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
 
-                                    EntryType.STOOL -> Screen.AddStool.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
+                                            EntryType.EXTERNAL_FACTOR -> Screen.AddExternalFactor.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
 
-                                    EntryType.MOOD -> Screen.AddMood.createRoute(
-                                        templateId = action.templateEntryId,
-                                        reminderId = action.reminderId
-                                    )
-                                    EntryType.VOICE_LOGGING -> Screen.VoiceLogging.route
-                                    null -> {
-                                        if (action.reminderId != null) {
-                                            Screen.AddCompleteEntry.createRoute()
-                                        } else {
-                                            null
+                                            EntryType.JOURNAL -> Screen.AddJournal.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
+
+                                            EntryType.PERIOD -> Screen.AddPeriod.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
+
+                                            EntryType.BEVERAGE -> Screen.AddBeverage.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
+
+                                            EntryType.STOOL -> Screen.AddStool.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
+
+                                            EntryType.MOOD -> Screen.AddMood.createRoute(
+                                                templateId = action.templateEntryId,
+                                                reminderId = action.reminderId
+                                            )
+
+                                            EntryType.VOICE_LOGGING -> Screen.VoiceLogging.route
+                                            null -> {
+                                                if (action.reminderId != null) {
+                                                    Screen.AddCompleteEntry.createRoute()
+                                                } else {
+                                                    null
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -221,21 +243,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
+        val action = intent?.action
         val type = intent?.getStringExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
         val reminderId = intent?.getLongExtra(NotificationHelper.EXTRA_REMINDER_ID, -1L)?.takeIf { it != -1L }
         val templateId = intent?.getLongExtra(NotificationHelper.EXTRA_TEMPLATE_ENTRY_ID, -1L)
             ?.takeIf { it != -1L }
         val isLogNow = intent?.getBooleanExtra(NotificationHelper.EXTRA_IS_LOG_NOW, false) ?: false
 
-        if (type != null || reminderId != null || templateId != null) {
+        if (action == ACTION_VOICE_LOGGING || action == ACTION_CHECKUP || type != null || reminderId != null || templateId != null) {
             // Cancel notification when handling it
             reminderId?.let { notificationHelper.cancelNotification(it.toInt()) }
 
-            pendingEntryAction.value = PendingAction(type, reminderId, templateId, isLogNow)
-            intent?.removeExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
-            intent?.removeExtra(NotificationHelper.EXTRA_REMINDER_ID)
-            intent?.removeExtra(NotificationHelper.EXTRA_TEMPLATE_ENTRY_ID)
-            intent?.removeExtra(NotificationHelper.EXTRA_IS_LOG_NOW)
+            pendingEntryAction.value = PendingAction(type, reminderId, templateId, isLogNow, action)
+            intent.removeExtra(NotificationHelper.EXTRA_ENTRY_TYPE)
+            intent.removeExtra(NotificationHelper.EXTRA_REMINDER_ID)
+            intent.removeExtra(NotificationHelper.EXTRA_TEMPLATE_ENTRY_ID)
+            intent.removeExtra(NotificationHelper.EXTRA_IS_LOG_NOW)
         }
     }
 
@@ -291,5 +314,10 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIntent(intent)
+    }
+
+    companion object {
+        const val ACTION_VOICE_LOGGING = "org.chronicheal.app.ACTION_VOICE_LOGGING"
+        const val ACTION_CHECKUP = "org.chronicheal.app.ACTION_CHECKUP"
     }
 }

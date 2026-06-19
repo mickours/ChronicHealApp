@@ -39,6 +39,8 @@
     <string name="voice_logging_title">Voice Logging</string>
     <string name="voice_listening">Listening…</string>
     <string name="voice_tap_to_speak">Tap the mic and speak</string>
+    <string name="voice_start">Start Listening</string>
+    <string name="voice_stop">Stop Listening</string>
     <string name="voice_detected_log">Detected Log</string>
     <string name="voice_save_hint">Say \"Save\" to confirm or \"Cancel\" to discard</string>
     <string name="voice_save_now">Save Now</string>

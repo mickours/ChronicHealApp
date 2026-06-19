@@ -90,7 +90,7 @@ fun AddMealScreen(
     templateId: Long? = null,
     onBackClick: () -> Unit,
     onSaveSuccess: () -> Unit,
-    viewModel: AddEntryViewModel = hiltViewModel()
+    viewModel: AddEntryViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -106,7 +106,7 @@ fun AddMealScreen(
     }
     var startTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
 
-    var setReminder by rememberSaveable { mutableStateOf(false) }
+    var setReminder by rememberSaveable { mutableStateOf(value = false) }
     var reminderTime by rememberSaveable { mutableStateOf(LocalTime.now()) }
     
     val uiState by viewModel.uiState.collectAsState()
@@ -114,7 +114,7 @@ fun AddMealScreen(
     val isNewFromTemplate = uiState.isNewFromTemplate
 
     val ingredients = remember { mutableStateListOf<Ingredient>() }
-    var showAdvancedOptions by rememberSaveable { mutableStateOf(false) }
+    var showAdvancedOptions by rememberSaveable { mutableStateOf(value = false) }
     var selectedAllergens by remember { mutableStateOf(setOf<String>()) }
     var selectedFodmaps by remember { mutableStateOf(setOf<String>()) }
 
@@ -153,7 +153,7 @@ fun AddMealScreen(
     val isModelPresent = viewModel.isModelPresent()
     val isDownloadingModel by viewModel.isDownloadingModel.collectAsState()
     val modelDownloadProgress by viewModel.modelDownloadProgress.collectAsState()
-    var isAnalyzing by remember { mutableStateOf(false) }
+    var isAnalyzing by remember { mutableStateOf(value = false) }
     var showDownloadDialog by remember { mutableStateOf(false) }
 
     LogNowEffect(
@@ -186,9 +186,8 @@ fun AddMealScreen(
             if (ingredients.isNotEmpty() || selectedAllergens.isNotEmpty() || selectedFodmaps.isNotEmpty() || proteins.isNotEmpty()) {
                 showAdvancedOptions = true
             }
-        },
-        onReminderTimeFound = { reminderTime = it }
-    )
+        }
+    ) { reminderTime = it }
 
     val createEntry = {
         HealthEntry(
@@ -219,9 +218,11 @@ fun AddMealScreen(
                 if (analysis != null) {
                     analysis.ingredients?.let { aiIngredients ->
                         ingredients.clear()
-                        ingredients.addAll(aiIngredients.map {
-                            Ingredient(it.name, it.quantity, it.unit)
-                        })
+                        ingredients.addAll(
+                            aiIngredients.map {
+                                Ingredient(it.name, it.quantity, it.unit)
+                            }
+                        )
                     }
                     analysis.allergens?.let { aiAllergens ->
                         // Match returned allergens with available keys (case-insensitive)
@@ -246,7 +247,8 @@ fun AddMealScreen(
 
     if (showDownloadDialog) {
         AlertDialog(
-            onDismissRequest = { showDownloadDialog = false },
+            onDismissRequest = {
+            },
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -275,14 +277,13 @@ fun AddMealScreen(
                 TextButton(
                     onClick = {
                         viewModel.downloadModel()
-                        showDownloadDialog = false
                     }
                 ) {
                     Text(stringResource(R.string.ai_download_now_confirm))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDownloadDialog = false }) {
+                TextButton(onClick = { }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -290,8 +291,10 @@ fun AddMealScreen(
     }
 
     AddEntryScaffold(
-        title = if (id == null || isNewFromTemplate) stringResource(R.string.log_meal) else stringResource(R.string.edit_meal),
-        hasExistingEntry = !isNewFromTemplate && existingEntry != null,
+        title = if ((id == null) || isNewFromTemplate) stringResource(R.string.log_meal) else stringResource(
+            R.string.edit_meal
+        ),
+        hasExistingEntry = (!isNewFromTemplate) && (existingEntry != null),
         onBackClick = onBackClick,
         onSaveClick = {
             handleEntrySave(
@@ -319,9 +322,8 @@ fun AddMealScreen(
             EntryDateTimePicker(
                 date = logDate,
                 onDateChange = { logDate = it },
-                startTime = startTime,
-                onStartTimeChange = { startTime = it }
-            )
+                startTime = startTime
+            ) { startTime = it }
 
             Spacer(modifier = Modifier.height(16.dp))
 
